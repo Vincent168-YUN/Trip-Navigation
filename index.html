@@ -1,428 +1,414 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WanderTracker Live</title>
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Globe_icon.svg/1024px-Globe_icon.svg.png">
+import React, { useState, useEffect, useRef } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, collection, doc, addDoc, onSnapshot, updateDoc, deleteDoc } from 'firebase/firestore';
+import { MapPin, Plus, X, ChevronLeft, ChevronRight, Camera, Trash2, ArrowLeft, Image as ImageIcon } from 'lucide-react';
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <style>
-        body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: contain; }
-        .safe-top { padding-top: env(safe-area-inset-top); }
-        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-        .bottom-nav { height: calc(64px + env(safe-area-inset-bottom)); }
-        .content-area { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+// --- Firebase Configuration ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'location-photo-app';
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [locations, setLocations] = useState([]);
+  const [currentView, setCurrentView] = useState('home'); // 'home', 'detail', 'add'
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // --- Auth Setup ---
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+      }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
+
+  // --- Data Fetching ---
+  useEffect(() => {
+    if (!user) return;
+
+    const locationsRef = collection(db, 'artifacts', appId, 'public', 'data', 'locations');
+    const unsubscribe = onSnapshot(locationsRef, (snapshot) => {
+      const locData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setLocations(locData);
+    }, (error) => {
+      console.error("Firestore error:", error);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const handleAddLocation = async (newLoc) => {
+    if (!user) return;
+    try {
+      const locationsRef = collection(db, 'artifacts', appId, 'public', 'data', 'locations');
+      await addDoc(locationsRef, {
+        ...newLoc,
+        userId: user.uid,
+        createdAt: new Date().toISOString()
+      });
+      setCurrentView('home');
+    } catch (err) {
+      console.error("Error adding location:", err);
+    }
+  };
+
+  const handleDeleteLocation = async (id, e) => {
+    e.stopPropagation();
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', id));
+      if (selectedLocation?.id === id) {
+        setCurrentView('home');
+        setSelectedLocation(null);
+      }
+    } catch (err) {
+      console.error("Error deleting:", err);
+    }
+  };
+
+  const openDetail = (loc) => {
+    setSelectedLocation(loc);
+    setCurrentView('detail');
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+      <div className="max-w-md mx-auto bg-white min-h-screen shadow-xl flex flex-col relative overflow-hidden">
+        {currentView === 'home' && (
+          <HomeView 
+            locations={locations} 
+            onSelect={openDetail} 
+            onAdd={() => setCurrentView('add')} 
+            onDelete={handleDeleteLocation}
+          />
+        )}
         
-        .fade-in { animation: fadeIn 0.2s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-</head>
-<body class="bg-slate-50 text-slate-900 font-sans overflow-x-hidden">
-    <div id="root"></div>
-    <script type="text/babel" data-type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        {currentView === 'detail' && selectedLocation && (
+          <DetailView 
+            location={selectedLocation} 
+            onBack={() => setCurrentView('home')} 
+          />
+        )}
 
-        const { useState, useEffect, useMemo } = React;
+        {currentView === 'add' && (
+          <AddLocationView 
+            onSave={handleAddLocation} 
+            onCancel={() => setCurrentView('home')} 
+          />
+        )}
+      </div>
+    </div>
+  );
+}
 
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config) 
-            : {
-                apiKey: "AIzaSyDUdgQdMPAUVHSIHmbfIpSEYwQNWdFM578",
-                authDomain: "trip-navigation-b0f21.firebaseapp.com",
-                projectId: "trip-navigation-b0f21",
-                storageBucket: "trip-navigation-b0f21.firebasestorage.app",
-                messagingSenderId: "841186283877",
-                appId: "1:841186283877:web:7551e6f5f33dfe6d3e118c"
-            };
+function HomeView({ locations, onSelect, onAdd, onDelete }) {
+  return (
+    <div className="flex flex-col h-full">
+      <header className="p-6 border-b bg-white sticky top-0 z-10">
+        <h1 className="text-2xl font-bold text-slate-800">My Locations</h1>
+        <p className="text-slate-500 text-sm">Tap a location to view photos</p>
+      </header>
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-wander-tracker-app';
-
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return null;
-            const R = 6371;
-            const dLat = (lat2 - lat1) * (Math.PI / 180);
-            const dLon = (lon2 - lon1) * (Math.PI / 180);
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-        }
-
-        function formatDistance(distInKm) {
-            if (distInKm === null) return "Scanning...";
-            if (distInKm < 1) return `${Math.round(distInKm * 1000)}m`;
-            return `${distInKm.toFixed(1)}km`;
-        }
-
-        function App() {
-            const [view, setView] = useState('categories');
-            const [selectedCategory, setSelectedCategory] = useState(null);
-            const [selectedLocationId, setSelectedLocationId] = useState(null);
-
-            const [user, setUser] = useState(null);
-            const [liveLocation, setLiveLocation] = useState(null);
-            const [locations, setLocations] = useState([]);
-            const [geoError, setGeoError] = useState('');
-
-            const [editingId, setEditingId] = useState(null);
-            const [name, setName] = useState('');
-            const [category, setCategory] = useState('');
-            const [coordinates, setCoordinates] = useState('');
-            const [mapLink, setMapLink] = useState('');
-            const [mediaFile, setMediaFile] = useState(null);
-            const [mediaType, setMediaType] = useState('image');
-            const [saveError, setSaveError] = useState('');
-
-            useEffect(() => {
-                const initAuth = async () => {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                };
-                initAuth();
-                onAuthStateChanged(auth, setUser);
-            }, []);
-
-            useEffect(() => {
-                if (!user) return;
-                const unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'locations'), (snapshot) => {
-                    const fetched = [];
-                    snapshot.forEach(doc => fetched.push({ id: doc.id, ...doc.data() }));
-                    setLocations(fetched);
-                }, (error) => console.error(error));
-                return () => unsubscribe();
-            }, [user]);
-
-            useEffect(() => {
-                const watchId = navigator.geolocation.watchPosition(
-                    (pos) => setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-                    (err) => {
-                        setGeoError("Mock GPS Active");
-                        setLiveLocation({ lat: 11.5564, lng: 104.9282 });
-                    },
-                    { enableHighAccuracy: true }
-                );
-                return () => navigator.geolocation.clearWatch(watchId);
-            }, []);
-
-            const groupedLocations = useMemo(() => {
-                const groups = {};
-                locations.forEach(loc => {
-                    const catName = loc.category || 'Uncategorized';
-                    if (!groups[catName]) groups[catName] = [];
-                    const dist = liveLocation ? calculateDistance(liveLocation.lat, liveLocation.lng, loc.lat, loc.lng) : null;
-                    groups[catName].push({ ...loc, dist });
-                });
-                Object.keys(groups).forEach(cat => {
-                    groups[cat].sort((a, b) => (a.dist ?? Infinity) - (b.dist ?? Infinity));
-                });
-                return groups;
-            }, [locations, liveLocation]);
-
-            const activeLocation = useMemo(() => 
-                locations.find(l => l.id === selectedLocationId), 
-            [locations, selectedLocationId]);
-
-            const handleFileChange = (e) => {
-                const file = e.target.files; 
-                if (!file) return;
-                const isVideo = file.type.startsWith('video');
-                setMediaType(isVideo ? 'video' : 'image');
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    if (isVideo) {
-                        if (file.size > 1024 * 1024) return setSaveError("Video too large (max 1MB)");
-                        setMediaFile(event.target.result);
-                    } else {
-                        const img = new Image();
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            const scale = Math.min(1, 800 / Math.max(img.width, img.height));
-                            canvas.width = img.width * scale;
-                            canvas.height = img.height * scale;
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                            setMediaFile(canvas.toDataURL('image/jpeg', 0.6));
-                        };
-                        img.src = event.target.result;
-                    }
-                };
-                reader.readAsDataURL(file);
-            };
-
-            const handleSave = async (e) => {
-                e.preventDefault();
-                setSaveError('');
-                const match = coordinates.match(/(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);
-                if (!name || !category || !match) return setSaveError("Check Name, Category and Coords");
-                
-                const data = {
-                    name, category, lat: parseFloat(match), lng: parseFloat(match),
-                    mapLink, media: mediaFile, mediaType, timestamp: Date.now()
-                };
-
-                try {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'locations', editingId || Date.now().toString());
-                    editingId ? await updateDoc(docRef, data) : await setDoc(docRef, data);
-                    resetForm();
-                    setView('categories');
-                } catch (err) { setSaveError("Save failed (likely file size)"); }
-            };
-
-            const resetForm = () => {
-                setEditingId(null); setName(''); setCategory(''); setCoordinates(''); setMapLink(''); setMediaFile(null);
-            };
-
-            const openEdit = (loc) => {
-                setEditingId(loc.id); setName(loc.name); setCategory(loc.category);
-                setCoordinates(`${loc.lat}, ${loc.lng}`); setMapLink(loc.mapLink || '');
-                setMediaFile(loc.media); setMediaType(loc.mediaType || 'image');
-                setView('form');
-            };
-
-            const deleteLocation = async (id) => {
-                if (window.confirm("Delete this location?")) {
-                    try {
-                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', id));
-                    } catch (err) { alert("Delete failed"); }
-                }
-            };
-
-            const renderHeader = (title, showBack = false, backTarget = 'categories') => (
-                <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200 safe-top flex items-center justify-between px-4 py-3">
-                    <div className="w-10">
-                        {showBack && (
-                            <button onClick={() => setView(backTarget)} className="text-slate-600 active:scale-90 transition-transform">
-                                <i className="fa-solid fa-chevron-left text-lg"></i>
-                            </button>
-                        )}
-                    </div>
-                    <h1 className="text-lg font-bold text-slate-800 tracking-tight text-center flex-1 truncate px-2">{title}</h1>
-                    <div className="w-10 flex justify-end">
-                        {liveLocation && <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>}
-                    </div>
-                </header>
-            );
-
-            return (
-                <div className="min-h-screen">
-                    <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-slate-200 safe-bottom bottom-nav z-50 flex justify-around items-center px-6">
-                        <button onClick={() => { setView('categories'); resetForm(); }} className={`flex flex-col items-center space-y-1 ${view !== 'form' ? 'text-indigo-600' : 'text-slate-400'}`}>
-                            <i className="fa-solid fa-map-location-dot text-xl"></i>
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Wander</span>
-                        </button>
-                        <button onClick={() => { setView('form'); resetForm(); }} className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-90 -mt-6 ${view === 'form' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>
-                            <i className={`fa-solid ${editingId ? 'fa-pen' : 'fa-plus'} text-lg`}></i>
-                        </button>
-                        <button onClick={() => alert(`Your Location: ${liveLocation?.lat.toFixed(4)}, ${liveLocation?.lng.toFixed(4)}`)} className="flex flex-col items-center space-y-1 text-slate-400">
-                            <i className="fa-solid fa-satellite text-xl"></i>
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Status</span>
-                        </button>
-                    </nav>
-
-                    <div className="content-area overflow-x-hidden">
-                        {view === 'categories' && (
-                            <div className="fade-in">
-                                {renderHeader("Categories")}
-                                <div className="px-4 py-6 space-y-3">
-                                    {Object.keys(groupedLocations).length === 0 ? (
-                                        <div className="text-center py-20 text-slate-400">
-                                            <i className="fa-solid fa-folder-open text-4xl mb-4 block"></i>
-                                            <p className="font-bold">No locations yet</p>
-                                        </div>
-                                    ) : (
-                                        Object.keys(groupedLocations).sort().map(cat => (
-                                            <button 
-                                                key={cat} 
-                                                onClick={() => { setSelectedCategory(cat); setView('locations'); }}
-                                                className="w-full bg-white p-4 rounded-2xl flex items-center justify-between shadow-sm border border-slate-100 active:bg-slate-50 active:scale-[0.98] transition-all"
-                                            >
-                                                <div className="flex items-center space-x-4">
-                                                    <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
-                                                        <i className="fa-solid fa-folder text-lg"></i>
-                                                    </div>
-                                                    <div className="text-left">
-                                                        <h3 className="font-bold text-slate-800">{cat}</h3>
-                                                        <p className="text-xs text-slate-500">{groupedLocations[cat].length} locations</p>
-                                                    </div>
-                                                </div>
-                                                <i className="fa-solid fa-chevron-right text-slate-300 text-sm"></i>
-                                            </button>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {view === 'locations' && (
-                            <div className="fade-in">
-                                {renderHeader(selectedCategory, true, 'categories')}
-                                <div className="px-4 py-6 space-y-2">
-                                    {(groupedLocations[selectedCategory] || []).map(loc => (
-                                        <button 
-                                            key={loc.id}
-                                            onClick={() => { setSelectedLocationId(loc.id); setView('detail'); }}
-                                            className="w-full bg-white p-3 rounded-2xl border border-slate-100 flex items-center active:bg-slate-50 active:scale-[0.99] transition-all shadow-sm"
-                                        >
-                                            <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 mr-4 flex-shrink-0">
-                                                {loc.media ? (
-                                                    loc.mediaType === 'video' ? <div className="w-full h-full flex items-center justify-center bg-indigo-600 text-white"><i className="fa-solid fa-video"></i></div> : <img src={loc.media} className="w-full h-full object-cover" />
-                                                ) : <div className="w-full h-full flex items-center justify-center text-slate-300"><i className="fa-solid fa-image text-sm"></i></div>}
-                                            </div>
-                                            <div className="flex-1 text-left min-w-0 pr-4">
-                                                <h4 className="font-bold text-slate-800 truncate">{loc.name}</h4>
-                                                <div className="flex items-center text-indigo-600 mt-0.5">
-                                                    <i className="fa-solid fa-compass text-[10px] mr-1.5"></i>
-                                                    <span className="text-[11px] font-black uppercase tracking-tight">
-                                                        {liveLocation ? formatDistance(loc.dist) : 'Locating...'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <i className="fa-solid fa-chevron-right text-slate-200 text-sm"></i>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {view === 'detail' && activeLocation && (
-                            <div className="fade-in">
-                                {renderHeader(activeLocation.name, true, 'locations')}
-                                <div className="relative w-full aspect-video bg-slate-900 overflow-hidden">
-                                    {activeLocation.media ? (
-                                        activeLocation.mediaType === 'video' ? 
-                                            <video src={activeLocation.media} controls className="w-full h-full object-contain" /> : 
-                                            <img src={activeLocation.media} className="w-full h-full object-contain" />
-                                    ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-500">
-                                            <i className="fa-solid fa-image text-4xl mb-2"></i>
-                                            <span className="text-xs uppercase font-bold tracking-widest">No Media</span>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="px-6 py-8">
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div className="flex-1 pr-4">
-                                            <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block mb-1">{activeLocation.category}</span>
-                                            <h2 className="text-2xl font-black text-slate-800 leading-tight">{activeLocation.name}</h2>
-                                        </div>
-                                        <div className="flex space-x-2">
-                                            <button onClick={() => openEdit(activeLocation)} className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center active:scale-90 transition-transform">
-                                                <i className="fa-solid fa-pen text-sm"></i>
-                                            </button>
-                                            <button onClick={() => deleteLocation(activeLocation.id).then(() => setView('categories'))} className="w-10 h-10 bg-red-50 text-red-500 rounded-full flex items-center justify-center active:scale-90 transition-transform">
-                                                <i className="fa-solid fa-trash text-sm"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm mb-6 flex items-center justify-between">
-                                        <div className="flex items-center space-x-4">
-                                            <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100">
-                                                <i className="fa-solid fa-route"></i>
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Distance from you</p>
-                                                <p className="text-xl font-black text-indigo-600">
-                                                    {liveLocation ? formatDistance(calculateDistance(liveLocation.lat, liveLocation.lng, activeLocation.lat, activeLocation.lng)) : 'Calculating...'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 gap-4">
-                                        {activeLocation.mapLink && (
-                                            <a 
-                                                href={activeLocation.mapLink} target="_blank"
-                                                className="w-full py-4 bg-slate-800 text-white rounded-2xl flex items-center justify-center font-bold shadow-xl shadow-slate-200 active:scale-[0.98] transition-all"
-                                            >
-                                                <i className="fa-solid fa-location-arrow mr-3"></i>
-                                                Navigate in Google Maps
-                                            </a>
-                                        )}
-                                        <p className="text-center font-mono text-[10px] text-slate-400 mt-4">
-                                            {activeLocation.lat.toFixed(6)}, {activeLocation.lng.toFixed(6)}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {view === 'form' && (
-                            <div className="fade-in">
-                                {renderHeader(editingId ? "Update Spot" : "New Spot")}
-                                <div className="px-6 py-8">
-                                    {saveError && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-xl text-xs font-bold border border-red-100">{saveError}</div>}
-                                    <form onSubmit={handleSave} className="space-y-5">
-                                        <div>
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block px-1">Name</label>
-                                            <input required value={name} onChange={e => setName(e.target.value)} className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold" placeholder="e.g. My Favorite Cafe" />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block px-1">Category</label>
-                                            <input required list="cats-form" value={category} onChange={e => setCategory(e.target.value)} className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold" placeholder="e.g. Food, Hiking" />
-                                            <datalist id="cats-form">{Object.keys(groupedLocations).map(c => <option key={c} value={c}/>)}</datalist>
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            <div className="col-span-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block px-1">Coords (Lat, Lng)</label>
-                                                <input required value={coordinates} onChange={e => setCoordinates(e.target.value)} className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs" placeholder="Auto-filled via GPS or Link" />
-                                            </div>
-                                            <div className="pt-5">
-                                                <button type="button" onClick={() => setCoordinates(`${liveLocation?.lat.toFixed(6)}, ${liveLocation?.lng.toFixed(6)}`)} className="w-full h-14 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100 flex items-center justify-center active:bg-indigo-100">
-                                                    <i className="fa-solid fa-location-crosshairs text-lg"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block px-1">Google Maps Link</label>
-                                            <input 
-                                                type="url" value={mapLink} 
-                                                onChange={e => {
-                                                    setMapLink(e.target.value);
-                                                    const m = e.target.value.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-                                                    if(m) setCoordinates(`${m}, ${m}`);
-                                                }} 
-                                                placeholder="Pasting here auto-fills coordinates"
-                                                className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none font-medium text-xs text-indigo-600" 
-                                            />
-                                        </div>
-                                        <div className="pt-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block px-1">Photo / Video</label>
-                                            <input type="file" accept="image/*,video/*" onChange={handleFileChange} className="w-full text-xs text-slate-500 file:mr-4 file:py-3 file:px-6 file:rounded-2xl file:border-0 file:text-xs file:font-black file:bg-indigo-50 file:text-indigo-600" />
-                                            {mediaFile && (
-                                                <div className="mt-4 rounded-3xl overflow-hidden h-32 bg-slate-100 relative border border-slate-200">
-                                                    {mediaType === 'video' ? <video src={mediaFile} className="w-full h-full object-cover" /> : <img src={mediaFile} className="w-full h-full object-cover" />}
-                                                    <button type="button" onClick={() => setMediaFile(null)} className="absolute top-2 right-2 bg-black/50 text-white w-6 h-6 rounded-full text-[10px] flex items-center justify-center"><i className="fa-solid fa-xmark"></i></button>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-3xl font-black text-lg shadow-xl shadow-indigo-100 active:scale-95 transition-all">
-                                            {editingId ? "Update Wander Spot" : "Add Wander Spot"}
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {locations.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-slate-400 space-y-4">
+            <MapPin size={48} strokeWidth={1} />
+            <p>No locations saved yet.</p>
+          </div>
+        ) : (
+          locations.map(loc => (
+            <div 
+              key={loc.id} 
+              onClick={() => onSelect(loc)}
+              className="bg-white border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer flex items-center p-3 gap-4"
+            >
+              <div className="w-16 h-16 bg-slate-100 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center">
+                {loc.photos && loc.photos.length > 0 ? (
+                  <img src={loc.photos} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <ImageIcon className="text-slate-300" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-slate-800 truncate">{loc.name}</h3>
+                <p className="text-xs text-slate-500 truncate">{loc.address || 'No address'}</p>
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">
+                    {loc.photos?.length || 0} Photos
+                  </span>
                 </div>
-            );
-        }
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-    </script>
-</body>
-</html>
+              </div>
+              <button 
+                onClick={(e) => onDelete(loc.id, e)}
+                className="p-2 text-slate-300 hover:text-red-500 transition-colors"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+
+      <button 
+        onClick={onAdd}
+        className="fixed bottom-8 right-8 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-transform active:scale-95 z-20"
+      >
+        <Plus size={28} />
+      </button>
+    </div>
+  );
+}
+
+function DetailView({ location, onBack }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const touchStartX = useRef(null);
+
+  const nextPhoto = () => {
+    if (location.photos && activeIndex < location.photos.length - 1) {
+      setActiveIndex(activeIndex + 1);
+    }
+  };
+
+  const prevPhoto = () => {
+    if (activeIndex > 0) {
+      setActiveIndex(activeIndex - 1);
+    }
+  };
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches.clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!touchStartX.current) return;
+    const touchEndX = e.changedTouches.clientX;
+    const diff = touchStartX.current - touchEndX;
+
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) nextPhoto();
+      else prevPhoto();
+    }
+    touchStartX.current = null;
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-black">
+      {/* Header Overlays */}
+      <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-start pointer-events-none">
+        <button 
+          onClick={onBack}
+          className="p-3 bg-white/20 backdrop-blur-md text-white rounded-full pointer-events-auto hover:bg-white/30 transition-colors"
+        >
+          <ArrowLeft size={24} />
+        </button>
+      </div>
+
+      {/* Hero Image Section (Cover Page) */}
+      <div 
+        className="relative flex-1 bg-slate-900 overflow-hidden flex items-center justify-center touch-none"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {location.photos && location.photos.length > 0 ? (
+          <>
+            <img 
+              src={location.photos[activeIndex]} 
+              className="w-full h-full object-contain transition-all duration-300" 
+              alt={`Photo ${activeIndex + 1}`} 
+            />
+            
+            {/* Carousel Navigation Buttons (for desktop) */}
+            {location.photos.length > 1 && (
+              <>
+                <div className="absolute inset-y-0 left-0 flex items-center p-2">
+                  <button 
+                    onClick={prevPhoto}
+                    disabled={activeIndex === 0}
+                    className={`p-2 rounded-full bg-black/40 text-white ${activeIndex === 0 ? 'opacity-0' : 'opacity-100'}`}
+                  >
+                    <ChevronLeft />
+                  </button>
+                </div>
+                <div className="absolute inset-y-0 right-0 flex items-center p-2">
+                  <button 
+                    onClick={nextPhoto}
+                    disabled={activeIndex === location.photos.length - 1}
+                    className={`p-2 rounded-full bg-black/40 text-white ${activeIndex === location.photos.length - 1 ? 'opacity-0' : 'opacity-100'}`}
+                  >
+                    <ChevronRight />
+                  </button>
+                </div>
+
+                {/* Indicators */}
+                <div className="absolute bottom-24 left-0 right-0 flex justify-center gap-2">
+                  {location.photos.map((_, idx) => (
+                    <div 
+                      key={idx}
+                      className={`h-1.5 rounded-full transition-all ${idx === activeIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        ) : (
+          <div className="flex flex-col items-center text-slate-500">
+            <ImageIcon size={64} strokeWidth={1} />
+            <p className="mt-4">No photos for this location</p>
+          </div>
+        )}
+      </div>
+
+      {/* Info Sheet */}
+      <div className="bg-white rounded-t-[32px] p-8 -mt-8 relative z-10 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
+        <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6" />
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">{location.name}</h2>
+        <div className="flex items-center gap-2 text-slate-500 mb-6">
+          <MapPin size={16} />
+          <span className="text-sm">{location.address || 'Address not specified'}</span>
+        </div>
+        
+        <div className="space-y-4">
+          <h3 className="font-semibold text-slate-700">Notes</h3>
+          <p className="text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-2xl italic">
+            {location.description || 'No additional details provided for this location.'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AddLocationView({ onSave, onCancel }) {
+  const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
+  const [description, setDescription] = useState('');
+  const [photos, setPhotos] = useState([]);
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotos(prev => [...prev, reader.result]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removePhoto = (idx) => {
+    setPhotos(photos.filter((_, i) => i !== idx));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    onSave({ name, address, description, photos });
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-slate-50">
+      <header className="p-4 flex items-center gap-4 bg-white border-b">
+        <button onClick={onCancel} className="p-2 text-slate-600"><X /></button>
+        <h2 className="text-xl font-bold">New Location</h2>
+      </header>
+
+      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div>
+          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Location Name</label>
+          <input 
+            type="text" 
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="e.g. Hidden Coffee Shop"
+            className="w-full bg-white border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Address / Area</label>
+          <input 
+            type="text" 
+            value={address}
+            onChange={e => setAddress(e.target.value)}
+            placeholder="123 Street Name, City"
+            className="w-full bg-white border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Photos</label>
+          <div className="grid grid-cols-3 gap-2">
+            {photos.map((p, i) => (
+              <div key={i} className="relative aspect-square rounded-lg overflow-hidden border bg-slate-100">
+                <img src={p} alt="" className="w-full h-full object-cover" />
+                <button 
+                  type="button"
+                  onClick={() => removePhoto(i)}
+                  className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+            <button 
+              type="button"
+              onClick={() => fileInputRef.current.click()}
+              className="aspect-square border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 hover:border-blue-500 hover:text-blue-500 transition-colors"
+            >
+              <Camera size={24} />
+              <span className="text-[10px] mt-1">Add Photo</span>
+            </button>
+          </div>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            multiple 
+            accept="image/*" 
+            className="hidden" 
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</label>
+          <textarea 
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            placeholder="What makes this place special?"
+            rows={4}
+            className="w-full bg-white border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+          />
+        </div>
+      </form>
+
+      <div className="p-6 bg-white border-t">
+        <button 
+          onClick={handleSubmit}
+          className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-transform"
+        >
+          Save Location
+        </button>
+      </div>
+    </div>
+  );
+}
