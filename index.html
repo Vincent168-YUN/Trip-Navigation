@@ -36,7 +36,12 @@
             from { opacity: 0; transform: translateX(10px); }
             to { opacity: 1; transform: translateX(0); }
         }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
         .animate-slide-in { animation: slideIn 0.2s ease-out forwards; }
+        .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 font-sans">
@@ -46,7 +51,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
 
         // --- FIREBASE SETUP ---
         const firebaseConfig = typeof __firebase_config !== 'undefined' 
@@ -90,10 +95,15 @@
             const [geoError, setGeoError] = useState('');
             const [locations, setLocations] = useState([]);
             
-            // Navigation State
-            const [view, setView] = useState('categories'); // 'categories', 'category_list', 'form'
+            // Navigation & UI State
+            const [view, setView] = useState('categories'); // 'categories', 'category_list', 'location_detail', 'form'
             const [activeCategory, setActiveCategory] = useState(null);
-            const [previousView, setPreviousView] = useState('categories'); // To know where to go back
+            const [selectedLocId, setSelectedLocId] = useState(null);
+            const [previousView, setPreviousView] = useState('categories');
+            
+            // Full Screen Image Viewer State
+            const [fullScreenPhoto, setFullScreenPhoto] = useState(null); // { photos: [], index: 0 }
+            const fullScreenScrollRef = useRef(null);
             
             // Form State
             const [editId, setEditId] = useState(null);
@@ -101,7 +111,7 @@
             const [category, setCategory] = useState('');
             const [coordinates, setCoordinates] = useState('');
             const [mapLink, setMapLink] = useState('');
-            const [photos, setPhotos] = useState([]); // Array of base64 image strings
+            const [photos, setPhotos] = useState([]); 
             const [saveError, setSaveError] = useState('');
             const [isSaving, setIsSaving] = useState(false);
 
@@ -132,7 +142,6 @@
                     const fetchedLocations = [];
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        // Normalize legacy media to new photos array
                         let docPhotos = data.photos || [];
                         if (!data.photos && data.media && data.mediaType === 'image') {
                             docPhotos = [data.media];
@@ -158,6 +167,14 @@
                 return () => navigator.geolocation.clearWatch(watchId);
             }, []);
 
+            // 4. Auto-scroll Full Screen Image Carousel
+            useEffect(() => {
+                if (fullScreenPhoto && fullScreenScrollRef.current) {
+                    const el = fullScreenScrollRef.current;
+                    el.scrollLeft = fullScreenPhoto.index * el.clientWidth;
+                }
+            }, [fullScreenPhoto]);
+
             // --- NAVIGATION HANDLERS ---
             const openCategoryList = (cat) => {
                 setActiveCategory(cat);
@@ -175,7 +192,7 @@
             };
 
             const openForm = (loc = null) => {
-                setPreviousView(view); // Remember where we came from
+                setPreviousView(view); 
                 if (loc) {
                     setEditId(loc.id);
                     setName(loc.name || '');
@@ -192,6 +209,9 @@
             const handleBack = () => {
                 if (view === 'form') {
                     setView(previousView);
+                } else if (view === 'location_detail') {
+                    setView('category_list');
+                    setSelectedLocId(null);
                 } else if (view === 'category_list') {
                     setView('categories');
                     setActiveCategory(null);
@@ -213,14 +233,15 @@
                         const img = new Image();
                         img.onload = () => {
                             const canvas = document.createElement('canvas');
-                            const MAX = 600; // Aggressive scale to fit multiple in Firestore 1MB limit
+                            const MAX = 1080; // High resolution for clear full screen viewing
                             let {width, height} = img;
                             if (width > height && width > MAX) { height *= MAX / width; width = MAX; }
                             else if (height > MAX) { width *= MAX / height; height = MAX; }
                             canvas.width = width; canvas.height = height;
                             const ctx = canvas.getContext('2d');
                             ctx.drawImage(img, 0, 0, width, height);
-                            resolve(canvas.toDataURL('image/jpeg', 0.5));
+                            // Quality set to 0.7 for good balance of clarity vs Firestore 1MB limits
+                            resolve(canvas.toDataURL('image/jpeg', 0.7)); 
                         };
                         img.src = e.target.result;
                     };
@@ -239,7 +260,7 @@
                     setSaveError("Error processing images.");
                 } finally {
                     setIsSaving(false);
-                    e.target.value = null; // reset input
+                    e.target.value = null; 
                 }
             };
 
@@ -270,14 +291,9 @@
                 }
 
                 setIsSaving(true);
-                const locationData = {
-                    name, category, lat: parsedLat, lng: parsedLng, mapLink, photos
-                };
+                const locationData = { name, category, lat: parsedLat, lng: parsedLng, mapLink, photos };
                 
-                // Only add timestamp if this is a brand new location
-                if (!editId) {
-                    locationData.timestamp = Date.now();
-                }
+                if (!editId) locationData.timestamp = Date.now();
 
                 try {
                     if (editId) {
@@ -289,7 +305,7 @@
                     handleBack();
                 } catch (err) {
                     if (err.code === 'resource-exhausted' || err.message.includes('payload')) {
-                        setSaveError("Images are too large! Remove some or try smaller ones.");
+                        setSaveError("The combined size of the images is too large to save. Try using fewer photos or resizing them.");
                     } else {
                         setSaveError("Save failed: " + err.message);
                     }
@@ -298,10 +314,11 @@
                 }
             };
 
-            const deleteLocation = async (id) => {
+            const deleteLocation = async (id, isDetailView = false) => {
                 if (window.confirm("Delete this location completely?")) {
                     try {
                         await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', id));
+                        if (isDetailView) handleBack();
                     } catch (err) { alert("Delete failed: " + err.message); }
                 }
             };
@@ -322,16 +339,66 @@
             }, [locations, liveLocation]);
 
             const uniqueCategories = Object.keys(groupedLocations).sort();
+            
+            // Look up the specific location if we are in Detail View
+            const locDetail = view === 'location_detail' && selectedLocId 
+                ? locations.find(l => l.id === selectedLocId) 
+                : null;
+                
+            // If the location was deleted elsewhere, return to list automatically
+            useEffect(() => {
+                if (view === 'location_detail' && selectedLocId && !locDetail && locations.length > 0) {
+                    handleBack();
+                }
+            }, [locations, locDetail, view, selectedLocId]);
 
             // --- RENDER VIEWS ---
             return (
-                <div className="min-h-screen bg-slate-50 pb-20 safe-bottom">
+                <div className="min-h-screen bg-slate-50 pb-20 safe-bottom relative">
+                    
+                    {/* FULL SCREEN PHOTO VIEWER MODAL */}
+                    {fullScreenPhoto && (
+                        <div className="fixed inset-0 z- bg-black/95 flex flex-col items-center justify-center animate-fade-in backdrop-blur-md">
+                            <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-black/60 to-transparent z- pointer-events-none safe-top"></div>
+                            
+                            {/* Close Button */}
+                            <button 
+                                onClick={() => setFullScreenPhoto(null)} 
+                                className="absolute top-4 right-4 text-white bg-white/20 hover:bg-white/30 w-10 h-10 flex items-center justify-center rounded-full z- active:scale-90 transition-transform safe-top mt-2"
+                            >
+                                <i className="fa-solid fa-xmark text-lg"></i>
+                            </button>
+                            
+                            {/* Native Horizontal Swiping Container */}
+                            <div 
+                                ref={fullScreenScrollRef}
+                                className="w-full h-full flex overflow-x-auto snap-x snap-mandatory scrollbar-hide z-"
+                            >
+                                {fullScreenPhoto.photos.map((p, idx) => (
+                                    <div key={idx} className="w-full h-full flex-shrink-0 snap-center flex items-center justify-center px-2 pb-10">
+                                        <img src={p} className="max-w-full max-h-full object-contain drop-shadow-2xl" />
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            {/* Photo Indicator / Hint */}
+                            {fullScreenPhoto.photos.length > 1 && (
+                                <div className="absolute bottom-10 left-0 right-0 flex justify-center pointer-events-none z- safe-bottom">
+                                    <div className="bg-white/20 text-white/90 text-xs font-bold px-4 py-2 rounded-full backdrop-blur-md">
+                                        <i className="fa-solid fa-arrows-left-right mr-2"></i> Swipe for more
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+
                     {/* APP HEADER */}
                     <header className="bg-white shadow-sm sticky top-0 z-40 border-b border-slate-200 safe-top">
                         <div className="max-w-3xl mx-auto px-4 py-3 flex justify-between items-center h-14">
                             <div className="flex items-center space-x-3 flex-1 overflow-hidden">
                                 {view !== 'categories' && (
-                                    <button onClick={handleBack} className="text-slate-500 hover:bg-slate-100 p-2 -ml-2 rounded-full transition-colors flex-shrink-0">
+                                    <button onClick={handleBack} className="text-slate-500 hover:bg-slate-100 p-2 -ml-2 rounded-full transition-colors flex-shrink-0 active:bg-slate-200">
                                         <i className="fa-solid fa-arrow-left text-lg"></i>
                                     </button>
                                 )}
@@ -341,6 +408,7 @@
                                 <h1 className="text-lg font-bold text-slate-800 truncate">
                                     {view === 'categories' ? 'WanderTracker' : 
                                      view === 'category_list' ? activeCategory : 
+                                     view === 'location_detail' ? 'Details' :
                                      editId ? 'Edit Location' : 'New Location'}
                                 </h1>
                             </div>
@@ -377,10 +445,10 @@
                                         <button 
                                             key={cat}
                                             onClick={() => openCategoryList(cat)}
-                                            className="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:border-indigo-300 active:bg-slate-50 transition-all text-left"
+                                            className="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:border-indigo-300 active:bg-slate-50 transition-all text-left group"
                                         >
                                             <div className="flex items-center">
-                                                <div className="bg-indigo-50 w-12 h-12 rounded-xl flex items-center justify-center mr-4">
+                                                <div className="bg-indigo-50 group-hover:bg-indigo-100 w-12 h-12 rounded-xl flex items-center justify-center mr-4 transition-colors">
                                                     <i className="fa-solid fa-folder-open text-indigo-500 text-xl"></i>
                                                 </div>
                                                 <div>
@@ -399,16 +467,28 @@
                         {view === 'category_list' && activeCategory && (
                             <div className="space-y-4">
                                 {groupedLocations[activeCategory].map(loc => (
-                                    <div key={loc.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                    <div 
+                                        key={loc.id} 
+                                        className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow active:bg-slate-50"
+                                        onClick={() => { setSelectedLocId(loc.id); setView('location_detail'); }}
+                                    >
                                         
-                                        {/* Swipeable Image Carousel */}
+                                        {/* Swipeable Image Carousel (Mini) */}
                                         {loc.photos && loc.photos.length > 0 ? (
                                             <div className="relative w-full h-48 bg-slate-100 group">
                                                 <div className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide">
                                                     {loc.photos.map((p, idx) => (
-                                                        <img key={idx} src={p} alt="" className="w-full h-full object-cover shrink-0 snap-center" />
+                                                        <img 
+                                                            key={idx} src={p} alt="" 
+                                                            className="w-full h-full object-cover shrink-0 snap-center" 
+                                                            onClick={(e) => { 
+                                                                e.stopPropagation(); 
+                                                                setFullScreenPhoto({ photos: loc.photos, index: idx }); 
+                                                            }} 
+                                                        />
                                                     ))}
                                                 </div>
+                                                {/* Dots indicator */}
                                                 {loc.photos.length > 1 && (
                                                     <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-1.5 pointer-events-none">
                                                         {loc.photos.map((_, i) => (
@@ -417,15 +497,14 @@
                                                     </div>
                                                 )}
                                                 {/* Edit Button overlaying image */}
-                                                <button onClick={() => openForm(loc)} className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/70 active:scale-95 z-10">
+                                                <button onClick={(e) => { e.stopPropagation(); openForm(loc); }} className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/70 active:scale-95 z-10">
                                                     <i className="fa-solid fa-pen text-sm"></i>
                                                 </button>
                                             </div>
                                         ) : (
                                             <div className="h-20 w-full bg-slate-50 border-b border-slate-100 flex items-center justify-between px-4 relative">
                                                 <i className="fa-regular fa-image text-2xl text-slate-300"></i>
-                                                {/* Edit Button when no image */}
-                                                <button onClick={() => openForm(loc)} className="text-slate-400 hover:text-indigo-600 bg-white shadow-sm border border-slate-200 w-8 h-8 rounded-full flex items-center justify-center active:scale-95">
+                                                <button onClick={(e) => { e.stopPropagation(); openForm(loc); }} className="text-slate-400 hover:text-indigo-600 bg-white shadow-sm border border-slate-200 w-8 h-8 rounded-full flex items-center justify-center active:scale-95">
                                                     <i className="fa-solid fa-pen text-sm"></i>
                                                 </button>
                                             </div>
@@ -434,7 +513,7 @@
                                         <div className="p-4">
                                             <div className="flex justify-between items-start mb-1">
                                                 <h4 className="text-lg font-bold text-slate-900">{loc.name}</h4>
-                                                <button onClick={() => deleteLocation(loc.id)} className="text-slate-300 hover:text-red-500 p-1 active:scale-90">
+                                                <button onClick={(e) => { e.stopPropagation(); deleteLocation(loc.id); }} className="text-slate-300 hover:text-red-500 p-1 active:scale-90">
                                                     <i className="fa-solid fa-trash"></i>
                                                 </button>
                                             </div>
@@ -443,20 +522,90 @@
                                                 <i className="fa-solid fa-location-arrow mr-1.5 text-xs"></i>
                                                 {formatDistance(loc.currentDistance)}
                                             </div>
-
-                                            <div className="flex flex-wrap items-center gap-2 mt-2 pt-3 border-t border-slate-100">
-                                                <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">
-                                                    {loc.lat.toFixed(4)}, {loc.lng.toFixed(4)}
-                                                </span>
-                                                {loc.mapLink && (
-                                                    <a href={loc.mapLink} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded inline-flex items-center">
-                                                        Map <i className="fa-solid fa-arrow-up-right-from-square ml-1"></i>
-                                                    </a>
-                                                )}
-                                            </div>
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                        )}
+
+                        {/* VIEW: LOCATION DETAIL */}
+                        {view === 'location_detail' && locDetail && (
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden pb-4">
+                                {/* Carousel (Large) */}
+                                {locDetail.photos && locDetail.photos.length > 0 ? (
+                                    <div className="relative w-full h-72 bg-slate-100">
+                                        <div className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide">
+                                            {locDetail.photos.map((p, idx) => (
+                                                <img 
+                                                    key={idx} src={p} alt="" 
+                                                    className="w-full h-full object-cover shrink-0 snap-center cursor-pointer active:opacity-90 transition-opacity" 
+                                                    onClick={() => setFullScreenPhoto({ photos: locDetail.photos, index: idx })} 
+                                                />
+                                            ))}
+                                        </div>
+                                        {/* Swipe Hints & Indicators */}
+                                        {locDetail.photos.length > 1 && (
+                                            <>
+                                                <div className="absolute top-3 left-3 bg-black/60 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded backdrop-blur-sm pointer-events-none">
+                                                    1 of {locDetail.photos.length}
+                                                </div>
+                                                <div className="absolute bottom-3 left-0 right-0 flex justify-center space-x-2 pointer-events-none">
+                                                    {locDetail.photos.map((_, i) => (
+                                                        <div key={i} className="w-2 h-2 rounded-full bg-white/80 shadow-sm" />
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="w-full h-32 bg-slate-50 border-b border-slate-200 flex flex-col items-center justify-center text-slate-400">
+                                        <i className="fa-regular fa-image text-4xl mb-2"></i>
+                                        <span className="text-sm font-medium">No photos</span>
+                                    </div>
+                                )}
+                                
+                                <div className="p-5 space-y-5">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h2 className="text-2xl font-bold text-slate-900 mb-1 leading-tight pr-2">{locDetail.name}</h2>
+                                            <span className="inline-block bg-indigo-50 text-indigo-600 text-xs font-bold px-2.5 py-1 rounded-md">{locDetail.category}</span>
+                                        </div>
+                                        <div className="flex space-x-2 flex-shrink-0">
+                                            <button onClick={() => openForm(locDetail)} className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 text-slate-600 flex items-center justify-center hover:bg-slate-100 active:scale-95"><i className="fa-solid fa-pen"></i></button>
+                                            <button onClick={() => deleteLocation(locDetail.id, true)} className="w-10 h-10 rounded-full bg-red-50 border border-red-100 text-red-500 flex items-center justify-center hover:bg-red-100 active:scale-95"><i className="fa-solid fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Distance Indicator */}
+                                    <div className="flex items-center text-teal-700 font-bold bg-teal-50 px-4 py-3 rounded-xl border border-teal-100">
+                                        <i className="fa-solid fa-location-arrow mr-3 text-teal-500 text-lg"></i>
+                                        Currently {formatDistance(locDetail.currentDistance)}
+                                    </div>
+
+                                    {/* Info Panel */}
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-2 sm:space-y-0">
+                                            <span className="text-xs font-bold text-slate-500 uppercase flex items-center">
+                                                <i className="fa-solid fa-map-pin mr-2 text-slate-400"></i> GPS Coordinates
+                                            </span>
+                                            <span className="text-sm font-mono text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm inline-block">
+                                                {locDetail.lat.toFixed(6)}, {locDetail.lng.toFixed(6)}
+                                            </span>
+                                        </div>
+                                        
+                                        {locDetail.mapLink && (
+                                            <div className="pt-4 border-t border-slate-200">
+                                                <a href={locDetail.mapLink} target="_blank" rel="noopener noreferrer" className="w-full py-3 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-bold hover:bg-indigo-700 active:scale-[0.98] transition-all shadow-md">
+                                                    Open in Google Maps <i className="fa-solid fa-arrow-up-right-from-square ml-2 opacity-80"></i>
+                                                </a>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    <p className="text-xs text-slate-400 text-center pt-2 font-medium">
+                                        Saved on {new Date(locDetail.timestamp || Date.now()).toLocaleDateString()}
+                                    </p>
+                                </div>
                             </div>
                         )}
 
@@ -533,11 +682,11 @@
                         )}
                     </main>
 
-                    {/* FLOATING ACTION BUTTON (Visible on Categories and List views) */}
+                    {/* FLOATING ACTION BUTTON */}
                     {view !== 'form' && (
                         <button 
                             onClick={() => openForm()}
-                            className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-300 flex items-center justify-center text-xl z-50 hover:bg-indigo-700 transition-transform active:scale-90 safe-bottom"
+                            className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-300 flex items-center justify-center text-xl z-30 hover:bg-indigo-700 transition-transform active:scale-90 safe-bottom"
                         >
                             <i className="fa-solid fa-plus"></i>
                         </button>
