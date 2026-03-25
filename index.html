@@ -1,283 +1,684 @@
-import React, { useState, useRef } from 'react';
-import { MapPin, Plus, X, Camera, Trash2, ArrowLeft, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- This meta tag ensures the app looks native on iOS and Android without awkward zooming -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>WanderTracker Live</title>
+    
+    <!-- Apple/iOS Web App settings for adding to Home Screen -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Globe_icon.svg/1024px-Globe_icon.svg.png">
 
-export default function App() {
-  const [locations, setLocations] = useState([]);
-  const [currentView, setCurrentView] = useState('home'); // 'home', 'detail', 'add'
-  const [selectedLocation, setSelectedLocation] = useState(null);
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for in-browser JSX compiling -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; }
+        /* iOS Safe Area paddings to avoid notch and home indicator */
+        .safe-top { padding-top: env(safe-area-inset-top); }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans">
+    <div id="root"></div>
+    <script type="text/babel" data-type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-  const handleAddLocation = (newLoc) => {
-    setLocations(prev => [...prev, { ...newLoc, id: Date.now() }]);
-    setCurrentView('home');
-  };
+        const { useState, useEffect, useMemo } = React;
 
-  const handleDeleteLocation = (id, e) => {
-    e.stopPropagation();
-    setLocations(prev => prev.filter(loc => loc.id !== id));
-    if (selectedLocation?.id === id) {
-      setCurrentView('home');
-      setSelectedLocation(null);
-    }
-  };
+        // --- FIREBASE SETUP ---
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : {
+                apiKey: "AIzaSyDUdgQdMPAUVHSIHmbfIpSEYwQNWdFM578",
+                authDomain: "trip-navigation-b0f21.firebaseapp.com",
+                projectId: "trip-navigation-b0f21",
+                storageBucket: "trip-navigation-b0f21.firebasestorage.app",
+                messagingSenderId: "841186283877",
+                appId: "1:841186283877:web:7551e6f5f33dfe6d3e118c"
+            };
 
-  const openDetail = (loc) => {
-    setSelectedLocation(loc);
-    setCurrentView('detail');
-  };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-wander-tracker-app';
 
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
-      <div className="max-w-md mx-auto bg-white min-h-screen shadow-xl flex flex-col relative overflow-hidden">
-        {currentView === 'home' && (
-          <HomeView 
-            locations={locations} 
-            onSelect={openDetail} 
-            onAdd={() => setCurrentView('add')} 
-            onDelete={handleDeleteLocation}
-          />
-        )}
-        
-        {currentView === 'detail' && selectedLocation && (
-          <DetailView 
-            location={selectedLocation} 
-            onBack={() => setCurrentView('home')} 
-          />
-        )}
+        // Haversine formula to calculate straight-line distance between two coordinates
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return null;
+            const R = 6371; // Earth's radius in km
+            const dLat = (lat2 - lat1) * (Math.PI / 180);
+            const dLon = (lon2 - lon1) * (Math.PI / 180);
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
 
-        {currentView === 'add' && (
-          <AddLocationView 
-            onSave={handleAddLocation} 
-            onCancel={() => setCurrentView('home')} 
-          />
-        )}
-      </div>
-    </div>
-  );
-}
+        function formatDistance(distInKm) {
+            if (distInKm === null) return "Distance unknown";
+            if (distInKm < 1) return `${Math.round(distInKm * 1000)} meters away`;
+            return `${distInKm.toFixed(1)} km away`;
+        }
 
-function HomeView({ locations, onSelect, onAdd, onDelete }) {
-  return (
-    <div className="flex flex-col h-full">
-      <header className="p-6 border-b bg-white sticky top-0 z-10">
-        <h1 className="text-2xl font-bold text-slate-800">My Locations</h1>
-      </header>
-
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {locations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-            <MapPin size={48} strokeWidth={1} className="mb-2 opacity-20" />
-            <p>No locations saved yet.</p>
-          </div>
-        ) : (
-          locations.map(loc => (
-            <div 
-              key={loc.id} 
-              onClick={() => onSelect(loc)}
-              className="bg-white border border-slate-100 rounded-2xl p-3 flex items-center gap-4 cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
-            >
-              <div className="w-16 h-16 bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0">
-                {loc.photos && loc.photos.length > 0 ? (
-                  <img src={loc.photos} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <ImageIcon className="text-slate-300" size={24} />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-slate-800 truncate">{loc.name}</h3>
-                <p className="text-xs text-slate-500 truncate mb-1">{loc.address || 'No address'}</p>
-                <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold">
-                  {loc.photos?.length || 0} Photos
-                </span>
-              </div>
-              <button 
-                onClick={(e) => onDelete(loc.id, e)} 
-                className="p-2 text-slate-200 hover:text-red-500 transition-colors"
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-          ))
-        )}
-      </div>
-
-      <button 
-        onClick={onAdd}
-        className="fixed bottom-8 right-8 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-transform active:scale-90"
-      >
-        <Plus size={28} />
-      </button>
-    </div>
-  );
-}
-
-function DetailView({ location, onBack }) {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const touchStart = useRef(0);
-
-  const next = () => setActiveIndex((prev) => (prev + 1) % location.photos.length);
-  const prev = () => setActiveIndex((prev) => (prev - 1 + location.photos.length) % location.photos.length);
-
-  const handleTouchStart = (e) => (touchStart.current = e.touches.clientX);
-  const handleTouchEnd = (e) => {
-    const touchEnd = e.changedTouches.clientX;
-    if (touchStart.current - touchEnd > 50) next();
-    if (touchStart.current - touchEnd < -50) prev();
-  };
-
-  return (
-    <div className="flex flex-col h-full bg-white">
-      {/* Cover Page Photo Section */}
-      <div 
-        className="relative h-[60vh] bg-slate-900 overflow-hidden group"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
-        <button 
-          onClick={onBack}
-          className="absolute top-6 left-6 p-3 bg-white/20 backdrop-blur-md text-white rounded-full z-20 hover:bg-white/40 transition-colors"
-        >
-          <ArrowLeft size={24} />
-        </button>
-
-        {location.photos && location.photos.length > 0 ? (
-          <>
-            <img 
-              src={location.photos[activeIndex]} 
-              className="w-full h-full object-cover transition-opacity duration-300" 
-              alt={location.name} 
-            />
+        function App() {
+            // --- STATE ---
+            const [user, setUser] = useState(null);
+            const [authError, setAuthError] = useState('');
+            const [liveLocation, setLiveLocation] = useState(null);
+            const [geoError, setGeoError] = useState('');
+            const [locations, setLocations] = useState([]);
             
-            {location.photos.length > 1 && (
-              <>
-                <button onClick={prev} className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/20 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                  <ChevronLeft size={24} />
-                </button>
-                <button onClick={next} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/20 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                  <ChevronRight size={24} />
-                </button>
-                <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-1.5">
-                  {location.photos.map((_, i) => (
-                    <div key={i} className={`h-1.5 rounded-full transition-all ${i === activeIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`} />
-                  ))}
+            // Form State
+            const [name, setName] = useState('');
+            const [category, setCategory] = useState('');
+            const [coordinates, setCoordinates] = useState('');
+            const [mapLink, setMapLink] = useState('');
+            
+            // Media State
+            const [mediaMode, setMediaMode] = useState('upload'); // 'upload' or 'url'
+            const [mediaUrl, setMediaUrl] = useState('');
+            const [urlMediaType, setUrlMediaType] = useState('image');
+            const [mediaFile, setMediaFile] = useState(null); // base64 string
+            const [mediaType, setMediaType] = useState('image');
+            
+            const [saveError, setSaveError] = useState('');
+
+            // Mobile & UI State
+            const [activeTab, setActiveTab] = useState('list'); // 'list' or 'add'
+            const [expandedCategories, setExpandedCategories] = useState({});
+
+            // --- EFFECTS ---
+            // 1. Authenticate to Firebase
+            useEffect(() => {
+                const initAuth = async () => {
+                    try {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (err) {
+                        console.error("Firebase Auth Error", err);
+                        setAuthError(err.message);
+                    }
+                };
+                initAuth();
+
+                const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+                    setUser(currentUser);
+                });
+                return () => unsubscribe();
+            }, []);
+
+            // 2. Fetch Live Data from Firestore
+            useEffect(() => {
+                if (!user) return; // Wait until authenticated
+
+                const locationsRef = collection(db, 'artifacts', appId, 'public', 'data', 'locations');
+                const unsubscribe = onSnapshot(locationsRef, (snapshot) => {
+                    const fetchedLocations = [];
+                    snapshot.forEach(doc => {
+                        fetchedLocations.push({ id: doc.id, ...doc.data() });
+                    });
+                    setLocations(fetchedLocations);
+                }, (error) => {
+                    console.error("Firestore Error:", error);
+                });
+
+                return () => unsubscribe();
+            }, [user]);
+
+            // 3. Track Live GPS Location
+            useEffect(() => {
+                if (!("geolocation" in navigator)) {
+                    setGeoError("GPS not supported by browser.");
+                    return;
+                }
+                const watchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        setLiveLocation({
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        });
+                        setGeoError(''); // clear any previous errors
+                    },
+                    (err) => {
+                        console.warn("Geolocation blocked. Using mock location.", err);
+                        setGeoError("Using Mock Location (Phnom Penh)");
+                        // Fallback to a mock location (Phnom Penh) so distance calculation works in preview
+                        setLiveLocation({ lat: 11.5564, lng: 104.9282 });
+                    },
+                    { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+                );
+                return () => navigator.geolocation.clearWatch(watchId);
+            }, []);
+
+            // --- HANDLERS ---
+            const handleMapLinkChange = (e) => {
+                const link = e.target.value;
+                setMapLink(link);
+                // Auto-extract coordinates if they paste a standard Google Maps link
+                const regex = /@(-?\d+\.\d+),(-?\d+\.\d+)/;
+                const match = link.match(regex);
+                if (match) {
+                    setCoordinates(`${match}, ${match}`);
+                }
+            };
+
+            const handleFileChange = (e) => {
+                // Target the first actual file from the array
+                const file = e.target.files; 
+                if (!file) return;
+                const type = file.type.startsWith('video') ? 'video' : 'image';
+                setMediaType(type);
+                
+                if (type === 'video') {
+                    if (file.size > 800 * 1024) { // 800KB limit for video
+                        setSaveError("Video file is too large (Max 800KB for direct upload). Please use a URL instead.");
+                        e.target.value = null;
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onloadend = () => setMediaFile(reader.result);
+                    reader.readAsDataURL(file);
+                } else {
+                    // Downscale image to prevent Firestore 1MB document limit crash
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const MAX_WIDTH = 800;
+                            const MAX_HEIGHT = 800;
+                            let width = img.width;
+                            let height = img.height;
+
+                            if (width > height) {
+                                if (width > MAX_WIDTH) {
+                                    height *= MAX_WIDTH / width;
+                                    width = MAX_WIDTH;
+                                }
+                            } else {
+                                if (height > MAX_HEIGHT) {
+                                    width *= MAX_HEIGHT / height;
+                                    height = MAX_HEIGHT;
+                                }
+                            }
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            // Compress to 60% quality JPEG
+                            const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                            setMediaFile(dataUrl);
+                        };
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const useCurrentLocation = () => {
+                if (liveLocation) {
+                    setCoordinates(`${liveLocation.lat.toFixed(6)}, ${liveLocation.lng.toFixed(6)}`);
+                } else {
+                    alert("Live location not available yet. Please wait a moment.");
+                }
+            };
+
+            const handleSaveLocation = async (e) => {
+                e.preventDefault();
+                setSaveError('');
+                
+                let parsedLat = null;
+                let parsedLng = null;
+                if (coordinates) {
+                    // Match numbers that might have a comma or space between them
+                    const coordsMatch = coordinates.match(/(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);
+                    if (coordsMatch) {
+                        // Use capture group 1 and 2
+                        parsedLat = parseFloat(coordsMatch);
+                        parsedLng = parseFloat(coordsMatch);
+                    }
+                }
+
+                if (!name || !category || parsedLat === null || parsedLng === null || isNaN(parsedLat) || isNaN(parsedLng)) {
+                    setSaveError("Please fill out Name, Category, and valid Coordinates (Lat, Lng).");
+                    return;
+                }
+                
+                let finalMedia = null;
+                let finalMediaType = null;
+                if (mediaMode === 'url' && mediaUrl) {
+                    finalMedia = mediaUrl;
+                    finalMediaType = urlMediaType;
+                } else if (mediaMode === 'upload' && mediaFile) {
+                    finalMedia = mediaFile;
+                    finalMediaType = mediaType;
+                }
+
+                const newLocationId = Date.now().toString();
+                const newLocationData = {
+                    name,
+                    category,
+                    lat: parsedLat,
+                    lng: parsedLng,
+                    mapLink,
+                    media: finalMedia,
+                    mediaType: finalMediaType,
+                    timestamp: Date.now()
+                };
+
+                try {
+                    // Save to Firestore
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'locations', newLocationId);
+                    await setDoc(docRef, newLocationData);
+                    
+                    // Reset Form
+                    setName('');
+                    setCategory('');
+                    setCoordinates('');
+                    setMapLink('');
+                    setMediaUrl('');
+                    setMediaFile(null);
+                    // Reset file input if it exists
+                    const fileInput = document.querySelector('input[type="file"]');
+                    if (fileInput) fileInput.value = "";
+                    
+                    // Switch to list view on mobile after successful save
+                    setActiveTab('list');
+                } catch (err) {
+                    if (err.code === 'resource-exhausted' || err.message.includes('payload')) {
+                        setSaveError("Firebase Storage limit! The image/video file is too large to save as a direct upload (Max 1MB). Please compress it or use a Media URL instead.");
+                    } else {
+                        setSaveError("Failed to save location to the cloud. Error: " + err.message);
+                    }
+                }
+            };
+
+            const deleteLocation = async (id) => {
+                if (window.confirm("Are you sure you want to remove this location from the cloud?")) {
+                    try {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', id));
+                    } catch (err) {
+                        alert("Failed to delete from cloud: " + err.message);
+                    }
+                }
+            };
+
+            const toggleCategory = (cat) => {
+                setExpandedCategories(prev => ({
+                    ...prev,
+                    [cat]: !prev[cat]
+                }));
+            };
+
+            // --- DATA PROCESSING ---
+            const groupedAndSortedLocations = useMemo(() => {
+                const groups = {};
+                
+                locations.forEach(loc => {
+                    const cat = loc.category || 'Uncategorized';
+                    if (!groups[cat]) groups[cat] = [];
+                    const dist = liveLocation ? calculateDistance(liveLocation.lat, liveLocation.lng, loc.lat, loc.lng) : null;
+                    groups[cat].push({ ...loc, currentDistance: dist });
+                });
+                // Sort each group by distance (closest first)
+                Object.keys(groups).forEach(cat => {
+                    groups[cat].sort((a, b) => {
+                        if (a.currentDistance === null) return 1;
+                        if (b.currentDistance === null) return -1;
+                        return a.currentDistance - b.currentDistance;
+                    });
+                });
+                return groups;
+            }, [locations, liveLocation]);
+
+            const uniqueCategories = useMemo(() => {
+                return [...new Set(locations.map(l => l.category))].filter(Boolean);
+            }, [locations]);
+
+            return (
+                <div className="min-h-screen pb-20 safe-bottom">
+                    {/* HEADER */}
+                    <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-slate-200 safe-top">
+                        <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+                            <div className="flex items-center space-x-3">
+                                <div className="bg-indigo-600 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm">
+                                    <i className="fa-solid fa-globe text-white"></i>
+                                </div>
+                                <h1 className="text-xl font-bold text-slate-800 tracking-tight">WanderTracker</h1>
+                            </div>
+                            
+                            <div className="flex items-center space-x-3">
+                                {user ? (
+                                    <div className="hidden sm:flex items-center text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200" title="Connected to Cloud Database">
+                                        <i className="fa-solid fa-cloud-check mr-1.5"></i> Cloud Sync
+                                    </div>
+                                ) : (
+                                    <div className="hidden sm:flex items-center text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
+                                        <i className="fa-solid fa-spinner fa-spin mr-1.5"></i> Connecting...
+                                    </div>
+                                )}
+
+                                {geoError ? (
+                                    <div className="flex items-center space-x-2 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200" title={geoError}>
+                                        <i className="fa-solid fa-location-crosshairs text-amber-500"></i>
+                                        <span className="text-xs font-bold text-amber-700">MOCK GPS</span>
+                                    </div>
+                                ) : liveLocation ? (
+                                    <div className="flex items-center space-x-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
+                                        <span className="relative flex h-2 w-2">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                        </span>
+                                        <span className="text-xs font-bold text-emerald-700">LIVE</span>
+                                    </div>
+                                ) : (
+                                    <div className="text-slate-500 bg-slate-100 p-2 rounded-full text-xs font-bold">
+                                        <i className="fa-solid fa-satellite-dish animate-pulse"></i>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </header>
+                    {/* MAIN CONTENT */}
+                    <main className="max-w-7xl mx-auto px-4 mt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 pb-24 lg:pb-8">
+                        
+                        {/* LEFT COLUMN: ADD FORM */}
+                        <div className={`lg:col-span-4 space-y-6 ${activeTab === 'add' ? 'block' : 'hidden lg:block'}`}>
+                            
+                            {/* LIVE LOCATION STATUS WIDGET */}
+                            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                                <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Your Live Location</h2>
+                                {liveLocation ? (
+                                    <div className="flex items-center space-x-4">
+                                        <div className="bg-emerald-100 p-3 rounded-full flex-shrink-0">
+                                            <i className="fa-solid fa-satellite text-emerald-600 text-xl"></i>
+                                        </div>
+                                        <div>
+                                            <div className="font-mono text-slate-800 font-bold text-sm tracking-tight">
+                                                {liveLocation.lat.toFixed(6)}, {liveLocation.lng.toFixed(6)}
+                                            </div>
+                                            <div className="text-xs text-slate-500 mt-1 font-medium">
+                                                {geoError ? <span className="text-amber-600"><i className="fa-solid fa-triangle-exclamation mr-1"></i>{geoError}</span> : <span className="text-emerald-600"><i className="fa-solid fa-check-circle mr-1"></i>Real-time GPS Active</span>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center space-x-3 text-slate-500 text-sm">
+                                        <i className="fa-solid fa-spinner fa-spin text-indigo-500"></i>
+                                        <span>Acquiring GPS signal...</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                                <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                                    <i className="fa-solid fa-location-dot text-indigo-500 mr-2"></i>
+                                    Save New Location
+                               </h2>
+                                
+                                {saveError && (
+                                    <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-start">
+                                        <i className="fa-solid fa-triangle-exclamation mr-2 mt-1 flex-shrink-0"></i>
+                                        {saveError}
+                                    </div>
+                                )}
+                                <form onSubmit={handleSaveLocation} className="space-y-4">
+                                    {authError && (
+                                        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs font-semibold">
+                                            <i className="fa-solid fa-circle-xmark mr-1"></i> Firebase Error: {authError}
+                                        </div>
+                                    )}
+                                    {/* Name */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Location Name</label>
+                                        <input 
+                                            type="text" required
+                                            value={name} onChange={e => setName(e.target.value)}
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors"
+                                            placeholder="e.g. Grand Canyon"
+                                        />
+                                    </div>
+                                    {/* Category */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                                        <input 
+                                            type="text" required list="categories-list"
+                                            value={category} onChange={e => setCategory(e.target.value)}
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors"
+                                            placeholder="e.g. National Park, Cafe"
+                                        />
+                                        <datalist id="categories-list">
+                                            {uniqueCategories.map(cat => <option key={cat} value={cat} />)}
+                                        </datalist>
+                                    </div>
+                                    {/* Google Maps Link */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1 flex justify-between">
+                                            <span>Google Maps Link</span>
+                                            <span className="text-xs text-slate-400 font-normal">Optional</span>
+                                        </label>
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <i className="fa-solid fa-link text-slate-400"></i>
+                                            </div>
+                                            <input 
+                                                type="url"
+                                                value={mapLink} onChange={handleMapLinkChange}
+                                                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors"
+                                                placeholder="https://maps.google.com/..."
+                                            />
+                                        </div>
+                                    </div>
+                                    {/* Coordinates */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Coordinates (Lat, Lng)</label>
+                                        <input 
+                                            type="text" required
+                                            value={coordinates} onChange={e => setCoordinates(e.target.value)}
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors"
+                                            placeholder="e.g. 11.5564, 104.9282"
+                                        />
+                                    </div>
+                                    <button 
+                                        type="button" onClick={useCurrentLocation}
+                                        className="w-full py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg flex items-center justify-center transition-colors"
+                                    >
+                                        <i className="fa-solid fa-crosshairs mr-2"></i>
+                                        Capture Current Location
+                                    </button>
+                                    {/* Media Attachment */}
+                                    <div className="pt-4 border-t border-slate-100">
+                                        <label className="block text-sm font-medium text-slate-700 mb-2">Attach Media</label>
+                                        
+                                        <div className="flex rounded-lg overflow-hidden mb-3 border border-slate-200">
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setMediaMode('upload')}
+                                                className={`flex-1 py-1.5 text-xs font-medium flex justify-center items-center ${mediaMode === 'upload' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
+                                            >
+                                                <i className="fa-solid fa-upload mr-1.5"></i> Upload
+                                            </button>
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setMediaMode('url')}
+                                                className={`flex-1 py-1.5 text-xs font-medium flex justify-center items-center border-l border-slate-200 ${mediaMode === 'url' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
+                                            >
+                                                <i className="fa-solid fa-link mr-1.5"></i> URL
+                                            </button>
+                                        </div>
+                                        {mediaMode === 'upload' ? (
+                                            <input 
+                                                type="file" accept="image/*,video/*"
+                                                onChange={handleFileChange}
+                                                className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700"
+                                            />
+                                        ) : (
+                                            <div className="space-y-2">
+                                                <input 
+                                                    type="url"
+                                                    value={mediaUrl} onChange={e => setMediaUrl(e.target.value)}
+                                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                                    placeholder="https://example.com/image.jpg"
+                                                />
+                                                <div className="flex space-x-4">
+                                                    <label className="flex items-center text-sm text-slate-600">
+                                                        <input type="radio" checked={urlMediaType === 'image'} onChange={() => setUrlMediaType('image')} className="mr-2 text-indigo-600" />
+                                                        Image
+                                                    </label>
+                                                    <label className="flex items-center text-sm text-slate-600">
+                                                        <input type="radio" checked={urlMediaType === 'video'} onChange={() => setUrlMediaType('video')} className="mr-2 text-indigo-600" />
+                                                        Video
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {/* Submit Button */}
+                                    <button 
+                                        type="submit"
+                                        disabled={!user}
+                                        className="w-full mt-4 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-xl flex items-center justify-center transition-colors shadow-md shadow-indigo-200"
+                                    >
+                                        <i className="fa-solid fa-cloud-arrow-up mr-2"></i>
+                                        {user ? "Save to Cloud" : "Connecting..."}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {/* RIGHT COLUMN: SAVED LOCATIONS */}
+                        <div className={`lg:col-span-8 space-y-8 lg:mt-0 ${activeTab === 'list' ? 'block' : 'hidden lg:block'}`}>
+                            {locations.length === 0 ? (
+                                <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 flex flex-col items-center justify-center text-center">
+                                    <div className="bg-slate-50 p-4 rounded-full mb-4">
+                                        <i className="fa-regular fa-map text-3xl text-slate-400"></i>
+                                    </div>
+                                    <h3 className="text-xl font-semibold text-slate-800 mb-2">No locations saved yet</h3>
+                                    <p className="text-slate-500 text-sm max-w-xs">
+                                        Add your first destination using the form to save it instantly to the cloud.
+                                    </p>
+                                </div>
+                            ) : (
+                                Object.keys(groupedAndSortedLocations).sort().map(cat => (
+                                    <div key={cat} className="space-y-4">
+                                        <button 
+                                            onClick={() => toggleCategory(cat)}
+                                            className="w-full flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        >
+                                            <div className="flex items-center">
+                                                <div className="bg-teal-50 text-teal-600 w-10 h-10 rounded-xl flex items-center justify-center mr-4">
+                                                     <i className="fa-solid fa-folder-open text-lg"></i>
+                                                </div>
+                                                <div className="text-left">
+                                                    <h3 className="text-base font-bold text-slate-800">{cat}</h3>
+                                                    <p className="text-xs text-slate-500 font-medium">{groupedAndSortedLocations[cat].length} saved location(s)</p>
+                                                </div>
+                                            </div>
+                                            <div className={`bg-slate-50 w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-200 ${expandedCategories[cat] ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400'}`}>
+                                                <i className={`fa-solid fa-chevron-${expandedCategories[cat] ? 'up' : 'down'} text-sm`}></i>
+                                            </div>
+                                        </button>
+                                        
+                                        {expandedCategories[cat] && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-[fadeIn_0.2s_ease-in-out]">
+                                                {groupedAndSortedLocations[cat].map(loc => (
+                                                    <div key={loc.id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                                                        
+                                                        {/* Media Thumbnail */}
+                                                    ) : (
+                                                        <div className="h-20 w-full bg-slate-50 border-b border-slate-100 flex items-center justify-center">
+                                                           <i className="fa-regular fa-image text-2xl text-slate-300"></i>
+                                                        </div>
+                                                    )}
+                                                    <div className="p-4 flex-1 flex flex-col">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <h4 className="text-base font-bold text-slate-900 leading-tight pr-2">{loc.name}</h4>
+                                                            <button 
+                                                                onClick={() => deleteLocation(loc.id)}
+                                                                className="text-slate-400 hover:text-red-500 p-1"
+                                                            >
+                                                                <i className="fa-solid fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                        {/* Distance Badge */}
+                                                        <div className="flex items-center mb-3">
+                                                            <i className={`fa-regular fa-compass mr-1.5 text-sm ${loc.currentDistance !== null ? 'text-teal-500' : 'text-slate-400'}`}></i>
+                                                            <span className={`text-sm font-semibold ${loc.currentDistance !== null ? 'text-teal-600' : 'text-slate-500'}`}>
+                                                                {formatDistance(loc.currentDistance)}
+                                                            </span>
+                                                        </div>
+                                                        <div className="mt-auto space-y-2 pt-3 border-t border-slate-100 text-sm">
+                                                            <div className="flex items-center text-slate-500 font-mono text-xs bg-slate-50 px-2 py-1 rounded-md">
+                                                                <i className="fa-solid fa-location-dot text-slate-400 mr-1.5"></i>
+                                                                {loc.lat.toFixed(4)}, {loc.lng.toFixed(4)}
+                                                            </div>
+                                                            
+                                                            {loc.mapLink && (
+                                                                <a 
+                                                                    href={loc.mapLink} 
+                                                                    target="_blank" 
+                                                                    rel="noopener noreferrer"
+                                                                    className="inline-flex items-center text-indigo-600 font-medium text-xs mt-2"
+                                                                >
+                                                                    <i className="fa-solid fa-arrow-up-right-from-square mr-1.5"></i>
+                                                                    View Map
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </main>
+
+                    {/* MOBILE BOTTOM NAV */}
+                    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center z-50 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)] safe-bottom">
+                        <button 
+                            onClick={() => setActiveTab('list')}
+                            className={`flex-1 py-3 pb-4 text-center flex flex-col items-center justify-center ${activeTab === 'list' ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-500 hover:bg-slate-50'}`}
+                        >
+                            <i className="fa-solid fa-map-location-dot text-xl mb-1"></i>
+                            <span className="text-[10px] font-bold uppercase tracking-wider">My Places</span>
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('add')}
+                            className={`flex-1 py-3 pb-4 text-center flex flex-col items-center justify-center border-l border-slate-100 ${activeTab === 'add' ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-500 hover:bg-slate-50'}`}
+                        >
+                            <i className="fa-solid fa-location-crosshairs text-xl mb-1"></i>
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Save New</span>
+                        </button>
+                    </div>
                 </div>
-              </>
-            )}
-          </>
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-slate-500">
-            <ImageIcon size={64} strokeWidth={1} />
-            <p className="mt-2">No photos available</p>
-          </div>
-        )}
-      </div>
-
-      {/* Info Section */}
-      <div className="flex-1 bg-white rounded-t-[40px] -mt-8 relative z-10 p-8 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
-        <div className="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mb-8" />
-        <h2 className="text-3xl font-bold text-slate-900 mb-2">{location.name}</h2>
-        <div className="flex items-center gap-2 text-blue-600 mb-8 font-medium">
-          <MapPin size={18} />
-          <span>{location.address || 'Saved Location'}</span>
-        </div>
-        
-        <div className="space-y-4">
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">About this place</h4>
-          <p className="text-slate-600 leading-relaxed text-lg">
-            {location.description || 'No description provided.'}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AddLocationView({ onSave, onCancel }) {
-  const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
-  const [description, setDescription] = useState('');
-  const [photos, setPhotos] = useState([]);
-  const fileInputRef = useRef(null);
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotos(prev => [...prev, reader.result]);
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const removePhoto = (index) => {
-    setPhotos(photos.filter((_, i) => i !== index));
-  };
-
-  return (
-    <div className="flex flex-col h-full bg-white">
-      <header className="p-4 border-b flex items-center justify-between">
-        <button onClick={onCancel} className="p-2 text-slate-400"><X /></button>
-        <h2 className="text-lg font-bold">New Location</h2>
-        <div className="w-10"></div>
-      </header>
-
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        <div className="space-y-3">
-          <label className="block text-xs font-bold text-slate-400 uppercase">Photos</label>
-          <div className="grid grid-cols-3 gap-2">
-            {photos.map((p, i) => (
-              <div key={i} className="relative aspect-square rounded-xl overflow-hidden group">
-                <img src={p} className="w-full h-full object-cover" alt="" />
-                <button 
-                  onClick={() => removePhoto(i)}
-                  className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X size={12} />
-                </button>
-              </div>
-            ))}
-            <button 
-              onClick={() => fileInputRef.current.click()}
-              className="aspect-square border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:border-blue-500 hover:text-blue-500 transition-all bg-slate-50"
-            >
-              <Camera size={24} />
-              <span className="text-[10px] mt-1 font-bold">ADD</span>
-            </button>
-          </div>
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple className="hidden" accept="image/*" />
-        </div>
-
-        <div className="space-y-4">
-          <input 
-            placeholder="Name of the place"
-            className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-            value={name}
-            onChange={e => setName(e.target.value)}
-          />
-          <input 
-            placeholder="Address or coordinates"
-            className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-            value={address}
-            onChange={e => setAddress(e.target.value)}
-          />
-          <textarea 
-            placeholder="Write a description..."
-            className="w-full p-4 bg-slate-50 border-none rounded-2xl h-32 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="p-6 border-t">
-        <button 
-          onClick={() => onSave({ name, address, description, photos })}
-          disabled={!name || photos.length === 0}
-          className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 disabled:opacity-50 transition-all"
-        >
-          Save Location
-        </button>
-      </div>
-    </div>
-  );
-}
+            );
+        }
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
