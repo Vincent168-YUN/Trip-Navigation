@@ -271,9 +271,13 @@
 
                 setIsSaving(true);
                 const locationData = {
-                    name, category, lat: parsedLat, lng: parsedLng, mapLink, photos,
-                    timestamp: editId ? undefined : Date.now() // keep original timestamp if editing
+                    name, category, lat: parsedLat, lng: parsedLng, mapLink, photos
                 };
+                
+                // Only add timestamp if this is a brand new location
+                if (!editId) {
+                    locationData.timestamp = Date.now();
+                }
 
                 try {
                     if (editId) {
