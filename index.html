@@ -179,6 +179,18 @@
                 }
             }, [view, fullScreenPhoto]);
 
+            // 5. Manage Native Pinch-to-Zoom for Photo Viewer
+            useEffect(() => {
+                const meta = document.querySelector('meta[name="viewport"]');
+                if (view === 'photo_viewer') {
+                    // Enable native device pinch-to-zoom for the photo viewer
+                    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover');
+                } else {
+                    // Reset to app-like non-zoomable state
+                    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+                }
+            }, [view]);
+
             // --- NAVIGATION HANDLERS ---
             const openCategoryList = (cat) => {
                 setActiveCategory(cat);
@@ -240,15 +252,15 @@
                         const img = new Image();
                         img.onload = () => {
                             const canvas = document.createElement('canvas');
-                            const MAX = 1080; // High resolution for clear full screen viewing
+                            const MAX = 2048; // Increased resolution to 2048 for crystal clear zooming
                             let {width, height} = img;
                             if (width > height && width > MAX) { height *= MAX / width; width = MAX; }
                             else if (height > MAX) { width *= MAX / height; height = MAX; }
                             canvas.width = width; canvas.height = height;
                             const ctx = canvas.getContext('2d');
                             ctx.drawImage(img, 0, 0, width, height);
-                            // Quality set to 0.7 for good balance of clarity vs Firestore 1MB limits
-                            resolve(canvas.toDataURL('image/jpeg', 0.7)); 
+                            // Set quality to 0.85 for high fidelity while preventing massive file sizes
+                            resolve(canvas.toDataURL('image/jpeg', 0.85)); 
                         };
                         img.src = e.target.result;
                     };
@@ -396,7 +408,7 @@
                             {fullScreenPhoto.photos.length > 1 && (
                                 <div className="absolute bottom-8 left-0 right-0 flex justify-center pointer-events-none safe-bottom">
                                     <div className="bg-gray-800/80 text-white/90 text-xs font-bold px-4 py-2 rounded-full backdrop-blur-md shadow-lg">
-                                        <i className="fa-solid fa-arrows-left-right mr-2"></i> Swipe for more
+                                        <i className="fa-solid fa-arrows-left-right mr-2"></i> Swipe / Pinch to Zoom
                                     </div>
                                 </div>
                             )}
