@@ -22,7 +22,6 @@
         .bottom-nav { height: calc(64px + env(safe-area-inset-bottom)); }
         .content-area { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
         
-        /* Smooth transitions for view switching */
         .fade-in { animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -36,7 +35,6 @@
 
         const { useState, useEffect, useMemo } = React;
 
-        // --- FIREBASE SETUP ---
         const firebaseConfig = typeof __firebase_config !== 'undefined' 
             ? JSON.parse(__firebase_config) 
             : {
@@ -69,18 +67,15 @@
         }
 
         function App() {
-            // --- NAVIGATION STATE ---
-            const [view, setView] = useState('categories'); // categories, locations, detail, form
+            const [view, setView] = useState('categories');
             const [selectedCategory, setSelectedCategory] = useState(null);
             const [selectedLocationId, setSelectedLocationId] = useState(null);
 
-            // --- DATA STATE ---
             const [user, setUser] = useState(null);
             const [liveLocation, setLiveLocation] = useState(null);
             const [locations, setLocations] = useState([]);
             const [geoError, setGeoError] = useState('');
 
-            // --- FORM STATE ---
             const [editingId, setEditingId] = useState(null);
             const [name, setName] = useState('');
             const [category, setCategory] = useState('');
@@ -90,7 +85,6 @@
             const [mediaType, setMediaType] = useState('image');
             const [saveError, setSaveError] = useState('');
 
-            // --- EFFECTS ---
             useEffect(() => {
                 const initAuth = async () => {
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -109,7 +103,7 @@
                     const fetched = [];
                     snapshot.forEach(doc => fetched.push({ id: doc.id, ...doc.data() }));
                     setLocations(fetched);
-                });
+                }, (error) => console.error(error));
                 return () => unsubscribe();
             }, [user]);
 
@@ -118,14 +112,13 @@
                     (pos) => setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
                     (err) => {
                         setGeoError("Mock GPS Active");
-                        setLiveLocation({ lat: 11.5564, lng: 104.9282 }); // Phnom Penh
+                        setLiveLocation({ lat: 11.5564, lng: 104.9282 });
                     },
                     { enableHighAccuracy: true }
                 );
                 return () => navigator.geolocation.clearWatch(watchId);
             }, []);
 
-            // --- COMPUTED ---
             const groupedLocations = useMemo(() => {
                 const groups = {};
                 locations.forEach(loc => {
@@ -144,9 +137,8 @@
                 locations.find(l => l.id === selectedLocationId), 
             [locations, selectedLocationId]);
 
-            // --- HANDLERS ---
             const handleFileChange = (e) => {
-                const file = e.target.files;
+                const file = e.target.files; 
                 if (!file) return;
                 const isVideo = file.type.startsWith('video');
                 setMediaType(isVideo ? 'video' : 'image');
@@ -202,7 +194,14 @@
                 setView('form');
             };
 
-            // --- VIEWS ---
+            const deleteLocation = async (id) => {
+                if (window.confirm("Delete this location?")) {
+                    try {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', id));
+                    } catch (err) { alert("Delete failed"); }
+                }
+            };
+
             const renderHeader = (title, showBack = false, backTarget = 'categories') => (
                 <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200 safe-top flex items-center justify-between px-4 py-3">
                     <div className="w-10">
@@ -212,7 +211,7 @@
                             </button>
                         )}
                     </div>
-                    <h1 className="text-lg font-bold text-slate-800 tracking-tight">{title}</h1>
+                    <h1 className="text-lg font-bold text-slate-800 tracking-tight text-center flex-1 truncate px-2">{title}</h1>
                     <div className="w-10 flex justify-end">
                         {liveLocation && <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>}
                     </div>
@@ -221,7 +220,6 @@
 
             return (
                 <div className="min-h-screen">
-                    {/* BOTTOM NAVIGATION */}
                     <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-slate-200 safe-bottom bottom-nav z-50 flex justify-around items-center px-6">
                         <button onClick={() => { setView('categories'); resetForm(); }} className={`flex flex-col items-center space-y-1 ${view !== 'form' ? 'text-indigo-600' : 'text-slate-400'}`}>
                             <i className="fa-solid fa-map-location-dot text-xl"></i>
@@ -230,13 +228,12 @@
                         <button onClick={() => { setView('form'); resetForm(); }} className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-90 -mt-6 ${view === 'form' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>
                             <i className={`fa-solid ${editingId ? 'fa-pen' : 'fa-plus'} text-lg`}></i>
                         </button>
-                        <button onClick={() => alert(`GPS: ${liveLocation?.lat.toFixed(4)}, ${liveLocation?.lng.toFixed(4)}`)} className="flex flex-col items-center space-y-1 text-slate-400">
+                        <button onClick={() => alert(`Your Location: ${liveLocation?.lat.toFixed(4)}, ${liveLocation?.lng.toFixed(4)}`)} className="flex flex-col items-center space-y-1 text-slate-400">
                             <i className="fa-solid fa-satellite text-xl"></i>
                             <span className="text-[10px] font-bold uppercase tracking-widest">Status</span>
                         </button>
                     </nav>
 
-                    {/* ROUTING */}
                     <div className="content-area overflow-x-hidden">
                         {view === 'categories' && (
                             <div className="fade-in">
@@ -305,7 +302,7 @@
                         {view === 'detail' && activeLocation && (
                             <div className="fade-in">
                                 {renderHeader(activeLocation.name, true, 'locations')}
-                                <div className="relative h-72 w-full bg-slate-900 overflow-hidden">
+                                <div className="relative w-full aspect-video bg-slate-900 overflow-hidden">
                                     {activeLocation.media ? (
                                         activeLocation.mediaType === 'video' ? 
                                             <video src={activeLocation.media} controls className="w-full h-full object-contain" /> : 
@@ -313,22 +310,22 @@
                                     ) : (
                                         <div className="w-full h-full flex flex-col items-center justify-center text-slate-500">
                                             <i className="fa-solid fa-image text-4xl mb-2"></i>
-                                            <span className="text-xs uppercase font-bold tracking-widest">No Media Attached</span>
+                                            <span className="text-xs uppercase font-bold tracking-widest">No Media</span>
                                         </div>
                                     )}
                                 </div>
                                 <div className="px-6 py-8">
                                     <div className="flex justify-between items-start mb-6">
-                                        <div>
+                                        <div className="flex-1 pr-4">
                                             <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block mb-1">{activeLocation.category}</span>
-                                            <h2 className="text-2xl font-black text-slate-800 leading-none">{activeLocation.name}</h2>
+                                            <h2 className="text-2xl font-black text-slate-800 leading-tight">{activeLocation.name}</h2>
                                         </div>
                                         <div className="flex space-x-2">
                                             <button onClick={() => openEdit(activeLocation)} className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center active:scale-90 transition-transform">
-                                                <i className="fa-solid fa-pen"></i>
+                                                <i className="fa-solid fa-pen text-sm"></i>
                                             </button>
                                             <button onClick={() => deleteLocation(activeLocation.id).then(() => setView('categories'))} className="w-10 h-10 bg-red-50 text-red-500 rounded-full flex items-center justify-center active:scale-90 transition-transform">
-                                                <i className="fa-solid fa-trash"></i>
+                                                <i className="fa-solid fa-trash text-sm"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -339,8 +336,10 @@
                                                 <i className="fa-solid fa-route"></i>
                                             </div>
                                             <div>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Distance to Target</p>
-                                                <p className="text-xl font-black text-indigo-600">{liveLocation ? formatDistance(activeLocation.dist) : 'Updating...'}</p>
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Distance from you</p>
+                                                <p className="text-xl font-black text-indigo-600">
+                                                    {liveLocation ? formatDistance(calculateDistance(liveLocation.lat, liveLocation.lng, activeLocation.lat, activeLocation.lng)) : 'Calculating...'}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -356,7 +355,7 @@
                                             </a>
                                         )}
                                         <p className="text-center font-mono text-[10px] text-slate-400 mt-4">
-                                            LAT: {activeLocation.lat.toFixed(6)} • LNG: {activeLocation.lng.toFixed(6)}
+                                            {activeLocation.lat.toFixed(6)}, {activeLocation.lng.toFixed(6)}
                                         </p>
                                     </div>
                                 </div>
@@ -365,32 +364,32 @@
 
                         {view === 'form' && (
                             <div className="fade-in">
-                                {renderHeader(editingId ? "Edit" : "New Spot")}
+                                {renderHeader(editingId ? "Update Spot" : "New Spot")}
                                 <div className="px-6 py-8">
                                     {saveError && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-xl text-xs font-bold border border-red-100">{saveError}</div>}
                                     <form onSubmit={handleSave} className="space-y-5">
                                         <div>
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block px-1">Name</label>
-                                            <input required value={name} onChange={e => setName(e.target.value)} className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
+                                            <input required value={name} onChange={e => setName(e.target.value)} className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold" placeholder="e.g. My Favorite Cafe" />
                                         </div>
                                         <div>
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block px-1">Category</label>
-                                            <input required list="cats-form" value={category} onChange={e => setCategory(e.target.value)} className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
+                                            <input required list="cats-form" value={category} onChange={e => setCategory(e.target.value)} className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold" placeholder="e.g. Food, Hiking" />
                                             <datalist id="cats-form">{Object.keys(groupedLocations).map(c => <option key={c} value={c}/>)}</datalist>
                                         </div>
                                         <div className="grid grid-cols-3 gap-2">
                                             <div className="col-span-2">
                                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block px-1">Coords (Lat, Lng)</label>
-                                                <input required value={coordinates} onChange={e => setCoordinates(e.target.value)} className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs" />
+                                                <input required value={coordinates} onChange={e => setCoordinates(e.target.value)} className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs" placeholder="Auto-filled via GPS or Link" />
                                             </div>
                                             <div className="pt-5">
-                                                <button type="button" onClick={() => setCoordinates(`${liveLocation?.lat.toFixed(6)}, ${liveLocation?.lng.toFixed(6)}`)} className="w-full h-14 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100 flex items-center justify-center">
+                                                <button type="button" onClick={() => setCoordinates(`${liveLocation?.lat.toFixed(6)}, ${liveLocation?.lng.toFixed(6)}`)} className="w-full h-14 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100 flex items-center justify-center active:bg-indigo-100">
                                                     <i className="fa-solid fa-location-crosshairs text-lg"></i>
                                                 </button>
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block px-1">Google Maps Link (Auto-Coords)</label>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block px-1">Google Maps Link</label>
                                             <input 
                                                 type="url" value={mapLink} 
                                                 onChange={e => {
@@ -398,6 +397,7 @@
                                                     const m = e.target.value.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
                                                     if(m) setCoordinates(`${m}, ${m}`);
                                                 }} 
+                                                placeholder="Pasting here auto-fills coordinates"
                                                 className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none font-medium text-xs text-indigo-600" 
                                             />
                                         </div>
@@ -407,12 +407,12 @@
                                             {mediaFile && (
                                                 <div className="mt-4 rounded-3xl overflow-hidden h-32 bg-slate-100 relative border border-slate-200">
                                                     {mediaType === 'video' ? <video src={mediaFile} className="w-full h-full object-cover" /> : <img src={mediaFile} className="w-full h-full object-cover" />}
-                                                    <button type="button" onClick={() => setMediaFile(null)} className="absolute top-2 right-2 bg-black/50 text-white w-6 h-6 rounded-full text-[10px]"><i className="fa-solid fa-xmark"></i></button>
+                                                    <button type="button" onClick={() => setMediaFile(null)} className="absolute top-2 right-2 bg-black/50 text-white w-6 h-6 rounded-full text-[10px] flex items-center justify-center"><i className="fa-solid fa-xmark"></i></button>
                                                 </div>
                                             )}
                                         </div>
                                         <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-3xl font-black text-lg shadow-xl shadow-indigo-100 active:scale-95 transition-all">
-                                            {editingId ? "Update Cloud" : "Add Wander Spot"}
+                                            {editingId ? "Update Wander Spot" : "Add Wander Spot"}
                                         </button>
                                     </form>
                                 </div>
