@@ -470,7 +470,7 @@
             // --- ITINERARY HANDLERS ---
             const openItineraryForm = (itin = null) => {
                 setPreviousView(view);
-                if (itin) {
+                if (itin && itin.id) {
                     setEditId(itin.id);
                     setItinTitle(itin.title || '');
                     setItinDate(itin.date || '');
@@ -486,7 +486,11 @@
                 e.preventDefault();
                 setIsSaving(true);
                 const data = { title: itinTitle, date: itinDate };
+                let isNew = false;
+                let currentItinId = editId;
+
                 if (!editId) {
+                    isNew = true;
                     data.timestamp = Date.now();
                     data.items = [];
                 }
@@ -494,10 +498,23 @@
                     if (editId) {
                         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', editId), data);
                     } else {
-                        const newId = Date.now().toString();
-                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', newId), data);
+                        currentItinId = Date.now().toString();
+                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', currentItinId), data);
                     }
-                    handleBack();
+                    
+                    if (isNew) {
+                        // Instantly navigate to selecting locations to add to the new itinerary
+                        setActiveItinId(currentItinId);
+                        setPreviousView('itinerary_detail'); // Ensure back button returns to the day's timesheet
+                        setEditItinItemId(null);
+                        setItinItemTime('');
+                        setItinItemLabel('Tourist Attraction');
+                        setItinItemLocId('');
+                        setItinItemNotes('');
+                        setView('itinerary_select_location');
+                    } else {
+                        handleBack();
+                    }
                 } catch (err) { alert("Save failed: " + err.message); }
                 setIsSaving(false);
             };
@@ -700,6 +717,7 @@
                                      view === 'location_detail' ? 'Details' :
                                      view === 'itineraries' ? 'Itinerary Planner' :
                                      view === 'itinerary_detail' ? 'Day Timesheet' :
+                                     view === 'itinerary_form' ? (editId ? 'Edit Itinerary' : 'Plan a Day') :
                                      view === 'itinerary_select_location' ? 'Select Location' :
                                      editId || editItinItemId ? 'Edit Item' : 'Create Item'}
                                 </h1>
