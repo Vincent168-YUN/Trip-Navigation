@@ -111,7 +111,7 @@
             const [itinItemNotes, setItinItemNotes] = useState('');
 
             // Navigation & UI State
-            const [view, setView] = useState('cities'); // 'cities', 'city_form', 'categories', 'category_list', 'location_detail', 'form', 'itineraries', 'itinerary_detail', 'itinerary_form', 'itinerary_select_location', 'itinerary_item_form'
+            const [view, setView] = useState('cities'); 
             const [activeCity, setActiveCity] = useState(null);
             const [activeCategory, setActiveCategory] = useState(null);
             const [selectedLocId, setSelectedLocId] = useState(null);
@@ -128,8 +128,8 @@
             const [editId, setEditId] = useState(null);
             const [name, setName] = useState('');
             
-            const [editingCityName, setEditingCityName] = useState(null); // The city currently being edited
-            const [newCityName, setNewCityName] = useState(''); // For the quick "Add/Edit City" form
+            const [editingCityName, setEditingCityName] = useState(null); 
+            const [newCityName, setNewCityName] = useState(''); 
             
             const [city, setCity] = useState('');
             const [category, setCategory] = useState('');
@@ -209,7 +209,6 @@
             // 4. Auto-scroll Full Screen Image Carousel
             useEffect(() => {
                 if (view === 'photo_viewer' && fullScreenPhoto && fullScreenScrollRef.current) {
-                    // Small timeout ensures the DOM has rendered the container before scrolling
                     setTimeout(() => {
                         if (fullScreenScrollRef.current) {
                             fullScreenScrollRef.current.scrollLeft = fullScreenPhoto.index * fullScreenScrollRef.current.clientWidth;
@@ -222,10 +221,8 @@
             useEffect(() => {
                 const meta = document.querySelector('meta[name="viewport"]');
                 if (view === 'photo_viewer') {
-                    // Enable native device pinch-to-zoom for the photo viewer
                     meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover');
                 } else {
-                    // Reset to app-like non-zoomable state
                     meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
                 }
             }, [view]);
@@ -315,14 +312,13 @@
                         const img = new Image();
                         img.onload = () => {
                             const canvas = document.createElement('canvas');
-                            const MAX = 2048; // Increased resolution to 2048 for crystal clear zooming
+                            const MAX = 2048; 
                             let {width, height} = img;
                             if (width > height && width > MAX) { height *= MAX / width; width = MAX; }
                             else if (height > MAX) { width *= MAX / height; height = MAX; }
                             canvas.width = width; canvas.height = height;
                             const ctx = canvas.getContext('2d');
                             ctx.drawImage(img, 0, 0, width, height);
-                            // Set quality to 0.85 for high fidelity while preventing massive file sizes
                             resolve(canvas.toDataURL('image/jpeg', 0.85)); 
                         };
                         img.src = e.target.result;
@@ -366,7 +362,6 @@
                 setIsSaving(true);
                 try {
                     if (editingCityName) {
-                        // Rename the city for all matching locations
                         if (trimmedCity !== editingCityName) {
                             const locsToUpdate = locations.filter(l => (l.city || 'Ho Chi Minh City') === editingCityName);
                             const updatePromises = locsToUpdate.map(l => 
@@ -375,7 +370,6 @@
                             await Promise.all(updatePromises);
                         }
                     } else {
-                        // Create a new city marker
                         const newId = Date.now().toString();
                         await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', newId), { 
                             isCityMarker: true, 
@@ -387,7 +381,7 @@
                     setEditingCityName(null);
                     setActiveCity(trimmedCity);
                     setPreviousView('cities');
-                    setView('categories'); // Instantly dive into the new (or renamed) city
+                    setView('categories'); 
                 } catch (err) {
                     setSaveError("Save failed: " + err.message);
                 } finally {
@@ -503,7 +497,7 @@
                     }
                     
                     if (isNew) {
-                        // Instantly navigate to selecting locations to add to the new itinerary
+                        // Flow logic: Instantly navigate to selecting locations to add to the new itinerary
                         setActiveItinId(currentItinId);
                         setPreviousView('itinerary_detail'); // Ensure back button returns to the day's timesheet
                         setEditItinItemId(null);
@@ -603,7 +597,7 @@
                     const cName = loc.city || 'Ho Chi Minh City';
                     if (!cities[cName]) cities[cName] = { count: 0, categories: {} };
 
-                    // If it's just an empty city marker, register the city but skip adding to counts/categories
+                    // Skip empty city markers when counting locations
                     if (loc.isCityMarker) return; 
 
                     const catName = loc.category || 'Uncategorized';
@@ -616,7 +610,6 @@
                     cities[cName].count++;
                 });
 
-                // Sort distances inside categories
                 Object.values(cities).forEach(cityData => {
                     Object.values(cityData.categories).forEach(catList => {
                         catList.sort((a, b) => (a.currentDistance || 99999) - (b.currentDistance || 99999));
@@ -632,7 +625,7 @@
 
             const sortedLocationsForItinerary = useMemo(() => {
                 return locations
-                    .filter(loc => !loc.isCityMarker) // Hide empty city initialization markers
+                    .filter(loc => !loc.isCityMarker) 
                     .map(loc => ({
                         ...loc,
                         currentDistance: liveLocation ? calculateDistance(liveLocation.lat, liveLocation.lng, loc.lat, loc.lng) : null
@@ -640,12 +633,10 @@
                     .sort((a, b) => (a.currentDistance || 99999) - (b.currentDistance || 99999));
             }, [locations, liveLocation]);
             
-            // Look up the specific location if we are in Detail View
             const locDetail = view === 'location_detail' && selectedLocId 
                 ? locations.find(l => l.id === selectedLocId) 
                 : null;
                 
-            // If the location was deleted elsewhere, return to list automatically
             useEffect(() => {
                 if (view === 'location_detail' && selectedLocId && !locDetail && locations.length > 0) {
                     handleBack();
@@ -659,7 +650,6 @@
                     {/* FULL SCREEN PHOTO VIEWER PAGE */}
                     {view === 'photo_viewer' && fullScreenPhoto && (
                         <div className="fixed inset-0 z-50 bg-black flex flex-col animate-slide-in">
-                            {/* Header */}
                             <div className="flex items-center px-4 py-3 h-14 safe-top border-b border-gray-800 bg-black flex-shrink-0">
                                 <button 
                                     onClick={handleBack} 
@@ -673,11 +663,7 @@
                                 </div>
                             </div>
                             
-                            {/* Native Horizontal Swiping Container */}
-                            <div 
-                                ref={fullScreenScrollRef}
-                                className="flex-1 w-full flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
-                            >
+                            <div ref={fullScreenScrollRef} className="flex-1 w-full flex overflow-x-auto snap-x snap-mandatory scrollbar-hide">
                                 {fullScreenPhoto.photos.map((p, idx) => (
                                     <div key={idx} className="w-full h-full flex-shrink-0 snap-center flex items-center justify-center">
                                         <img src={p} className="max-w-full max-h-full object-contain safe-bottom" alt={`Location photo ${idx + 1}`} />
@@ -685,7 +671,6 @@
                                 ))}
                             </div>
                             
-                            {/* Photo Indicator / Hint */}
                             {fullScreenPhoto.photos.length > 1 && (
                                 <div className="absolute bottom-8 left-0 right-0 flex justify-center pointer-events-none safe-bottom">
                                     <div className="bg-gray-800/80 text-white/90 text-xs font-bold px-4 py-2 rounded-full backdrop-blur-md shadow-lg">
@@ -753,6 +738,11 @@
                     </header>
 
                     <main className="max-w-3xl mx-auto p-4 animate-slide-in">
+                        
+                        {/* ========================================================= */}
+                        {/* MAIN VIEWS - LOCATIONS / PLACES                           */}
+                        {/* ========================================================= */}
+
                         {/* VIEW: CITIES */}
                         {view === 'cities' && (
                             <div className="space-y-3">
@@ -833,7 +823,6 @@
                                         className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow active:bg-slate-50"
                                         onClick={() => { setSelectedLocId(loc.id); setView('location_detail'); }}
                                     >
-                                        
                                         {/* Swipeable Image Carousel (Mini) */}
                                         {loc.photos && loc.photos.length > 0 ? (
                                             <div className="relative w-full h-48 bg-slate-100 group">
@@ -993,6 +982,215 @@
                                 </div>
                                 <button type="submit" disabled={isSaving || !newCityName.trim()} className="w-full mt-6 py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center transition-all shadow-md active:scale-[0.98]">
                                     {isSaving ? <i className="fa-solid fa-spinner fa-spin text-lg"></i> : <><i className="fa-solid fa-check mr-2"></i> {editingCityName ? 'Update City' : 'Create City'}</>}
+                                </button>
+                            </form>
+                        )}
+
+                        {/* VIEW: ADD / EDIT LOCATION FORM */}
+                        {view === 'form' && (
+                            <form onSubmit={handleSaveLocation} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                                {saveError && (
+                                    <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200">
+                                        <i className="fa-solid fa-triangle-exclamation mr-2"></i>{saveError}
+                                    </div>
+                                )}
+                                
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Location Name</label>
+                                    <input type="text" required value={name} onChange={e => setName(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="e.g. Secret Beach" />
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">City</label>
+                                        <input type="text" required list="cities-list" value={city} onChange={e => setCity(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="e.g. Ho Chi Minh City" />
+                                        <datalist id="cities-list">
+                                            {dataHierarchy.uniqueCities.map(c => <option key={c} value={c} />)}
+                                        </datalist>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Category</label>
+                                        <input type="text" required list="categories-list" value={category} onChange={e => setCategory(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="e.g. Food" />
+                                        <datalist id="categories-list">
+                                            {dataHierarchy.allCategories.map(c => <option key={c} value={c} />)}
+                                        </datalist>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-4 pt-2">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 flex justify-between">
+                                            Coordinates (Lat, Lng)
+                                            <button type="button" onClick={useCurrentLocation} className="text-indigo-600 font-bold active:opacity-70"><i className="fa-solid fa-crosshairs mr-1"></i>Current</button>
+                                        </label>
+                                        <input type="text" required value={coordinates} onChange={e => setCoordinates(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="11.5564, 104.9282" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Google Maps Link <span className="text-slate-400 font-normal lowercase">(optional)</span></label>
+                                        <input type="url" value={mapLink} onChange={handleMapLinkChange} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Paste link to auto-fill coordinates" />
+                                    </div>
+                                </div>
+
+                                {/* Photos Section */}
+                                <div className="pt-4 border-t border-slate-100">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Photos ({photos.length})</label>
+                                        <label className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded cursor-pointer active:bg-indigo-100">
+                                            <i className="fa-solid fa-plus mr-1"></i>Add
+                                            <input type="file" multiple accept="image/*" className="hidden" onChange={handleFiles} disabled={isSaving} />
+                                        </label>
+                                    </div>
+                                    
+                                    {photos.length > 0 ? (
+                                        <div className="flex overflow-x-auto space-x-3 pb-2 scrollbar-hide snap-x">
+                                            {photos.map((p, i) => (
+                                                <div key={i} className="relative w-24 h-24 flex-shrink-0 snap-start rounded-xl overflow-hidden border border-slate-200">
+                                                    <img src={p} className="w-full h-full object-cover" alt="Uploaded preview" />
+                                                    <button type="button" onClick={() => removePhoto(i)} className="absolute top-1 right-1 bg-black/60 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs active:scale-90">
+                                                        <i className="fa-solid fa-xmark"></i>
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-4 text-center">
+                                            <p className="text-xs text-slate-400">No photos attached yet.</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button type="submit" disabled={!user || isSaving} className="w-full mt-6 py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center transition-all shadow-md active:scale-[0.98]">
+                                    {isSaving ? <i className="fa-solid fa-spinner fa-spin text-lg"></i> : (
+                                        <><i className="fa-solid fa-check mr-2"></i> {editId ? 'Save Changes' : 'Create Location'}</>
+                                    )}
+                                </button>
+                            </form>
+                        )}
+
+                        {/* ========================================================= */}
+                        {/* MAIN VIEWS - ITINERARY PLANNER                            */}
+                        {/* ========================================================= */}
+
+                        {/* VIEW: ITINERARIES LIST */}
+                        {view === 'itineraries' && (
+                            <div className="space-y-3">
+                                <p className="text-sm text-slate-500 font-medium mb-4 px-1">Your Planned Days</p>
+                                {itineraries.length === 0 ? (
+                                    <div className="text-center p-8 bg-white rounded-2xl border border-dashed border-slate-300 mt-8">
+                                        <i className="fa-solid fa-calendar-days text-3xl text-slate-300 mb-3"></i>
+                                        <p className="text-slate-500 text-sm">No itineraries yet. Tap + to plan a day!</p>
+                                    </div>
+                                ) : (
+                                    itineraries.map(itin => (
+                                        <div key={itin.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow active:bg-slate-50 flex" onClick={() => { setActiveItinId(itin.id); setView('itinerary_detail'); }}>
+                                            <div className="bg-indigo-600 w-3 shrink-0"></div>
+                                            <div className="p-4 flex-1 flex justify-between items-center">
+                                                <div>
+                                                    <h3 className="font-bold text-slate-800 text-lg">{itin.title}</h3>
+                                                    <p className="text-sm text-slate-500 font-medium"><i className="fa-regular fa-calendar mr-1.5"></i> {itin.date || 'No Date'}</p>
+                                                </div>
+                                                <div className="text-slate-400 flex items-center">
+                                                    <span className="text-xs font-bold bg-slate-100 px-2 py-1 rounded-lg mr-3">{(itin.items || []).length} events</span>
+                                                    <button onClick={(e) => { e.stopPropagation(); deleteItinerary(itin.id); }} className="text-slate-300 hover:text-red-500 active:scale-90 p-2"><i className="fa-solid fa-trash"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        )}
+
+                        {/* VIEW: ITINERARY DETAIL (TIMESHEET) */}
+                        {view === 'itinerary_detail' && (
+                            <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+                                {(() => {
+                                    const itin = itineraries.find(i => i.id === activeItinId);
+                                    if (!itin) return null;
+                                    return (
+                                        <>
+                                            <div className="mb-6 relative z-10 text-center flex justify-center items-center">
+                                                <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-5 py-3">
+                                                    <h2 className="text-2xl font-bold text-slate-900">{itin.title}</h2>
+                                                    {itin.date && <p className="text-sm text-slate-500 font-medium">{itin.date}</p>}
+                                                </div>
+                                                <button onClick={() => openItineraryForm(itin)} className="ml-3 text-slate-400 hover:text-indigo-600 bg-white border border-slate-200 shadow-sm rounded-full w-10 h-10 flex items-center justify-center">
+                                                    <i className="fa-solid fa-pen"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            {(itin.items || []).length === 0 ? (
+                                                <div className="relative z-10 text-center p-8 bg-white/80 backdrop-blur rounded-2xl border border-dashed border-slate-300 mx-4">
+                                                    <p className="text-slate-500 text-sm">Timesheet empty. Tap + to add breakfast, lunch, or an activity!</p>
+                                                </div>
+                                            ) : (
+                                                (itin.items || []).map((item) => {
+                                                    const loc = locations.find(l => l.id === item.locationId);
+                                                    return (
+                                                        <div key={item.id} className="relative z-10 flex items-center">
+                                                            <div className="hidden md:block w-1/2 pr-8 text-right">
+                                                                <div className="text-lg font-bold text-slate-800">{item.time}</div>
+                                                                <div className="text-sm font-medium text-slate-500">{item.label}</div>
+                                                            </div>
+                                                            <div className="absolute left-0 md:left-1/2 -ml-3 w-6 h-6 rounded-full border-4 border-slate-50 bg-indigo-500 shadow-sm flex items-center justify-center"></div>
+                                                            <div className="ml-10 md:ml-0 md:pl-8 w-full md:w-1/2 pb-4">
+                                                                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                                                                    <div className="flex justify-between items-start mb-2">
+                                                                        <div className="md:hidden">
+                                                                            <span className="text-indigo-600 font-bold mr-2">{item.time}</span>
+                                                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{item.label}</span>
+                                                                        </div>
+                                                                        <div className="hidden md:block">
+                                                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{item.label}</span>
+                                                                        </div>
+                                                                        <div className="flex space-x-1">
+                                                                            <button onClick={() => openItineraryItemForm(item)} className="text-slate-400 hover:text-indigo-600 p-1"><i className="fa-solid fa-pen text-xs"></i></button>
+                                                                            <button onClick={() => deleteItineraryItem(item.id)} className="text-slate-400 hover:text-red-500 p-1"><i className="fa-solid fa-xmark text-xs"></i></button>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    {loc ? (
+                                                                        <div className="flex items-center space-x-3 mt-2 bg-slate-50 p-2 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100" onClick={() => { setSelectedLocId(loc.id); setView('location_detail'); }}>
+                                                                            {loc.photos && loc.photos.length > 0 ? (
+                                                                                <img src={loc.photos} className="w-12 h-12 rounded object-cover" alt="Location preview" />
+                                                                            ) : (
+                                                                                <div className="w-12 h-12 rounded bg-slate-200 flex items-center justify-center text-slate-400"><i className="fa-regular fa-image"></i></div>
+                                                                            )}
+                                                                            <div>
+                                                                                <p className="font-bold text-slate-800 text-sm">{loc.name}</p>
+                                                                                <p className="text-xs text-slate-500">{loc.city || 'Ho Chi Minh City'} &bull; {loc.category || 'Uncategorized'}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : item.locationId ? (
+                                                                        <p className="text-sm text-red-500 italic mt-2"><i className="fa-solid fa-triangle-exclamation mr-1"></i>Location was deleted</p>
+                                                                    ) : null}
+                                                                    
+                                                                    {item.notes && <p className="text-sm text-slate-600 mt-3 pt-3 border-t border-slate-100"><i className="fa-regular fa-note-sticky mr-1.5 text-slate-400"></i>{item.notes}</p>}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })
+                                            )}
+                                        </>
+                                    );
+                                })()}
+                            </div>
+                        )}
+
+                        {/* VIEW: ITINERARY DAY FORM */}
+                        {view === 'itinerary_form' && (
+                            <form onSubmit={handleSaveItinerary} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                                <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2 mb-4">Plan a Day</h2>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Itinerary Title</label>
+                                    <input type="text" required value={itinTitle} onChange={e => setItinTitle(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="e.g. Day 1: City Tour" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Date</label>
+                                    <input type="date" value={itinDate} onChange={e => setItinDate(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                                </div>
+                                <button type="submit" disabled={isSaving} className="w-full mt-6 py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center transition-all shadow-md active:scale-[0.98]">
+                                    {isSaving ? <i className="fa-solid fa-spinner fa-spin text-lg"></i> : <><i className="fa-solid fa-check mr-2"></i> Save Day</>}
                                 </button>
                             </form>
                         )}
