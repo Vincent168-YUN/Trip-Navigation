@@ -109,6 +109,9 @@
             const [itinItemLabel, setItinItemLabel] = useState('Tourist Attraction');
             const [itinItemLocId, setItinItemLocId] = useState('');
             const [itinItemNotes, setItinItemNotes] = useState('');
+            
+            // Search State for Itinerary Location Picker
+            const [searchQuery, setSearchQuery] = useState('');
 
             // Navigation & UI State
             const [view, setView] = useState('cities'); 
@@ -529,6 +532,7 @@
                     setItinItemLabel('Tourist Attraction');
                     setItinItemLocId('');
                     setItinItemNotes('');
+                    setSearchQuery(''); // Reset search when opening location picker
                     setView('itinerary_select_location');
                 }
             };
@@ -632,6 +636,28 @@
                     }))
                     .sort((a, b) => (a.currentDistance || 99999) - (b.currentDistance || 99999));
             }, [locations, liveLocation]);
+            
+            // Filter and Group Locations for the Itinerary Picker
+            const filteredAndGroupedLocations = useMemo(() => {
+                const term = searchQuery.toLowerCase();
+                const filtered = sortedLocationsForItinerary.filter(loc => 
+                    (loc.name || '').toLowerCase().includes(term) ||
+                    (loc.category || '').toLowerCase().includes(term) ||
+                    (loc.city || '').toLowerCase().includes(term)
+                );
+
+                const grouped = {};
+                filtered.forEach(loc => {
+                    const cat = loc.category || 'Uncategorized';
+                    if (!grouped[cat]) grouped[cat] = [];
+                    grouped[cat].push(loc);
+                });
+
+                return {
+                    grouped,
+                    sortedCategories: Object.keys(grouped).sort()
+                };
+            }, [sortedLocationsForItinerary, searchQuery]);
             
             const locDetail = view === 'location_detail' && selectedLocId 
                 ? locations.find(l => l.id === selectedLocId) 
@@ -1198,37 +1224,58 @@
                         {/* VIEW: SELECT LOCATION FOR ITINERARY */}
                         {view === 'itinerary_select_location' && (
                             <div className="space-y-4">
-                                <p className="text-sm text-slate-500 font-medium px-1">Choose a location to add to your itinerary</p>
+                                <div className="sticky top-14 bg-slate-50 pt-2 pb-4 z-10 -mt-2">
+                                    <div className="relative">
+                                        <i className="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Search by name, city, or category..." 
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                        />
+                                    </div>
+                                </div>
+
                                 <button 
                                     onClick={() => handleSelectLocationForItinerary('')} 
-                                    className="w-full bg-indigo-50 text-indigo-700 p-4 rounded-2xl shadow-sm border border-indigo-100 font-bold hover:bg-indigo-100 active:scale-[0.98] transition-all flex items-center justify-center"
+                                    className="w-full bg-indigo-50 text-indigo-700 p-4 rounded-2xl shadow-sm border border-indigo-100 font-bold hover:bg-indigo-100 active:scale-[0.98] transition-all flex items-center justify-center mb-6"
                                 >
                                     <i className="fa-solid fa-plus-circle mr-2"></i> Add Event Without Location
                                 </button>
                                 
-                                {sortedLocationsForItinerary.map(loc => (
-                                    <div 
-                                        key={loc.id} 
-                                        className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex items-center justify-between cursor-pointer hover:border-indigo-300 active:bg-slate-50 transition-all"
-                                        onClick={() => handleSelectLocationForItinerary(loc.id)}
-                                    >
-                                        <div className="flex items-center flex-1 overflow-hidden">
-                                            {loc.photos && loc.photos.length > 0 ? (
-                                                <img src={loc.photos} className="w-12 h-12 rounded-xl object-cover shrink-0 mr-4" alt="" />
-                                            ) : (
-                                                <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 shrink-0 mr-4"><i className="fa-regular fa-image"></i></div>
-                                            )}
-                                            <div className="truncate pr-2">
-                                                <h4 className="font-bold text-slate-900 truncate">{loc.name}</h4>
-                                                <p className="text-xs text-slate-500 truncate">{loc.city || 'Ho Chi Minh City'} &bull; {loc.category || 'Uncategorized'}</p>
-                                            </div>
+                                {filteredAndGroupedLocations.sortedCategories.length === 0 ? (
+                                    <div className="text-center p-8 text-slate-400">No locations found.</div>
+                                ) : (
+                                    filteredAndGroupedLocations.sortedCategories.map(cat => (
+                                        <div key={cat} className="space-y-3 pt-2">
+                                            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider pl-2 border-b border-slate-200 pb-1">{cat}</h3>
+                                            {filteredAndGroupedLocations.grouped[cat].map(loc => (
+                                                <div 
+                                                    key={loc.id} 
+                                                    className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex items-center justify-between cursor-pointer hover:border-indigo-300 active:bg-slate-50 transition-all"
+                                                    onClick={() => handleSelectLocationForItinerary(loc.id)}
+                                                >
+                                                    <div className="flex items-center flex-1 overflow-hidden">
+                                                        {loc.photos && loc.photos.length > 0 ? (
+                                                            <img src={loc.photos} className="w-12 h-12 rounded-xl object-cover shrink-0 mr-4" alt="" />
+                                                        ) : (
+                                                            <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 shrink-0 mr-4"><i className="fa-regular fa-image"></i></div>
+                                                        )}
+                                                        <div className="truncate pr-2">
+                                                            <h4 className="font-bold text-slate-900 truncate">{loc.name}</h4>
+                                                            <p className="text-xs text-slate-500 truncate">{loc.city || 'Ho Chi Minh City'} &bull; {loc.category || 'Uncategorized'}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col items-end shrink-0 pl-2 border-l border-slate-100">
+                                                        <span className="text-xs font-bold text-teal-600 bg-teal-50 px-2 py-1 rounded-md mb-1">{formatDistance(loc.currentDistance)}</span>
+                                                        <i className="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                        <div className="flex flex-col items-end shrink-0 pl-2 border-l border-slate-100">
-                                            <span className="text-xs font-bold text-teal-600 bg-teal-50 px-2 py-1 rounded-md mb-1">{formatDistance(loc.currentDistance)}</span>
-                                            <i className="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))
+                                )}
                             </div>
                         )}
 
