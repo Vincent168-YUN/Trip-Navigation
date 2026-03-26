@@ -111,10 +111,11 @@
             const [itinItemNotes, setItinItemNotes] = useState('');
 
             // Navigation & UI State
-            const [view, setView] = useState('categories'); // 'categories', 'category_list', 'location_detail', 'form', 'itineraries', 'itinerary_detail', 'itinerary_form', 'itinerary_item_form'
+            const [view, setView] = useState('cities'); // 'cities', 'categories', 'category_list', 'location_detail', 'form', 'itineraries', 'itinerary_detail', 'itinerary_form', 'itinerary_item_form'
+            const [activeCity, setActiveCity] = useState(null);
             const [activeCategory, setActiveCategory] = useState(null);
             const [selectedLocId, setSelectedLocId] = useState(null);
-            const [previousView, setPreviousView] = useState('categories');
+            const [previousView, setPreviousView] = useState('cities');
             
             // Full Screen Image Viewer State
             const [fullScreenPhoto, setFullScreenPhoto] = useState(null); // { photos: [], index: 0 }
@@ -123,6 +124,7 @@
             // Form State
             const [editId, setEditId] = useState(null);
             const [name, setName] = useState('');
+            const [city, setCity] = useState('');
             const [category, setCategory] = useState('');
             const [coordinates, setCoordinates] = useState('');
             const [mapLink, setMapLink] = useState('');
@@ -222,14 +224,10 @@
             }, [view]);
 
             // --- NAVIGATION HANDLERS ---
-            const openCategoryList = (cat) => {
-                setActiveCategory(cat);
-                setView('category_list');
-            };
-
             const resetForm = () => {
                 setEditId(null);
                 setName('');
+                setCity(activeCity || 'Ho Chi Minh City');
                 setCategory(activeCategory || '');
                 setCoordinates('');
                 setMapLink('');
@@ -242,7 +240,9 @@
                 if (loc) {
                     setEditId(loc.id);
                     setName(loc.name || '');
-                    setCategory(loc.category || '');
+                    // Fallbacks for older data structure
+                    setCity(loc.city || 'Ho Chi Minh City');
+                    setCategory(loc.category || 'Uncategorized');
                     setCoordinates(`${loc.lat}, ${loc.lng}`);
                     setMapLink(loc.mapLink || '');
                     setPhotos([...(loc.photos || [])]);
@@ -264,6 +264,9 @@
                 } else if (view === 'category_list') {
                     setView('categories');
                     setActiveCategory(null);
+                } else if (view === 'categories') {
+                    setView('cities');
+                    setActiveCity(null);
                 } else if (view === 'itinerary_detail') {
                     setView('itineraries');
                     setActiveItinId(null);
@@ -341,13 +344,13 @@
                     }
                 }
 
-                if (!name || !category || parsedLat === null || parsedLng === null || isNaN(parsedLat) || isNaN(parsedLng)) {
-                    setSaveError("Please provide Name, Category, and valid Coordinates.");
+                if (!name || !city || !category || parsedLat === null || parsedLng === null || isNaN(parsedLat) || isNaN(parsedLng)) {
+                    setSaveError("Please provide Name, City, Category, and valid Coordinates.");
                     return;
                 }
 
                 setIsSaving(true);
-                const locationData = { name, category, lat: parsedLat, lng: parsedLng, mapLink, photos };
+                const locationData = { name, city, category, lat: parsedLat, lng: parsedLng, mapLink, photos };
                 
                 if (!editId) locationData.timestamp = Date.now();
 
@@ -480,21 +483,36 @@
             };
 
             // --- DATA PROCESSING ---
-            const groupedLocations = useMemo(() => {
-                const groups = {};
+            const dataHierarchy = useMemo(() => {
+                const cities = {};
+                const allCategories = new Set();
+                
                 locations.forEach(loc => {
-                    const cat = loc.category || 'Uncategorized';
-                    if (!groups[cat]) groups[cat] = [];
-                    const dist = liveLocation ? calculateDistance(liveLocation.lat, liveLocation.lng, loc.lat, loc.lng) : null;
-                    groups[cat].push({ ...loc, currentDistance: dist });
-                });
-                Object.keys(groups).forEach(cat => {
-                    groups[cat].sort((a, b) => (a.currentDistance || 99999) - (b.currentDistance || 99999));
-                });
-                return groups;
-            }, [locations, liveLocation]);
+                    const cName = loc.city || 'Ho Chi Minh City';
+                    const catName = loc.category || 'Uncategorized';
+                    allCategories.add(catName);
 
-            const uniqueCategories = Object.keys(groupedLocations).sort();
+                    if (!cities[cName]) cities[cName] = { count: 0, categories: {} };
+                    if (!cities[cName].categories[catName]) cities[cName].categories[catName] = [];
+
+                    const dist = liveLocation ? calculateDistance(liveLocation.lat, liveLocation.lng, loc.lat, loc.lng) : null;
+                    cities[cName].categories[catName].push({ ...loc, currentDistance: dist });
+                    cities[cName].count++;
+                });
+
+                // Sort distances inside categories
+                Object.values(cities).forEach(cityData => {
+                    Object.values(cityData.categories).forEach(catList => {
+                        catList.sort((a, b) => (a.currentDistance || 99999) - (b.currentDistance || 99999));
+                    });
+                });
+
+                return {
+                    cities,
+                    uniqueCities: Object.keys(cities).sort(),
+                    allCategories: Array.from(allCategories).sort()
+                };
+            }, [locations, liveLocation]);
             
             // Look up the specific location if we are in Detail View
             const locDetail = view === 'location_detail' && selectedLocId 
@@ -557,7 +575,7 @@
                     <header className="bg-white shadow-sm sticky top-0 z-40 border-b border-slate-200 safe-top">
                         <div className="max-w-3xl mx-auto px-4 py-3 flex justify-between items-center h-14">
                             <div className="flex items-center space-x-3 flex-1 overflow-hidden">
-                                {view !== 'categories' && view !== 'itineraries' && (
+                                {view !== 'cities' && view !== 'itineraries' && (
                                     <button onClick={handleBack} className="text-slate-500 hover:bg-slate-100 p-2 -ml-2 rounded-full transition-colors flex-shrink-0 active:bg-slate-200">
                                         <i className="fa-solid fa-arrow-left text-lg"></i>
                                     </button>
@@ -566,7 +584,8 @@
                                     <i className="fa-solid fa-globe text-white"></i>
                                 </div>
                                 <h1 className="text-lg font-bold text-slate-800 truncate">
-                                    {view === 'categories' ? 'WanderTracker' : 
+                                    {view === 'cities' ? 'WanderTracker' : 
+                                     view === 'categories' ? activeCity : 
                                      view === 'category_list' ? activeCategory : 
                                      view === 'location_detail' ? 'Details' :
                                      view === 'itineraries' ? 'Itinerary Planner' :
@@ -592,9 +611,9 @@
                         </div>
                         
                         {/* Tabs for Places / Itinerary */}
-                        {(view === 'categories' || view === 'itineraries') && (
+                        {(view === 'cities' || view === 'itineraries') && (
                             <div className="flex bg-white px-4 border-b border-slate-200">
-                                <button onClick={() => setView('categories')} className={`flex-1 py-3 text-center font-bold text-sm border-b-2 transition-colors ${view === 'categories' ? 'text-indigo-600 border-indigo-600' : 'text-slate-400 border-transparent hover:text-slate-600'}`}>
+                                <button onClick={() => setView('cities')} className={`flex-1 py-3 text-center font-bold text-sm border-b-2 transition-colors ${view === 'cities' ? 'text-indigo-600 border-indigo-600' : 'text-slate-400 border-transparent hover:text-slate-600'}`}>
                                     <i className="fa-solid fa-map-location-dot mr-2"></i> Places
                                 </button>
                                 <button onClick={() => setView('itineraries')} className={`flex-1 py-3 text-center font-bold text-sm border-b-2 transition-colors ${view === 'itineraries' ? 'text-indigo-600 border-indigo-600' : 'text-slate-400 border-transparent hover:text-slate-600'}`}>
@@ -605,29 +624,29 @@
                     </header>
 
                     <main className="max-w-3xl mx-auto p-4 animate-slide-in">
-                        {/* VIEW: CATEGORIES */}
-                        {view === 'categories' && (
+                        {/* VIEW: CITIES */}
+                        {view === 'cities' && (
                             <div className="space-y-3">
-                                <p className="text-sm text-slate-500 font-medium mb-4 px-1">Your Categories</p>
-                                {uniqueCategories.length === 0 ? (
+                                <p className="text-sm text-slate-500 font-medium mb-4 px-1">Your Cities</p>
+                                {dataHierarchy.uniqueCities.length === 0 ? (
                                     <div className="text-center p-8 bg-white rounded-2xl border border-dashed border-slate-300 mt-8">
                                         <i className="fa-regular fa-map text-3xl text-slate-300 mb-3"></i>
                                         <p className="text-slate-500 text-sm">No locations saved yet. Tap + to add one!</p>
                                     </div>
                                 ) : (
-                                    uniqueCategories.map(cat => (
+                                    dataHierarchy.uniqueCities.map(cityName => (
                                         <button 
-                                            key={cat}
-                                            onClick={() => openCategoryList(cat)}
+                                            key={cityName}
+                                            onClick={() => { setActiveCity(cityName); setView('categories'); }}
                                             className="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:border-indigo-300 active:bg-slate-50 transition-all text-left group"
                                         >
                                             <div className="flex items-center">
                                                 <div className="bg-indigo-50 group-hover:bg-indigo-100 w-12 h-12 rounded-xl flex items-center justify-center mr-4 transition-colors">
-                                                    <i className="fa-solid fa-folder-open text-indigo-500 text-xl"></i>
+                                                    <i className="fa-solid fa-city text-indigo-500 text-xl"></i>
                                                 </div>
                                                 <div>
-                                                    <h3 className="font-bold text-slate-800 text-lg">{cat}</h3>
-                                                    <p className="text-sm text-slate-500 font-medium">{groupedLocations[cat].length} Places</p>
+                                                    <h3 className="font-bold text-slate-800 text-lg">{cityName}</h3>
+                                                    <p className="text-sm text-slate-500 font-medium">{dataHierarchy.cities[cityName].count} Places</p>
                                                 </div>
                                             </div>
                                             <i className="fa-solid fa-chevron-right text-slate-300"></i>
@@ -637,10 +656,35 @@
                             </div>
                         )}
 
-                        {/* VIEW: CATEGORY LIST */}
-                        {view === 'category_list' && activeCategory && (
+                        {/* VIEW: CATEGORIES IN CITY */}
+                        {view === 'categories' && activeCity && dataHierarchy.cities[activeCity] && (
+                            <div className="space-y-3">
+                                <p className="text-sm text-slate-500 font-medium mb-4 px-1">Categories in {activeCity}</p>
+                                {Object.keys(dataHierarchy.cities[activeCity].categories).sort().map(catName => (
+                                    <button 
+                                        key={catName}
+                                        onClick={() => { setActiveCategory(catName); setView('category_list'); }}
+                                        className="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:border-indigo-300 active:bg-slate-50 transition-all text-left group"
+                                    >
+                                        <div className="flex items-center">
+                                            <div className="bg-indigo-50 group-hover:bg-indigo-100 w-12 h-12 rounded-xl flex items-center justify-center mr-4 transition-colors">
+                                                <i className="fa-solid fa-folder-open text-indigo-500 text-xl"></i>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-slate-800 text-lg">{catName}</h3>
+                                                <p className="text-sm text-slate-500 font-medium">{dataHierarchy.cities[activeCity].categories[catName].length} Places</p>
+                                            </div>
+                                        </div>
+                                        <i className="fa-solid fa-chevron-right text-slate-300"></i>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* VIEW: CATEGORY LIST (LOCATIONS) */}
+                        {view === 'category_list' && activeCity && activeCategory && dataHierarchy.cities[activeCity]?.categories[activeCategory] && (
                             <div className="space-y-4">
-                                {groupedLocations[activeCategory].map(loc => (
+                                {dataHierarchy.cities[activeCity].categories[activeCategory].map(loc => (
                                     <div 
                                         key={loc.id} 
                                         className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow active:bg-slate-50"
@@ -748,7 +792,7 @@
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <h2 className="text-2xl font-bold text-slate-900 mb-1 leading-tight pr-2">{locDetail.name}</h2>
-                                            <span className="inline-block bg-indigo-50 text-indigo-600 text-xs font-bold px-2.5 py-1 rounded-md">{locDetail.category}</span>
+                                            <span className="inline-block bg-indigo-50 text-indigo-600 text-xs font-bold px-2.5 py-1 rounded-md">{locDetail.category || 'Uncategorized'}</span>
                                         </div>
                                         <div className="flex space-x-2 flex-shrink-0">
                                             <button onClick={() => openForm(locDetail)} className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 text-slate-600 flex items-center justify-center hover:bg-slate-100 active:scale-95"><i className="fa-solid fa-pen"></i></button>
@@ -803,12 +847,21 @@
                                     <input type="text" required value={name} onChange={e => setName(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="e.g. Secret Beach" />
                                 </div>
                                 
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Category</label>
-                                    <input type="text" required list="categories-list" value={category} onChange={e => setCategory(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="e.g. Beaches" />
-                                    <datalist id="categories-list">
-                                        {uniqueCategories.map(cat => <option key={cat} value={cat} />)}
-                                    </datalist>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">City</label>
+                                        <input type="text" required list="cities-list" value={city} onChange={e => setCity(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="e.g. Ho Chi Minh" />
+                                        <datalist id="cities-list">
+                                            {dataHierarchy.uniqueCities.map(c => <option key={c} value={c} />)}
+                                        </datalist>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Category</label>
+                                        <input type="text" required list="categories-list" value={category} onChange={e => setCategory(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="e.g. Food" />
+                                        <datalist id="categories-list">
+                                            {dataHierarchy.allCategories.map(c => <option key={c} value={c} />)}
+                                        </datalist>
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-4 pt-2">
@@ -947,7 +1000,7 @@
                                                                             )}
                                                                             <div>
                                                                                 <p className="font-bold text-slate-800 text-sm">{loc.name}</p>
-                                                                                <p className="text-xs text-slate-500">{loc.category}</p>
+                                                                                <p className="text-xs text-slate-500">{loc.city || 'Ho Chi Minh City'} &bull; {loc.category || 'Uncategorized'}</p>
                                                                             </div>
                                                                         </div>
                                                                     ) : item.locationId ? (
@@ -1011,7 +1064,7 @@
                                     <select value={itinItemLocId} onChange={e => setItinItemLocId(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                                         <option value="">-- No Location (Event only) --</option>
                                         {locations.map(loc => (
-                                            <option key={loc.id} value={loc.id}>{loc.name} ({loc.category})</option>
+                                            <option key={loc.id} value={loc.id}>{loc.name} ({loc.city || 'Ho Chi Minh City'} - {loc.category || 'Uncategorized'})</option>
                                         ))}
                                     </select>
                                 </div>
