@@ -95,8 +95,23 @@
             const [geoError, setGeoError] = useState('');
             const [locations, setLocations] = useState([]);
             
+            // Itinerary State
+            const [itineraries, setItineraries] = useState([]);
+            const [activeItinId, setActiveItinId] = useState(null);
+            
+            // Itinerary Form State
+            const [itinTitle, setItinTitle] = useState('');
+            const [itinDate, setItinDate] = useState('');
+            
+            // Itinerary Item (Timesheet Event) Form State
+            const [editItinItemId, setEditItinItemId] = useState(null);
+            const [itinItemTime, setItinItemTime] = useState('');
+            const [itinItemLabel, setItinItemLabel] = useState('Activity');
+            const [itinItemLocId, setItinItemLocId] = useState('');
+            const [itinItemNotes, setItinItemNotes] = useState('');
+
             // Navigation & UI State
-            const [view, setView] = useState('categories'); // 'categories', 'category_list', 'location_detail', 'form'
+            const [view, setView] = useState('categories'); // 'categories', 'category_list', 'location_detail', 'form', 'itineraries', 'itinerary_detail', 'itinerary_form', 'itinerary_item_form'
             const [activeCategory, setActiveCategory] = useState(null);
             const [selectedLocId, setSelectedLocId] = useState(null);
             const [previousView, setPreviousView] = useState('categories');
@@ -138,7 +153,7 @@
             useEffect(() => {
                 if (!user) return;
                 const locationsRef = collection(db, 'artifacts', appId, 'public', 'data', 'locations');
-                const unsubscribe = onSnapshot(locationsRef, (snapshot) => {
+                const unsubLocs = onSnapshot(locationsRef, (snapshot) => {
                     const fetchedLocations = [];
                     snapshot.forEach(doc => {
                         const data = doc.data();
@@ -149,8 +164,23 @@
                         fetchedLocations.push({ id: doc.id, ...data, photos: docPhotos });
                     });
                     setLocations(fetchedLocations);
+                }, (error) => {
+                    console.error("Error fetching locations: ", error);
                 });
-                return () => unsubscribe();
+
+                const itinerariesRef = collection(db, 'artifacts', appId, 'public', 'data', 'itineraries');
+                const unsubItins = onSnapshot(itinerariesRef, (snapshot) => {
+                    const fetchedItins = [];
+                    snapshot.forEach(doc => {
+                        fetchedItins.push({ id: doc.id, ...doc.data() });
+                    });
+                    fetchedItins.sort((a, b) => a.timestamp - b.timestamp);
+                    setItineraries(fetchedItins);
+                }, (error) => {
+                    console.error("Error fetching itineraries: ", error);
+                });
+
+                return () => { unsubLocs(); unsubItins(); };
             }, [user]);
 
             // 3. Track GPS
@@ -234,6 +264,13 @@
                 } else if (view === 'category_list') {
                     setView('categories');
                     setActiveCategory(null);
+                } else if (view === 'itinerary_detail') {
+                    setView('itineraries');
+                    setActiveItinId(null);
+                } else if (view === 'itinerary_form') {
+                    setView('itineraries');
+                } else if (view === 'itinerary_item_form') {
+                    setView('itinerary_detail');
                 }
             };
 
@@ -342,6 +379,106 @@
                 }
             };
 
+            // --- ITINERARY HANDLERS ---
+            const openItineraryForm = (itin = null) => {
+                setPreviousView(view);
+                if (itin) {
+                    setEditId(itin.id);
+                    setItinTitle(itin.title || '');
+                    setItinDate(itin.date || '');
+                } else {
+                    setEditId(null);
+                    setItinTitle('');
+                    setItinDate('');
+                }
+                setView('itinerary_form');
+            };
+
+            const handleSaveItinerary = async (e) => {
+                e.preventDefault();
+                setIsSaving(true);
+                const data = { title: itinTitle, date: itinDate };
+                if (!editId) {
+                    data.timestamp = Date.now();
+                    data.items = [];
+                }
+                try {
+                    if (editId) {
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', editId), data);
+                    } else {
+                        const newId = Date.now().toString();
+                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', newId), data);
+                    }
+                    handleBack();
+                } catch (err) { alert("Save failed: " + err.message); }
+                setIsSaving(false);
+            };
+
+            const openItineraryItemForm = (item = null) => {
+                setPreviousView(view);
+                if (item) {
+                    setEditItinItemId(item.id);
+                    setItinItemTime(item.time || '');
+                    setItinItemLabel(item.label || 'Activity');
+                    setItinItemLocId(item.locationId || '');
+                    setItinItemNotes(item.notes || '');
+                } else {
+                    setEditItinItemId(null);
+                    setItinItemTime('');
+                    setItinItemLabel('Activity');
+                    setItinItemLocId('');
+                    setItinItemNotes('');
+                }
+                setView('itinerary_item_form');
+            };
+
+            const handleSaveItineraryItem = async (e) => {
+                e.preventDefault();
+                setIsSaving(true);
+                const itin = itineraries.find(i => i.id === activeItinId);
+                if (!itin) return;
+                
+                let updatedItems = [...(itin.items || [])];
+                const newItem = {
+                    id: editItinItemId || Date.now().toString(),
+                    time: itinItemTime,
+                    label: itinItemLabel,
+                    locationId: itinItemLocId,
+                    notes: itinItemNotes
+                };
+
+                if (editItinItemId) {
+                    updatedItems = updatedItems.map(item => item.id === editItinItemId ? newItem : item);
+                } else {
+                    updatedItems.push(newItem);
+                }
+                
+                // Sort chronologically by time
+                updatedItems.sort((a, b) => a.time.localeCompare(b.time));
+
+                try {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', activeItinId), { items: updatedItems });
+                    handleBack();
+                } catch (err) { alert("Save failed: " + err.message); }
+                setIsSaving(false);
+            };
+
+            const deleteItineraryItem = async (itemId) => {
+                if (!window.confirm("Remove this event from the timesheet?")) return;
+                const itin = itineraries.find(i => i.id === activeItinId);
+                const updatedItems = (itin.items || []).filter(item => item.id !== itemId);
+                try {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', activeItinId), { items: updatedItems });
+                } catch (err) { alert("Delete failed: " + err.message); }
+            };
+
+            const deleteItinerary = async (id) => {
+                if (!window.confirm("Delete this entire itinerary and its timesheet?")) return;
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', id));
+                } catch (err) { alert("Delete failed: " + err.message); }
+            };
+
             // --- DATA PROCESSING ---
             const groupedLocations = useMemo(() => {
                 const groups = {};
@@ -399,7 +536,7 @@
                             >
                                 {fullScreenPhoto.photos.map((p, idx) => (
                                     <div key={idx} className="w-full h-full flex-shrink-0 snap-center flex items-center justify-center">
-                                        <img src={p} className="max-w-full max-h-full object-contain safe-bottom" />
+                                        <img src={p} className="max-w-full max-h-full object-contain safe-bottom" alt={`Location photo ${idx + 1}`} />
                                     </div>
                                 ))}
                             </div>
@@ -420,7 +557,7 @@
                     <header className="bg-white shadow-sm sticky top-0 z-40 border-b border-slate-200 safe-top">
                         <div className="max-w-3xl mx-auto px-4 py-3 flex justify-between items-center h-14">
                             <div className="flex items-center space-x-3 flex-1 overflow-hidden">
-                                {view !== 'categories' && (
+                                {view !== 'categories' && view !== 'itineraries' && (
                                     <button onClick={handleBack} className="text-slate-500 hover:bg-slate-100 p-2 -ml-2 rounded-full transition-colors flex-shrink-0 active:bg-slate-200">
                                         <i className="fa-solid fa-arrow-left text-lg"></i>
                                     </button>
@@ -432,7 +569,9 @@
                                     {view === 'categories' ? 'WanderTracker' : 
                                      view === 'category_list' ? activeCategory : 
                                      view === 'location_detail' ? 'Details' :
-                                     editId ? 'Edit Location' : 'New Location'}
+                                     view === 'itineraries' ? 'Itinerary Planner' :
+                                     view === 'itinerary_detail' ? 'Day Timesheet' :
+                                     editId || editItinItemId ? 'Edit Item' : 'Create Item'}
                                 </h1>
                             </div>
                             
@@ -451,6 +590,18 @@
                                 ) : null}
                             </div>
                         </div>
+                        
+                        {/* Tabs for Places / Itinerary */}
+                        {(view === 'categories' || view === 'itineraries') && (
+                            <div className="flex bg-white px-4 border-b border-slate-200">
+                                <button onClick={() => setView('categories')} className={`flex-1 py-3 text-center font-bold text-sm border-b-2 transition-colors ${view === 'categories' ? 'text-indigo-600 border-indigo-600' : 'text-slate-400 border-transparent hover:text-slate-600'}`}>
+                                    <i className="fa-solid fa-map-location-dot mr-2"></i> Places
+                                </button>
+                                <button onClick={() => setView('itineraries')} className={`flex-1 py-3 text-center font-bold text-sm border-b-2 transition-colors ${view === 'itineraries' ? 'text-indigo-600 border-indigo-600' : 'text-slate-400 border-transparent hover:text-slate-600'}`}>
+                                    <i className="fa-solid fa-calendar-day mr-2"></i> Itineraries
+                                </button>
+                            </div>
+                        )}
                     </header>
 
                     <main className="max-w-3xl mx-auto p-4 animate-slide-in">
@@ -502,7 +653,7 @@
                                                 <div className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide">
                                                     {loc.photos.map((p, idx) => (
                                                         <img 
-                                                            key={idx} src={p} alt="" 
+                                                            key={idx} src={p} alt={`Photo of ${loc.name}`} 
                                                             className="w-full h-full object-cover shrink-0 snap-center" 
                                                             onClick={(e) => { 
                                                                 e.stopPropagation(); 
@@ -562,7 +713,7 @@
                                         <div className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide">
                                             {locDetail.photos.map((p, idx) => (
                                                 <img 
-                                                    key={idx} src={p} alt="" 
+                                                    key={idx} src={p} alt={`Detailed photo of ${locDetail.name}`} 
                                                     className="w-full h-full object-cover shrink-0 snap-center cursor-pointer active:opacity-90 transition-opacity" 
                                                     onClick={() => {
                                                         setPreviousView(view);
@@ -688,7 +839,7 @@
                                         <div className="flex overflow-x-auto space-x-3 pb-2 scrollbar-hide snap-x">
                                             {photos.map((p, i) => (
                                                 <div key={i} className="relative w-24 h-24 flex-shrink-0 snap-start rounded-xl overflow-hidden border border-slate-200">
-                                                    <img src={p} className="w-full h-full object-cover" />
+                                                    <img src={p} className="w-full h-full object-cover" alt="Uploaded preview" />
                                                     <button type="button" onClick={() => removePhoto(i)} className="absolute top-1 right-1 bg-black/60 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs active:scale-90">
                                                         <i className="fa-solid fa-xmark"></i>
                                                     </button>
@@ -709,12 +860,180 @@
                                 </button>
                             </form>
                         )}
+
+                        {/* VIEW: ITINERARIES LIST */}
+                        {view === 'itineraries' && (
+                            <div className="space-y-3">
+                                <p className="text-sm text-slate-500 font-medium mb-4 px-1">Your Planned Days</p>
+                                {itineraries.length === 0 ? (
+                                    <div className="text-center p-8 bg-white rounded-2xl border border-dashed border-slate-300 mt-8">
+                                        <i className="fa-solid fa-calendar-days text-3xl text-slate-300 mb-3"></i>
+                                        <p className="text-slate-500 text-sm">No itineraries yet. Tap + to plan a day!</p>
+                                    </div>
+                                ) : (
+                                    itineraries.map(itin => (
+                                        <div key={itin.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow active:bg-slate-50 flex" onClick={() => { setActiveItinId(itin.id); setView('itinerary_detail'); }}>
+                                            <div className="bg-indigo-600 w-3 shrink-0"></div>
+                                            <div className="p-4 flex-1 flex justify-between items-center">
+                                                <div>
+                                                    <h3 className="font-bold text-slate-800 text-lg">{itin.title}</h3>
+                                                    <p className="text-sm text-slate-500 font-medium"><i className="fa-regular fa-calendar mr-1.5"></i> {itin.date || 'No Date'}</p>
+                                                </div>
+                                                <div className="text-slate-400 flex items-center">
+                                                    <span className="text-xs font-bold bg-slate-100 px-2 py-1 rounded-lg mr-3">{(itin.items || []).length} events</span>
+                                                    <button onClick={(e) => { e.stopPropagation(); deleteItinerary(itin.id); }} className="text-slate-300 hover:text-red-500 active:scale-90 p-2"><i className="fa-solid fa-trash"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        )}
+
+                        {/* VIEW: ITINERARY DETAIL (TIMESHEET) */}
+                        {view === 'itinerary_detail' && (
+                            <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+                                {(() => {
+                                    const itin = itineraries.find(i => i.id === activeItinId);
+                                    if (!itin) return null;
+                                    return (
+                                        <>
+                                            <div className="mb-6 relative z-10 text-center flex justify-center items-center">
+                                                <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-5 py-3">
+                                                    <h2 className="text-2xl font-bold text-slate-900">{itin.title}</h2>
+                                                    {itin.date && <p className="text-sm text-slate-500 font-medium">{itin.date}</p>}
+                                                </div>
+                                                <button onClick={() => openItineraryForm(itin)} className="ml-3 text-slate-400 hover:text-indigo-600 bg-white border border-slate-200 shadow-sm rounded-full w-10 h-10 flex items-center justify-center">
+                                                    <i className="fa-solid fa-pen"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            {(itin.items || []).length === 0 ? (
+                                                <div className="relative z-10 text-center p-8 bg-white/80 backdrop-blur rounded-2xl border border-dashed border-slate-300 mx-4">
+                                                    <p className="text-slate-500 text-sm">Timesheet empty. Tap + to add breakfast, lunch, or an activity!</p>
+                                                </div>
+                                            ) : (
+                                                (itin.items || []).map((item) => {
+                                                    const loc = locations.find(l => l.id === item.locationId);
+                                                    return (
+                                                        <div key={item.id} className="relative z-10 flex items-center">
+                                                            <div className="hidden md:block w-1/2 pr-8 text-right">
+                                                                <div className="text-lg font-bold text-slate-800">{item.time}</div>
+                                                                <div className="text-sm font-medium text-slate-500">{item.label}</div>
+                                                            </div>
+                                                            <div className="absolute left-0 md:left-1/2 -ml-3 w-6 h-6 rounded-full border-4 border-slate-50 bg-indigo-500 shadow-sm flex items-center justify-center"></div>
+                                                            <div className="ml-10 md:ml-0 md:pl-8 w-full md:w-1/2 pb-4">
+                                                                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                                                                    <div className="flex justify-between items-start mb-2">
+                                                                        <div className="md:hidden">
+                                                                            <span className="text-indigo-600 font-bold mr-2">{item.time}</span>
+                                                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{item.label}</span>
+                                                                        </div>
+                                                                        <div className="hidden md:block">
+                                                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{item.label}</span>
+                                                                        </div>
+                                                                        <div className="flex space-x-1">
+                                                                            <button onClick={() => openItineraryItemForm(item)} className="text-slate-400 hover:text-indigo-600 p-1"><i className="fa-solid fa-pen text-xs"></i></button>
+                                                                            <button onClick={() => deleteItineraryItem(item.id)} className="text-slate-400 hover:text-red-500 p-1"><i className="fa-solid fa-xmark text-xs"></i></button>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    {loc ? (
+                                                                        <div className="flex items-center space-x-3 mt-2 bg-slate-50 p-2 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100" onClick={() => { setSelectedLocId(loc.id); setView('location_detail'); }}>
+                                                                            {loc.photos && loc.photos.length > 0 ? (
+                                                                                <img src={loc.photos} className="w-12 h-12 rounded object-cover" alt="Location preview" />
+                                                                            ) : (
+                                                                                <div className="w-12 h-12 rounded bg-slate-200 flex items-center justify-center text-slate-400"><i className="fa-regular fa-image"></i></div>
+                                                                            )}
+                                                                            <div>
+                                                                                <p className="font-bold text-slate-800 text-sm">{loc.name}</p>
+                                                                                <p className="text-xs text-slate-500">{loc.category}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : item.locationId ? (
+                                                                        <p className="text-sm text-red-500 italic mt-2"><i className="fa-solid fa-triangle-exclamation mr-1"></i>Location was deleted</p>
+                                                                    ) : null}
+                                                                    
+                                                                    {item.notes && <p className="text-sm text-slate-600 mt-3 pt-3 border-t border-slate-100"><i className="fa-regular fa-note-sticky mr-1.5 text-slate-400"></i>{item.notes}</p>}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })
+                                            )}
+                                        </>
+                                    );
+                                })()}
+                            </div>
+                        )}
+
+                        {/* VIEW: ITINERARY DAY FORM */}
+                        {view === 'itinerary_form' && (
+                            <form onSubmit={handleSaveItinerary} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                                <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2 mb-4">Plan a Day</h2>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Itinerary Title</label>
+                                    <input type="text" required value={itinTitle} onChange={e => setItinTitle(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="e.g. Day 1: City Tour" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Date</label>
+                                    <input type="date" value={itinDate} onChange={e => setItinDate(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                                </div>
+                                <button type="submit" disabled={isSaving} className="w-full mt-6 py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center transition-all shadow-md active:scale-[0.98]">
+                                    {isSaving ? <i className="fa-solid fa-spinner fa-spin text-lg"></i> : <><i className="fa-solid fa-check mr-2"></i> Save Day</>}
+                                </button>
+                            </form>
+                        )}
+
+                        {/* VIEW: ITINERARY ITEM FORM */}
+                        {view === 'itinerary_item_form' && (
+                            <form onSubmit={handleSaveItineraryItem} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                                <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2 mb-4">Add Event to Timesheet</h2>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Time</label>
+                                        <input type="time" required value={itinItemTime} onChange={e => setItinItemTime(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Type</label>
+                                        <select value={itinItemLabel} onChange={e => setItinItemLabel(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                            <option>Breakfast</option>
+                                            <option>Lunch</option>
+                                            <option>Dinner</option>
+                                            <option>Activity</option>
+                                            <option>Travel</option>
+                                            <option>Check-in</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Saved Location</label>
+                                    <select value={itinItemLocId} onChange={e => setItinItemLocId(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                        <option value="">-- No Location (Event only) --</option>
+                                        {locations.map(loc => (
+                                            <option key={loc.id} value={loc.id}>{loc.name} ({loc.category})</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Notes (Optional)</label>
+                                    <textarea value={itinItemNotes} onChange={e => setItinItemNotes(e.target.value)} rows="2" className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="e.g. Reservation under John" />
+                                </div>
+                                <button type="submit" disabled={isSaving} className="w-full mt-6 py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center transition-all shadow-md active:scale-[0.98]">
+                                    {isSaving ? <i className="fa-solid fa-spinner fa-spin text-lg"></i> : <><i className="fa-solid fa-check mr-2"></i> Save Event</>}
+                                </button>
+                            </form>
+                        )}
                     </main>
 
                     {/* FLOATING ACTION BUTTON */}
-                    {!['form', 'photo_viewer'].includes(view) && (
+                    {!['form', 'photo_viewer', 'itinerary_form', 'itinerary_item_form'].includes(view) && (
                         <button 
-                            onClick={() => openForm()}
+                            onClick={() => {
+                                if (view === 'itineraries') openItineraryForm();
+                                else if (view === 'itinerary_detail') openItineraryItemForm();
+                                else openForm();
+                            }}
                             className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-300 flex items-center justify-center text-xl z-30 hover:bg-indigo-700 transition-transform active:scale-90 safe-bottom"
                         >
                             <i className="fa-solid fa-plus"></i>
