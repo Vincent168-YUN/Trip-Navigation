@@ -127,7 +127,10 @@
             // Form State
             const [editId, setEditId] = useState(null);
             const [name, setName] = useState('');
-            const [newCityName, setNewCityName] = useState(''); // For the quick "Add City" form
+            
+            const [editingCityName, setEditingCityName] = useState(null); // The city currently being edited
+            const [newCityName, setNewCityName] = useState(''); // For the quick "Add/Edit City" form
+            
             const [city, setCity] = useState('');
             const [category, setCategory] = useState('');
             const [coordinates, setCoordinates] = useState('');
@@ -255,6 +258,19 @@
                 setView('form');
             };
 
+            const openCityForm = (cityName = null) => {
+                setPreviousView(view);
+                setSaveError('');
+                if (cityName) {
+                    setEditingCityName(cityName);
+                    setNewCityName(cityName);
+                } else {
+                    setEditingCityName(null);
+                    setNewCityName('');
+                }
+                setView('city_form');
+            };
+
             const handleBack = () => {
                 if (view === 'photo_viewer') {
                     setView(previousView);
@@ -347,17 +363,29 @@
                 if (!trimmedCity) return;
                 setIsSaving(true);
                 try {
-                    const newId = Date.now().toString();
-                    // Save a marker location so the city persists even when empty
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', newId), { 
-                        isCityMarker: true, 
-                        city: trimmedCity, 
-                        timestamp: Date.now() 
-                    });
+                    if (editingCityName) {
+                        // Rename the city for all matching locations
+                        if (trimmedCity !== editingCityName) {
+                            const locsToUpdate = locations.filter(l => (l.city || 'Ho Chi Minh City') === editingCityName);
+                            const updatePromises = locsToUpdate.map(l => 
+                                updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', l.id), { city: trimmedCity })
+                            );
+                            await Promise.all(updatePromises);
+                        }
+                    } else {
+                        // Create a new city marker
+                        const newId = Date.now().toString();
+                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', newId), { 
+                            isCityMarker: true, 
+                            city: trimmedCity, 
+                            timestamp: Date.now() 
+                        });
+                    }
                     setNewCityName('');
+                    setEditingCityName(null);
                     setActiveCity(trimmedCity);
                     setPreviousView('cities');
-                    setView('categories'); // Instantly dive into the new city
+                    setView('categories'); // Instantly dive into the new (or renamed) city
                 } catch (err) {
                     setSaveError("Save failed: " + err.message);
                 } finally {
@@ -408,6 +436,24 @@
 
             const confirmAction = (message, onConfirm) => {
                 setConfirmDialog({ message, onConfirm });
+            };
+
+            const deleteCity = async (cityToDelete) => {
+                confirmAction(`Delete "${cityToDelete}" and ALL places inside it?`, async () => {
+                    try {
+                        const locsToDelete = locations.filter(l => (l.city || 'Ho Chi Minh City') === cityToDelete);
+                        const deletePromises = locsToDelete.map(l => 
+                            deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', l.id))
+                        );
+                        await Promise.all(deletePromises);
+                        if (activeCity === cityToDelete) {
+                            setView('cities');
+                            setActiveCity(null);
+                        }
+                    } catch (err) {
+                        alert("Delete failed: " + err.message);
+                    }
+                });
             };
 
             const deleteLocation = async (id, isDetailView = false) => {
@@ -628,7 +674,7 @@
                                 </div>
                                 <h1 className="text-lg font-bold text-slate-800 truncate">
                                     {view === 'cities' ? 'WanderTracker' : 
-                                     view === 'city_form' ? 'Add City' :
+                                     view === 'city_form' ? (editingCityName ? 'Edit City' : 'Add City') :
                                      view === 'categories' ? activeCity : 
                                      view === 'category_list' ? activeCategory : 
                                      view === 'location_detail' ? 'Details' :
@@ -679,12 +725,11 @@
                                     </div>
                                 ) : (
                                     dataHierarchy.uniqueCities.map(cityName => (
-                                        <button 
+                                        <div 
                                             key={cityName}
-                                            onClick={() => { setActiveCity(cityName); setView('categories'); }}
-                                            className="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:border-indigo-300 active:bg-slate-50 transition-all text-left group"
+                                            className="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:border-indigo-300 transition-all group"
                                         >
-                                            <div className="flex items-center">
+                                            <div className="flex items-center flex-1 cursor-pointer active:opacity-70" onClick={() => { setActiveCity(cityName); setView('categories'); }}>
                                                 <div className="bg-indigo-50 group-hover:bg-indigo-100 w-12 h-12 rounded-xl flex items-center justify-center mr-4 transition-colors">
                                                     <i className="fa-solid fa-city text-indigo-500 text-xl"></i>
                                                 </div>
@@ -693,8 +738,15 @@
                                                     <p className="text-sm text-slate-500 font-medium">{dataHierarchy.cities[cityName].count} Places</p>
                                                 </div>
                                             </div>
-                                            <i className="fa-solid fa-chevron-right text-slate-300"></i>
-                                        </button>
+                                            <div className="flex space-x-1 sm:space-x-2 pl-3 border-l border-slate-100 ml-2">
+                                                <button onClick={(e) => { e.stopPropagation(); openCityForm(cityName); }} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 flex items-center justify-center transition-colors active:scale-90">
+                                                    <i className="fa-solid fa-pen text-sm"></i>
+                                                </button>
+                                                <button onClick={(e) => { e.stopPropagation(); deleteCity(cityName); }} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-red-50 text-red-400 hover:text-red-600 hover:bg-red-100 flex items-center justify-center transition-colors active:scale-90">
+                                                    <i className="fa-solid fa-trash text-sm"></i>
+                                                </button>
+                                            </div>
+                                        </div>
                                     ))
                                 )}
                             </div>
@@ -885,10 +937,12 @@
                             </div>
                         )}
 
-                        {/* VIEW: ADD CITY FORM */}
+                        {/* VIEW: ADD OR EDIT CITY FORM */}
                         {view === 'city_form' && (
                             <form onSubmit={handleSaveCity} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-                                <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2 mb-4">Add a New City</h2>
+                                <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2 mb-4">
+                                    {editingCityName ? 'Edit City Name' : 'Add a New City'}
+                                </h2>
                                 {saveError && (
                                     <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200">
                                         <i className="fa-solid fa-triangle-exclamation mr-2"></i>{saveError}
@@ -899,7 +953,7 @@
                                     <input type="text" required value={newCityName} onChange={e => setNewCityName(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="e.g. Tokyo, Japan" autoFocus />
                                 </div>
                                 <button type="submit" disabled={isSaving || !newCityName.trim()} className="w-full mt-6 py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center transition-all shadow-md active:scale-[0.98]">
-                                    {isSaving ? <i className="fa-solid fa-spinner fa-spin text-lg"></i> : <><i className="fa-solid fa-check mr-2"></i> Create City</>}
+                                    {isSaving ? <i className="fa-solid fa-spinner fa-spin text-lg"></i> : <><i className="fa-solid fa-check mr-2"></i> {editingCityName ? 'Update City' : 'Create City'}</>}
                                 </button>
                             </form>
                         )}
@@ -1156,7 +1210,7 @@
                             onClick={() => {
                                 if (view === 'itineraries') openItineraryForm();
                                 else if (view === 'itinerary_detail') openItineraryItemForm();
-                                else if (view === 'cities') setView('city_form');
+                                else if (view === 'cities') openCityForm();
                                 else openForm();
                             }}
                             className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-300 flex items-center justify-center text-xl z-30 hover:bg-indigo-700 transition-transform active:scale-90 safe-bottom"
