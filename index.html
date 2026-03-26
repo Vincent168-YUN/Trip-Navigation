@@ -111,7 +111,7 @@
             const [itinItemNotes, setItinItemNotes] = useState('');
 
             // Navigation & UI State
-            const [view, setView] = useState('cities'); // 'cities', 'categories', 'category_list', 'location_detail', 'form', 'itineraries', 'itinerary_detail', 'itinerary_form', 'itinerary_item_form'
+            const [view, setView] = useState('cities'); // 'cities', 'city_form', 'categories', 'category_list', 'location_detail', 'form', 'itineraries', 'itinerary_detail', 'itinerary_form', 'itinerary_item_form'
             const [activeCity, setActiveCity] = useState(null);
             const [activeCategory, setActiveCategory] = useState(null);
             const [selectedLocId, setSelectedLocId] = useState(null);
@@ -121,9 +121,13 @@
             const [fullScreenPhoto, setFullScreenPhoto] = useState(null); // { photos: [], index: 0 }
             const fullScreenScrollRef = useRef(null);
             
+            // Custom Confirm Modal State
+            const [confirmDialog, setConfirmDialog] = useState(null);
+            
             // Form State
             const [editId, setEditId] = useState(null);
             const [name, setName] = useState('');
+            const [newCityName, setNewCityName] = useState(''); // For the quick "Add City" form
             const [city, setCity] = useState('');
             const [category, setCategory] = useState('');
             const [coordinates, setCoordinates] = useState('');
@@ -240,7 +244,6 @@
                 if (loc) {
                     setEditId(loc.id);
                     setName(loc.name || '');
-                    // Fallbacks for older data structure
                     setCity(loc.city || 'Ho Chi Minh City');
                     setCategory(loc.category || 'Uncategorized');
                     setCoordinates(`${loc.lat}, ${loc.lng}`);
@@ -258,6 +261,8 @@
                     setFullScreenPhoto(null);
                 } else if (view === 'form') {
                     setView(previousView);
+                } else if (view === 'city_form') {
+                    setView('cities');
                 } else if (view === 'location_detail') {
                     setView('category_list');
                     setSelectedLocId(null);
@@ -328,8 +333,36 @@
             };
 
             const useCurrentLocation = () => {
-                if (liveLocation) setCoordinates(`${liveLocation.lat.toFixed(6)}, ${liveLocation.lng.toFixed(6)}`);
-                else alert("Live location not ready yet.");
+                if (liveLocation) {
+                    setCoordinates(`${liveLocation.lat.toFixed(6)}, ${liveLocation.lng.toFixed(6)}`);
+                    setSaveError('');
+                } else {
+                    setSaveError("Live location not ready yet. Please ensure GPS is enabled.");
+                }
+            };
+
+            const handleSaveCity = async (e) => {
+                e.preventDefault();
+                const trimmedCity = newCityName.trim();
+                if (!trimmedCity) return;
+                setIsSaving(true);
+                try {
+                    const newId = Date.now().toString();
+                    // Save a marker location so the city persists even when empty
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', newId), { 
+                        isCityMarker: true, 
+                        city: trimmedCity, 
+                        timestamp: Date.now() 
+                    });
+                    setNewCityName('');
+                    setActiveCity(trimmedCity);
+                    setPreviousView('cities');
+                    setView('categories'); // Instantly dive into the new city
+                } catch (err) {
+                    setSaveError("Save failed: " + err.message);
+                } finally {
+                    setIsSaving(false);
+                }
             };
 
             const handleSaveLocation = async (e) => {
@@ -373,13 +406,17 @@
                 }
             };
 
+            const confirmAction = (message, onConfirm) => {
+                setConfirmDialog({ message, onConfirm });
+            };
+
             const deleteLocation = async (id, isDetailView = false) => {
-                if (window.confirm("Delete this location completely?")) {
+                confirmAction("Delete this location completely?", async () => {
                     try {
                         await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', id));
                         if (isDetailView) handleBack();
-                    } catch (err) { alert("Delete failed: " + err.message); }
-                }
+                    } catch (err) { setSaveError("Delete failed: " + err.message); }
+                });
             };
 
             // --- ITINERARY HANDLERS ---
@@ -462,24 +499,26 @@
                 try {
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', activeItinId), { items: updatedItems });
                     handleBack();
-                } catch (err) { alert("Save failed: " + err.message); }
+                } catch (err) { setSaveError("Save failed: " + err.message); }
                 setIsSaving(false);
             };
 
             const deleteItineraryItem = async (itemId) => {
-                if (!window.confirm("Remove this event from the timesheet?")) return;
-                const itin = itineraries.find(i => i.id === activeItinId);
-                const updatedItems = (itin.items || []).filter(item => item.id !== itemId);
-                try {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', activeItinId), { items: updatedItems });
-                } catch (err) { alert("Delete failed: " + err.message); }
+                confirmAction("Remove this event from the timesheet?", async () => {
+                    const itin = itineraries.find(i => i.id === activeItinId);
+                    const updatedItems = (itin.items || []).filter(item => item.id !== itemId);
+                    try {
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', activeItinId), { items: updatedItems });
+                    } catch (err) { console.error("Delete failed: " + err.message); }
+                });
             };
 
             const deleteItinerary = async (id) => {
-                if (!window.confirm("Delete this entire itinerary and its timesheet?")) return;
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', id));
-                } catch (err) { alert("Delete failed: " + err.message); }
+                confirmAction("Delete this entire itinerary and its timesheet?", async () => {
+                    try {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', id));
+                    } catch (err) { console.error("Delete failed: " + err.message); }
+                });
             };
 
             // --- DATA PROCESSING ---
@@ -489,10 +528,14 @@
                 
                 locations.forEach(loc => {
                     const cName = loc.city || 'Ho Chi Minh City';
+                    if (!cities[cName]) cities[cName] = { count: 0, categories: {} };
+
+                    // If it's just an empty city marker, register the city but skip adding to counts/categories
+                    if (loc.isCityMarker) return; 
+
                     const catName = loc.category || 'Uncategorized';
                     allCategories.add(catName);
 
-                    if (!cities[cName]) cities[cName] = { count: 0, categories: {} };
                     if (!cities[cName].categories[catName]) cities[cName].categories[catName] = [];
 
                     const dist = liveLocation ? calculateDistance(liveLocation.lat, liveLocation.lng, loc.lat, loc.lng) : null;
@@ -585,6 +628,7 @@
                                 </div>
                                 <h1 className="text-lg font-bold text-slate-800 truncate">
                                     {view === 'cities' ? 'WanderTracker' : 
+                                     view === 'city_form' ? 'Add City' :
                                      view === 'categories' ? activeCity : 
                                      view === 'category_list' ? activeCategory : 
                                      view === 'location_detail' ? 'Details' :
@@ -660,24 +704,32 @@
                         {view === 'categories' && activeCity && dataHierarchy.cities[activeCity] && (
                             <div className="space-y-3">
                                 <p className="text-sm text-slate-500 font-medium mb-4 px-1">Categories in {activeCity}</p>
-                                {Object.keys(dataHierarchy.cities[activeCity].categories).sort().map(catName => (
-                                    <button 
-                                        key={catName}
-                                        onClick={() => { setActiveCategory(catName); setView('category_list'); }}
-                                        className="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:border-indigo-300 active:bg-slate-50 transition-all text-left group"
-                                    >
-                                        <div className="flex items-center">
-                                            <div className="bg-indigo-50 group-hover:bg-indigo-100 w-12 h-12 rounded-xl flex items-center justify-center mr-4 transition-colors">
-                                                <i className="fa-solid fa-folder-open text-indigo-500 text-xl"></i>
+                                
+                                {Object.keys(dataHierarchy.cities[activeCity].categories).length === 0 ? (
+                                    <div className="text-center p-8 bg-white rounded-2xl border border-dashed border-slate-300 mt-8">
+                                        <i className="fa-regular fa-folder-open text-3xl text-slate-300 mb-3"></i>
+                                        <p className="text-slate-500 text-sm">No places in this city yet. Tap + to add one!</p>
+                                    </div>
+                                ) : (
+                                    Object.keys(dataHierarchy.cities[activeCity].categories).sort().map(catName => (
+                                        <button 
+                                            key={catName}
+                                            onClick={() => { setActiveCategory(catName); setView('category_list'); }}
+                                            className="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:border-indigo-300 active:bg-slate-50 transition-all text-left group"
+                                        >
+                                            <div className="flex items-center">
+                                                <div className="bg-indigo-50 group-hover:bg-indigo-100 w-12 h-12 rounded-xl flex items-center justify-center mr-4 transition-colors">
+                                                    <i className="fa-solid fa-folder-open text-indigo-500 text-xl"></i>
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-bold text-slate-800 text-lg">{catName}</h3>
+                                                    <p className="text-sm text-slate-500 font-medium">{dataHierarchy.cities[activeCity].categories[catName].length} Places</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h3 className="font-bold text-slate-800 text-lg">{catName}</h3>
-                                                <p className="text-sm text-slate-500 font-medium">{dataHierarchy.cities[activeCity].categories[catName].length} Places</p>
-                                            </div>
-                                        </div>
-                                        <i className="fa-solid fa-chevron-right text-slate-300"></i>
-                                    </button>
-                                ))}
+                                            <i className="fa-solid fa-chevron-right text-slate-300"></i>
+                                        </button>
+                                    ))
+                                )}
                             </div>
                         )}
 
@@ -833,7 +885,26 @@
                             </div>
                         )}
 
-                        {/* VIEW: ADD / EDIT FORM */}
+                        {/* VIEW: ADD CITY FORM */}
+                        {view === 'city_form' && (
+                            <form onSubmit={handleSaveCity} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                                <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2 mb-4">Add a New City</h2>
+                                {saveError && (
+                                    <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200">
+                                        <i className="fa-solid fa-triangle-exclamation mr-2"></i>{saveError}
+                                    </div>
+                                )}
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">City Name</label>
+                                    <input type="text" required value={newCityName} onChange={e => setNewCityName(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="e.g. Tokyo, Japan" autoFocus />
+                                </div>
+                                <button type="submit" disabled={isSaving || !newCityName.trim()} className="w-full mt-6 py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center transition-all shadow-md active:scale-[0.98]">
+                                    {isSaving ? <i className="fa-solid fa-spinner fa-spin text-lg"></i> : <><i className="fa-solid fa-check mr-2"></i> Create City</>}
+                                </button>
+                            </form>
+                        )}
+
+                        {/* VIEW: ADD / EDIT LOCATION FORM */}
                         {view === 'form' && (
                             <form onSubmit={handleSaveLocation} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
                                 {saveError && (
@@ -1080,17 +1151,32 @@
                     </main>
 
                     {/* FLOATING ACTION BUTTON */}
-                    {!['form', 'photo_viewer', 'itinerary_form', 'itinerary_item_form'].includes(view) && (
+                    {!['form', 'photo_viewer', 'itinerary_form', 'itinerary_item_form', 'city_form'].includes(view) && (
                         <button 
                             onClick={() => {
                                 if (view === 'itineraries') openItineraryForm();
                                 else if (view === 'itinerary_detail') openItineraryItemForm();
+                                else if (view === 'cities') setView('city_form');
                                 else openForm();
                             }}
                             className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-300 flex items-center justify-center text-xl z-30 hover:bg-indigo-700 transition-transform active:scale-90 safe-bottom"
                         >
                             <i className="fa-solid fa-plus"></i>
                         </button>
+                    )}
+                    
+                    {/* CUSTOM CONFIRM MODAL */}
+                    {confirmDialog && (
+                        <div className="fixed inset-0 z- bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">
+                            <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl animate-fade-in">
+                                <h3 className="text-lg font-bold text-slate-900 mb-2">Confirm Action</h3>
+                                <p className="text-slate-600 mb-6">{confirmDialog.message}</p>
+                                <div className="flex space-x-3">
+                                    <button onClick={() => setConfirmDialog(null)} className="flex-1 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 active:bg-slate-300 transition-colors">Cancel</button>
+                                    <button onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }} className="flex-1 py-2.5 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 active:bg-red-700 transition-colors">Confirm</button>
+                                </div>
+                            </div>
+                        </div>
                     )}
                 </div>
             );
