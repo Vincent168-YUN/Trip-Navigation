@@ -355,8 +355,11 @@
             const handleMapLinkChange = (e) => {
                 const link = e.target.value;
                 setMapLink(link);
-                const match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-                if (match) setCoordinates(`${match}, ${match}`);
+                // Enhanced regex to catch coordinates from various Google Maps link formats
+                const match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || link.match(/query=(-?\d+\.\d+),(-?\d+\.\d+)/);
+                if (match) {
+                    setCoordinates(`${match}, ${match}`);
+                }
             };
 
             const processImage = (file) => {
@@ -451,7 +454,9 @@
                 if (coordinates) {
                     const coordsMatch = coordinates.match(/(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);
                     if (coordsMatch) {
-                        parsedLat = parseFloat(coordsMatch); parsedLng = parseFloat(coordsMatch);
+                        // FIX: Correctly grab the first (Lat) and second (Lng) matched numbers
+                        parsedLat = parseFloat(coordsMatch); 
+                        parsedLng = parseFloat(coordsMatch);
                     }
                 }
 
