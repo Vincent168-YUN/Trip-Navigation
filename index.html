@@ -186,10 +186,11 @@
             // Derived active bottom tab
             const activeTab = (view.includes('itinerar')) ? 'itineraries' : 'places';
 
-            // Nearby Alert State
-            const [nearbyAlert, setNearbyAlert] = useState(null);
+            // Native Notification State
+            const [notifPermission, setNotifPermission] = useState(
+                typeof window !== 'undefined' && "Notification" in window ? Notification.permission : "unsupported"
+            );
             const alertedLocsRef = useRef(new Set());
-            const alertTimerRef = useRef(null);
             const initialAlertShownRef = useRef(false);
             
             // Photo Viewer State
@@ -280,6 +281,27 @@
                 return () => navigator.geolocation.clearWatch(watchId);
             }, []);
 
+            // Helper to trigger Native Notification
+            const triggerNotification = (loc, isStartup) => {
+                if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+                const title = isStartup ? 'Closest to you' : 'Nearby Location';
+                const body = `${loc.name} is ${formatDistance(loc.currentDistance)} away. Tap to view.`;
+                
+                const notification = new Notification(title, {
+                    body: body,
+                    icon: (loc.photos && loc.photos.length > 0) ? loc.photos : 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Globe_icon.svg/1024px-Globe_icon.svg.png',
+                });
+
+                notification.onclick = function() {
+                    window.focus();
+                    setLocationReturnView('cities');
+                    setSelectedLocId(loc.id);
+                    setView('location_detail');
+                    this.close();
+                };
+            };
+
             // Nearby Alert Checker
             useEffect(() => {
                 if (!liveLocation || locations.length === 0) return;
@@ -310,16 +332,12 @@
                 });
 
                 if (!initialAlertShownRef.current && closestOverall) {
-                    setNearbyAlert({ ...closestOverall, isStartup: true });
+                    triggerNotification(closestOverall, true);
                     alertedLocsRef.current.add(closestOverall.id);
                     initialAlertShownRef.current = true;
-                    if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
-                    alertTimerRef.current = setTimeout(() => { setNearbyAlert(null); }, 8000);
                 } else if (closestNearby) {
-                    setNearbyAlert({ ...closestNearby, isStartup: false });
+                    triggerNotification(closestNearby, false);
                     alertedLocsRef.current.add(closestNearby.id);
-                    if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
-                    alertTimerRef.current = setTimeout(() => { setNearbyAlert(null); }, 8000);
                 }
             }, [liveLocation, locations, view, selectedLocId]);
 
@@ -379,13 +397,12 @@
                 else if (view === 'itinerary_item_form') { setView(previousView === 'itinerary_select_location' ? 'itinerary_select_location' : 'itinerary_detail'); }
             };
 
-            const handleAlertClick = () => {
-                if (nearbyAlert) {
-                    if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
-                    setPreviousView(view); setLocationReturnView(view); setSelectedLocId(nearbyAlert.id); setView('location_detail'); setNearbyAlert(null);
+            const requestNotificationPermission = async () => {
+                if ("Notification" in window) {
+                    const permission = await Notification.requestPermission();
+                    setNotifPermission(permission);
                 }
             };
-            const dismissAlert = (e) => { e.stopPropagation(); if (alertTimerRef.current) clearTimeout(alertTimerRef.current); setNearbyAlert(null); };
 
             // --- FORM HANDLERS ---
             const handleMapLinkChange = (e) => {
@@ -617,51 +634,9 @@
                         <div className="orb-3"></div>
                     </div>
 
-                    {/* NEARBY ALERT POPUP (iOS Style - Centered) */}
-                    {nearbyAlert && (
-                        <div className="fixed inset-0 z- flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-fade-in pointer-events-auto" onClick={dismissAlert}>
-                            <div 
-                                onClick={(e) => { e.stopPropagation(); handleAlertClick(); }}
-                                className="bg-[var(--ios-glass)] backdrop-blur-3xl shadow-[0_20px_40px_rgb(0,0,0,0.2)] rounded-[32px] p-6 w-full max-w-[300px] flex flex-col items-center cursor-pointer transition-transform active:scale-95 border border-white/60 animate-pop-in relative"
-                            >
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); dismissAlert(e); }}
-                                    className="absolute top-4 right-4 w-7 h-7 rounded-full bg-black/5 text-[#8E8E93] flex items-center justify-center hover:bg-black/10 transition-colors"
-                                >
-                                    <i className="fa-solid fa-xmark text-sm"></i>
-                                </button>
-
-                                {nearbyAlert.photos && nearbyAlert.photos.length > 0 ? (
-                                    <img src={nearbyAlert.photos} alt="thumb" className="w-24 h-24 rounded-full object-cover shrink-0 shadow-md border-4 border-white mb-4" />
-                                ) : (
-                                    <div className="bg-[#007AFF] text-white w-24 h-24 rounded-full flex items-center justify-center shrink-0 shadow-md border-4 border-white mb-4">
-                                        <i className={`${nearbyAlert.isStartup ? "fa-solid fa-map-pin" : "fa-solid fa-location-dot"} text-4xl`}></i>
-                                    </div>
-                                )}
-                                
-                                <h4 className="text-[13px] font-bold text-[#8E8E93] uppercase tracking-wider mb-1.5">
-                                    {nearbyAlert.isStartup ? 'Closest to you' : 'Nearby'}
-                                </h4>
-                                <h3 className="text-[24px] font-bold text-[#1C1C1E] text-center leading-tight tracking-tight mb-1">
-                                    {nearbyAlert.name}
-                                </h3>
-                                <p className="text-[16px] text-[#007AFF] font-semibold mb-6">
-                                    {formatDistance(nearbyAlert.currentDistance)}
-                                </p>
-                                
-                                <button 
-                                    className="w-full py-3.5 bg-[#007AFF] text-white font-semibold text-[17px] rounded-[14px] active:opacity-80 transition-opacity"
-                                    onClick={(e) => { e.stopPropagation(); handleAlertClick(); }}
-                                >
-                                    View Details
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
                     {/* FULL SCREEN PHOTO VIEWER PAGE */}
                     {view === 'photo_viewer' && fullScreenPhoto && (
-                        <div className="fixed inset-0 z- bg-black/95 backdrop-blur-2xl flex flex-col animate-slide-in">
+                        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col animate-slide-in" style={{ zIndex: 120 }}>
                             <div className="flex items-center px-4 py-3 h-14 safe-top flex-shrink-0">
                                 <button onClick={handleBack} className="text-white px-2 py-1.5 -ml-2 rounded-full flex items-center active:opacity-50">
                                     <i className="fa-solid fa-chevron-left text-xl mr-1.5"></i>
@@ -721,8 +696,17 @@
                                 </h1>
                             </div>
 
-                            {/* Right: Add Button */}
+                            {/* Right: Add Button & Notif Bell */}
                             <div className="w-1/3 flex items-center justify-end">
+                                {notifPermission === 'default' && (
+                                    <button 
+                                        onClick={requestNotificationPermission} 
+                                        className="text-[#007AFF] text-xl active:opacity-50 transition-opacity mr-3"
+                                        title="Enable System Notifications"
+                                    >
+                                        <i className="fa-regular fa-bell"></i>
+                                    </button>
+                                )}
                                 {canShowAddButton && (
                                     <button 
                                         onClick={() => {
@@ -1254,7 +1238,7 @@
                     
                     {/* CUSTOM iOS CONFIRM MODAL */}
                     {confirmDialog && (
-                        <div className="fixed inset-0 z- bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+                        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in" style={{ zIndex: 130 }}>
                             <div className="bg-[rgba(242,242,247,0.9)] backdrop-blur-3xl rounded-[14px] w-[270px] flex flex-col overflow-hidden animate-slide-in shadow-xl" style={{animationDuration: '0.2s'}}>
                                 <div className="p-4 text-center">
                                     <h3 className="text-[17px] font-semibold text-[#1C1C1E] mb-1">Confirm</h3>
