@@ -16,6 +16,11 @@
     
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet CSS & JS for Interactive Map Picker -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -151,6 +156,11 @@
             const [nearbyAlerts, setNearbyAlerts] = useState([]);
             const [notifiedLocationIds, setNotifiedLocationIds] = useState(new Set());
 
+            // Leaflet Map Refs
+            const mapRef = useRef(null);
+            const leafletMap = useRef(null);
+            const leafletMarker = useRef(null);
+
             // --- EFFECTS ---
             // 1. Authenticate
             useEffect(() => {
@@ -278,6 +288,69 @@
                 }
             }, [view]);
 
+            // 6. Interactive Leaflet Map Initialization
+            useEffect(() => {
+                if (view === 'form') {
+                    // Small delay to ensure the div is fully rendered with height/width
+                    const timer = setTimeout(() => {
+                        if (mapRef.current && !leafletMap.current) {
+                            const initLat = parseFloat(lat) || (liveLocation ? liveLocation.lat : 11.5564);
+                            const initLng = parseFloat(lng) || (liveLocation ? liveLocation.lng : 104.9282);
+
+                            leafletMap.current = L.map(mapRef.current).setView([initLat, initLng], 15);
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                maxZoom: 19,
+                                attribution: '© OpenStreetMap'
+                            }).addTo(leafletMap.current);
+
+                            const customIcon = L.icon({
+                                iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+                                iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+                                shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+                                iconSize:,
+                                iconAnchor:
+                            });
+
+                            leafletMarker.current = L.marker([initLat, initLng], {draggable: true, icon: customIcon}).addTo(leafletMap.current);
+                            
+                            leafletMarker.current.on('dragend', function () {
+                                const position = leafletMarker.current.getLatLng();
+                                setLat(position.lat.toFixed(6));
+                                setLng(position.lng.toFixed(6));
+                            });
+
+                            leafletMap.current.on('click', function(event) {
+                                leafletMarker.current.setLatLng(event.latlng);
+                                setLat(event.latlng.lat.toFixed(6));
+                                setLng(event.latlng.lng.toFixed(6));
+                            });
+                        }
+                    }, 100);
+                    return () => clearTimeout(timer);
+                } else {
+                    if (leafletMap.current) {
+                        leafletMap.current.remove();
+                        leafletMap.current = null;
+                        leafletMarker.current = null;
+                    }
+                }
+            }, [view]);
+
+            // 7. Keep Map in Sync with Manual Input
+            useEffect(() => {
+                if (view === 'form' && leafletMap.current && leafletMarker.current) {
+                    const pLat = parseFloat(lat);
+                    const pLng = parseFloat(lng);
+                    if (!isNaN(pLat) && !isNaN(pLng)) {
+                        const currentLatLng = leafletMarker.current.getLatLng();
+                        if (Math.abs(currentLatLng.lat - pLat) > 0.0001 || Math.abs(currentLatLng.lng - pLng) > 0.0001) {
+                             leafletMarker.current.setLatLng([pLat, pLng]);
+                             leafletMap.current.setView([pLat, pLng]);
+                        }
+                    }
+                }
+            }, [lat, lng, view]);
+
             // --- NAVIGATION HANDLERS ---
             const resetForm = () => {
                 setEditId(null);
@@ -355,6 +428,16 @@
             };
 
             // --- FORM HANDLERS ---
+            const handleCoordinatePaste = (e) => {
+                const pastedText = e.clipboardData.getData('text');
+                const coordsMatch = pastedText.match(/(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);
+                if (coordsMatch) {
+                    e.preventDefault(); 
+                    setLat(coordsMatch);
+                    setLng(coordsMatch);
+                }
+            };
+
             const handleMapLinkChange = (e) => {
                 const link = e.target.value;
                 setMapLink(link);
@@ -1152,12 +1235,18 @@
                                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Coordinates</label>
                                         <button type="button" onClick={useCurrentLocation} className="text-indigo-600 text-xs font-bold active:opacity-70 bg-indigo-50 px-2 py-1 rounded"><i className="fa-solid fa-crosshairs mr-1"></i>Current GPS</button>
                                     </div>
+                                    
+                                    {/* INTERACTIVE MAP PICKER */}
+                                    <div className="w-full h-48 bg-slate-200 rounded-xl mb-3 border border-slate-300 overflow-hidden relative z-0" ref={mapRef}>
+                                         <div className="absolute inset-0 flex items-center justify-center text-slate-400 font-medium">Loading Map...</div>
+                                    </div>
+
                                     <div className="grid grid-cols-2 gap-4 mb-4">
                                         <div>
-                                            <input type="number" step="any" required value={lat} onChange={e => setLat(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Lat (e.g. 11.55)" />
+                                            <input type="text" onPaste={handleCoordinatePaste} required value={lat} onChange={e => setLat(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Lat (e.g. 11.55)" />
                                         </div>
                                         <div>
-                                            <input type="number" step="any" required value={lng} onChange={e => setLng(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Lng (e.g. 104.92)" />
+                                            <input type="text" onPaste={handleCoordinatePaste} required value={lng} onChange={e => setLng(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Lng (e.g. 104.92)" />
                                         </div>
                                     </div>
                                     <div>
