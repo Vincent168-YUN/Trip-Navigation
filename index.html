@@ -11,6 +11,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Globe_icon.svg/1024px-Globe_icon.svg.png">
 
+    <!-- Google Fonts for Art/Editorial Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -68,6 +73,9 @@
         .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
         .animate-pop-in { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 
+        /* Art Design Font */
+        .font-art { font-family: 'Playfair Display', serif; }
+
         /* Custom Input Styling for iOS look */
         .ios-input {
             background-color: rgba(118, 118, 128, 0.08);
@@ -83,19 +91,19 @@
             top: 0; left: 0; right: 0; bottom: 0;
             z-index: -1;
             overflow: hidden;
-            background-color: #F2F2F7;
+            background-color: #F8F8F7; /* Warm gallery white */
         }
         .orb-1 {
             position: absolute; top: -10%; left: -10%; width: 50vw; height: 50vw;
-            background: rgba(0, 122, 255, 0.15); border-radius: 50%; filter: blur(60px);
+            background: rgba(210, 190, 180, 0.4); border-radius: 50%; filter: blur(60px); /* Soft clay */
         }
         .orb-2 {
             position: absolute; bottom: 10%; right: -10%; width: 60vw; height: 60vw;
-            background: rgba(88, 86, 214, 0.12); border-radius: 50%; filter: blur(80px);
+            background: rgba(180, 190, 200, 0.4); border-radius: 50%; filter: blur(80px); /* Dusty slate */
         }
         .orb-3 {
             position: absolute; top: 40%; left: 30%; width: 40vw; height: 40vw;
-            background: rgba(52, 199, 89, 0.08); border-radius: 50%; filter: blur(70px);
+            background: rgba(220, 215, 200, 0.5); border-radius: 50%; filter: blur(70px); /* Warm linen */
         }
     </style>
 </head>
@@ -639,7 +647,7 @@
 
             // HELPER: iOS Native Header Title
             const getHeaderTitle = () => {
-                if (view === 'cities') return "Vincent's Travelling System";
+                if (view === 'cities') return ""; // Empty to make room for large editorial header
                 if (view === 'city_form') return editingCityName ? 'Edit City' : 'Add City';
                 if (view === 'categories') return activeCity;
                 if (view === 'category_list') return activeCategory;
@@ -699,7 +707,7 @@
                             {/* Left: Back Button or GPS */}
                             <div className="w-1/3 flex items-center justify-start">
                                 {view !== 'cities' && view !== 'itineraries' && view !== 'notifications' ? (
-                                    <button onClick={handleBack} className="text-[#007AFF] flex items-center -ml-2 active:opacity-50 transition-opacity">
+                                    <button onClick={handleBack} className="text-[#1C1C1E] flex items-center -ml-2 active:opacity-50 transition-opacity">
                                         <i className="fa-solid fa-chevron-left text-xl mr-1.5"></i>
                                         <span className="text-[17px]">Back</span>
                                     </button>
@@ -739,7 +747,7 @@
                                             else if (view === 'cities') openCityForm();
                                             else openForm();
                                         }}
-                                        className="text-[#007AFF] text-2xl active:opacity-50 transition-opacity -mr-1"
+                                        className="text-[#1C1C1E] text-2xl active:opacity-50 transition-opacity -mr-1"
                                     >
                                         <i className="fa-regular fa-square-plus font-light"></i>
                                     </button>
@@ -808,8 +816,13 @@
                         {/* VIEW: CITIES */}
                         {view === 'cities' && (
                             <div className="pb-6">
+                                <div className="pt-2 pb-8 px-2">
+                                    <h1 className="text-[40px] font-bold font-art leading-[1.05] text-[#1C1C1E] tracking-tight">
+                                        Vincent's<br/><span className="text-[#8E8E93] italic font-normal">Travelling</span><br/>System
+                                    </h1>
+                                </div>
                                 {dataHierarchy.uniqueCities.length === 0 ? (
-                                    <div className="text-center p-10 mt-10">
+                                    <div className="text-center p-10 mt-2">
                                         <i className="fa-regular fa-map text-5xl text-[#8E8E93] mb-4 opacity-50"></i>
                                         <h3 className="text-lg font-semibold text-[#1C1C1E] mb-1">No Places Yet</h3>
                                         <p className="text-[#8E8E93] text-sm">Tap the + button to add your first city or location.</p>
@@ -820,15 +833,15 @@
                                             <div key={cityName} className={`flex items-center justify-between p-3 pl-4 ${index !== dataHierarchy.uniqueCities.length - 1 ? 'border-b border-black/5' : ''}`}>
                                                 <div className="flex items-center flex-1 cursor-pointer active:opacity-50 transition-opacity" onClick={() => { setActiveCity(cityName); setView('categories'); }}>
                                                     {dataHierarchy.cities[cityName].photos && dataHierarchy.cities[cityName].photos.length > 0 ? (
-                                                        <img src={dataHierarchy.cities[cityName].photos} className="w-12 h-12 rounded-[12px] object-cover shrink-0 mr-3 shadow-sm" alt={cityName} />
+                                                        <img src={dataHierarchy.cities[cityName].photos} className="w-16 h-20 rounded-[12px] object-cover shrink-0 mr-4 shadow-sm" alt={cityName} />
                                                     ) : (
-                                                        <div className="bg-[#007AFF]/10 w-12 h-12 rounded-[12px] flex items-center justify-center mr-3 shrink-0">
-                                                            <i className="fa-solid fa-city text-[#007AFF] text-lg"></i>
+                                                        <div className="bg-[#1C1C1E]/5 w-16 h-20 rounded-[12px] flex items-center justify-center mr-4 shrink-0">
+                                                            <i className="fa-solid fa-image text-[#1C1C1E]/20 text-xl"></i>
                                                         </div>
                                                     )}
                                                     <div>
-                                                        <h3 className="text-[17px] font-normal text-[#1C1C1E]">{cityName}</h3>
-                                                        <p className="text-[13px] text-[#8E8E93] mt-0.5">{dataHierarchy.cities[cityName].count} Places</p>
+                                                        <h3 className="text-[20px] font-art font-bold text-[#1C1C1E] mb-1">{cityName}</h3>
+                                                        <p className="text-[11px] font-bold tracking-wider text-[#8E8E93] uppercase">{dataHierarchy.cities[cityName].count} Places</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex space-x-2 shrink-0">
@@ -952,11 +965,11 @@
                                 <div className="relative z-10 bg-[var(--ios-bg)] rounded-t-[32px] -mt-6 pt-6 px-4 min-h-[50vh]">
                                     <div className="flex justify-between items-start mb-6">
                                         <div>
-                                            <h2 className="text-[28px] font-bold text-[#1C1C1E] leading-tight tracking-tight mb-1">{locDetail.name}</h2>
-                                            <span className="text-[15px] text-[#8E8E93]">{locDetail.category || 'Uncategorized'}</span>
+                                            <h2 className="text-[32px] font-art font-bold text-[#1C1C1E] leading-tight tracking-tight mb-1">{locDetail.name}</h2>
+                                            <span className="text-[13px] tracking-widest uppercase font-semibold text-[#8E8E93]">{locDetail.category || 'Uncategorized'}</span>
                                         </div>
                                         <div className="flex space-x-2 shrink-0">
-                                            <button onClick={() => openForm(locDetail)} className="w-9 h-9 rounded-full bg-black/5 text-[#007AFF] flex items-center justify-center active:bg-black/10"><i className="fa-solid fa-pen text-sm"></i></button>
+                                            <button onClick={() => openForm(locDetail)} className="w-9 h-9 rounded-full bg-black/5 text-[#1C1C1E] flex items-center justify-center active:bg-black/10"><i className="fa-solid fa-pen text-sm"></i></button>
                                         </div>
                                     </div>
                                     
@@ -1326,14 +1339,14 @@
                         <div className="max-w-3xl mx-auto flex justify-around items-center h-14">
                             <button 
                                 onClick={() => setView('cities')} 
-                                className={`flex flex-col items-center justify-center w-full h-full pt-1 ${activeTab === 'places' ? 'text-[#007AFF]' : 'text-[#999999]'}`}
+                                className={`flex flex-col items-center justify-center w-full h-full pt-1 ${activeTab === 'places' ? 'text-[#1C1C1E]' : 'text-[#999999]'}`}
                             >
                                 <i className="fa-solid fa-map-location-dot text-[20px] mb-0.5"></i>
                                 <span className="text-[10px] font-medium tracking-wide">Places</span>
                             </button>
                             <button 
                                 onClick={() => setView('notifications')} 
-                                className={`flex flex-col items-center justify-center w-full h-full pt-1 relative ${activeTab === 'notifications' ? 'text-[#007AFF]' : 'text-[#999999]'}`}
+                                className={`flex flex-col items-center justify-center w-full h-full pt-1 relative ${activeTab === 'notifications' ? 'text-[#1C1C1E]' : 'text-[#999999]'}`}
                             >
                                 <div className="relative">
                                     <i className={unreadCount > 0 ? "fa-solid fa-bell text-[20px] mb-0.5" : "fa-regular fa-bell text-[20px] mb-0.5"}></i>
@@ -1347,7 +1360,7 @@
                             </button>
                             <button 
                                 onClick={() => setView('itineraries')} 
-                                className={`flex flex-col items-center justify-center w-full h-full pt-1 ${activeTab === 'itineraries' ? 'text-[#007AFF]' : 'text-[#999999]'}`}
+                                className={`flex flex-col items-center justify-center w-full h-full pt-1 ${activeTab === 'itineraries' ? 'text-[#1C1C1E]' : 'text-[#999999]'}`}
                             >
                                 <i className="fa-solid fa-calendar-day text-[20px] mb-0.5"></i>
                                 <span className="text-[10px] font-medium tracking-wide">Itineraries</span>
