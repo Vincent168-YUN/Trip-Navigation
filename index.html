@@ -793,9 +793,17 @@
                                 onClick={handleAlertClick}
                                 className="bg-white/90 backdrop-blur-xl shadow-xl shadow-slate-200/50 border border-slate-200/60 rounded-2xl p-3.5 w-full max-w-sm flex items-center pointer-events-auto cursor-pointer transition-transform active:scale-95"
                             >
-                                <div className="bg-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center shrink-0 mr-3 shadow-md shadow-indigo-200">
-                                    <i className={nearbyAlert.isStartup ? "fa-solid fa-map-pin" : "fa-solid fa-location-dot"}></i>
-                                </div>
+                                {nearbyAlert.photos && nearbyAlert.photos.length > 0 ? (
+                                    <img 
+                                        src={nearbyAlert.photos} 
+                                        alt={`${nearbyAlert.name} thumbnail`} 
+                                        className="w-10 h-10 rounded-full object-cover shrink-0 mr-3 shadow-sm border border-slate-200"
+                                    />
+                                ) : (
+                                    <div className="bg-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center shrink-0 mr-3 shadow-md shadow-indigo-200">
+                                        <i className={nearbyAlert.isStartup ? "fa-solid fa-map-pin" : "fa-solid fa-location-dot"}></i>
+                                    </div>
+                                )}
                                 <div className="flex-1 pr-2 overflow-hidden">
                                     <h4 className="text-sm font-bold text-slate-900 truncate">
                                         {nearbyAlert.isStartup ? 'Closest to you:' : 'Nearby:'} {nearbyAlert.name}
