@@ -93,8 +93,8 @@
 
         function formatDistance(distInKm) {
             if (distInKm == null || isNaN(distInKm)) return "Distance unknown";
-            if (distInKm < 1) return `${Math.round(distInKm * 1000)}m away`;
-            return `${Number(distInKm).toFixed(1)}km away`;
+            if (distInKm < 1) return `${Math.round(distInKm * 1000)}m`;
+            return `${Number(distInKm).toFixed(1)}km`;
         }
 
         function App() {
@@ -102,6 +102,7 @@
             const [user, setUser] = useState(null);
             const [authError, setAuthError] = useState('');
             const [liveLocation, setLiveLocation] = useState(null);
+            const [gpsAccuracy, setGpsAccuracy] = useState(null);
             const [geoError, setGeoError] = useState('');
             const [locations, setLocations] = useState([]);
             
@@ -219,8 +220,12 @@
                     return;
                 }
                 const watchId = navigator.geolocation.watchPosition(
-                    (pos) => { setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGeoError(''); },
-                    (err) => { setGeoError("Using Mock Location"); setLiveLocation({ lat: 11.5564, lng: 104.9282 }); },
+                    (pos) => { 
+                        setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); 
+                        setGpsAccuracy(pos.coords.accuracy);
+                        setGeoError(''); 
+                    },
+                    (err) => { setGeoError("Using Mock Location"); setLiveLocation({ lat: 11.5564, lng: 104.9282 }); setGpsAccuracy(null); },
                     { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
                 );
                 return () => navigator.geolocation.clearWatch(watchId);
@@ -376,7 +381,7 @@
                 const link = e.target.value;
                 setMapLink(link);
                 const match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-                if (match) {
+                if (match && match.length >= 3) {
                     setLat(match);
                     setLng(match);
                 }
@@ -433,6 +438,7 @@
                     navigator.geolocation.getCurrentPosition(
                         (pos) => {
                             setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                            setGpsAccuracy(pos.coords.accuracy);
                             setLat(pos.coords.latitude.toFixed(6));
                             setLng(pos.coords.longitude.toFixed(6));
                             setSaveError('');
@@ -854,11 +860,16 @@
                                         <i className="fa-solid fa-location-crosshairs text-amber-500 text-xs"></i>
                                     </div>
                                 ) : liveLocation ? (
-                                    <div className="bg-emerald-50 px-2 py-1 rounded border border-emerald-100 flex items-center space-x-1">
+                                    <div className="bg-emerald-50 px-2 py-1 rounded border border-emerald-100 flex items-center space-x-1" title={gpsAccuracy ? `GPS Accuracy: ±${Math.round(gpsAccuracy)}m` : 'GPS Active'}>
                                         <span className="relative flex h-2 w-2">
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                                         </span>
+                                        {gpsAccuracy && (
+                                            <span className="text-[10px] text-emerald-700 font-bold ml-1">
+                                                ±{Math.round(gpsAccuracy)}m
+                                            </span>
+                                        )}
                                     </div>
                                 ) : null}
                             </div>
@@ -1010,9 +1021,9 @@
                                                 </button>
                                             </div>
                                             
-                                            <div className="flex items-center text-sm text-teal-600 font-semibold mb-3 bg-teal-50 inline-flex px-2 py-0.5 rounded">
+                                            <div className="flex items-center text-sm text-teal-600 font-semibold mb-3 bg-teal-50 inline-flex px-2 py-0.5 rounded" title="Straight-line distance">
                                                 <i className="fa-solid fa-location-arrow mr-1.5 text-xs"></i>
-                                                {formatDistance(loc.currentDistance)}
+                                                {formatDistance(loc.currentDistance)} away
                                             </div>
                                         </div>
                                     </div>
@@ -1074,8 +1085,11 @@
                                     
                                     {/* Distance Indicator */}
                                     <div className="flex items-center text-teal-700 font-bold bg-teal-50 px-4 py-3 rounded-xl border border-teal-100">
-                                        <i className="fa-solid fa-location-arrow mr-3 text-teal-500 text-lg"></i>
-                                        Currently {formatDistance(liveLocation && locDetail.lat != null && locDetail.lng != null ? calculateDistance(liveLocation.lat, liveLocation.lng, locDetail.lat, locDetail.lng) : null)}
+                                        <i className="fa-solid fa-location-arrow mr-3 text-teal-500 text-xl"></i>
+                                        <div>
+                                            <div>Currently {formatDistance(liveLocation && locDetail.lat != null && locDetail.lng != null ? calculateDistance(liveLocation.lat, liveLocation.lng, locDetail.lat, locDetail.lng) : null)} away</div>
+                                            <div className="text-[10px] font-normal text-teal-600/80 uppercase tracking-wider mt-0.5">Straight-line distance (as the crow flies)</div>
+                                        </div>
                                     </div>
 
                                     {/* Info Panel */}
@@ -1398,7 +1412,7 @@
                                                         </div>
                                                     </div>
                                                     <div className="flex flex-col items-end shrink-0 pl-2 border-l border-slate-100">
-                                                        <span className="text-xs font-bold text-teal-600 bg-teal-50 px-2 py-1 rounded-md mb-1">{formatDistance(loc.currentDistance)}</span>
+                                                        <span className="text-xs font-bold text-teal-600 bg-teal-50 px-2 py-1 rounded-md mb-1" title="Straight-line distance">{formatDistance(loc.currentDistance)}</span>
                                                         <i className="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
                                                     </div>
                                                 </div>
