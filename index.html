@@ -82,9 +82,9 @@
         }
 
         function formatDistance(distInKm) {
-            if (distInKm === null) return "Distance unknown";
+            if (distInKm == null || isNaN(distInKm)) return "Distance unknown";
             if (distInKm < 1) return `${Math.round(distInKm * 1000)}m away`;
-            return `${distInKm.toFixed(1)}km away`;
+            return `${Number(distInKm).toFixed(1)}km away`;
         }
 
         function App() {
@@ -962,7 +962,7 @@
                                     {/* Distance Indicator */}
                                     <div className="flex items-center text-teal-700 font-bold bg-teal-50 px-4 py-3 rounded-xl border border-teal-100">
                                         <i className="fa-solid fa-location-arrow mr-3 text-teal-500 text-lg"></i>
-                                        Currently {formatDistance(locDetail.currentDistance)}
+                                        Currently {formatDistance(liveLocation && locDetail.lat != null && locDetail.lng != null ? calculateDistance(liveLocation.lat, liveLocation.lng, locDetail.lat, locDetail.lng) : null)}
                                     </div>
 
                                     {/* Info Panel */}
