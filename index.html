@@ -288,18 +288,39 @@
                 const title = isStartup ? 'Closest to you' : 'Nearby Location';
                 const body = `${loc.name} is ${formatDistance(loc.currentDistance)} away. Tap to view.`;
                 
-                const notification = new Notification(title, {
-                    body: body,
-                    icon: (loc.photos && loc.photos.length > 0) ? loc.photos : 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Globe_icon.svg/1024px-Globe_icon.svg.png',
-                });
+                try {
+                    const notification = new Notification(title, {
+                        body: body,
+                        // FIX: Ensure we only pass the first photo string, not the array
+                        icon: (Array.isArray(loc.photos) && loc.photos.length > 0) ? loc.photos : 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Globe_icon.svg/1024px-Globe_icon.svg.png',
+                        tag: 'wander-alert' // Groups notifications together so they don't spam your screen
+                    });
 
-                notification.onclick = function() {
-                    window.focus();
-                    setLocationReturnView('cities');
-                    setSelectedLocId(loc.id);
-                    setView('location_detail');
-                    this.close();
-                };
+                    notification.onclick = function(event) {
+                        // Prevent default browser behavior to ensure our manual routing works
+                        if (event && event.preventDefault) {
+                            event.preventDefault();
+                        }
+                        
+                        // Wake up the PWA window
+                        if (typeof window.focus === 'function') {
+                            window.focus();
+                        }
+
+                        // Delay the state update by 150ms. 
+                        // This gives the iOS WebView enough time to fully resume from the background
+                        // before asking React to re-render the screen.
+                        setTimeout(() => {
+                            setLocationReturnView('cities');
+                            setSelectedLocId(loc.id);
+                            setView('location_detail');
+                        }, 150);
+                        
+                        this.close();
+                    };
+                } catch (error) {
+                    console.error("Notification Error:", error);
+                }
             };
 
             // Nearby Alert Checker
