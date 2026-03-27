@@ -186,10 +186,8 @@
             // Derived active bottom tab
             const activeTab = (view.includes('itinerar')) ? 'itineraries' : 'places';
 
-            // Native Notification State
-            const [notifPermission, setNotifPermission] = useState(
-                typeof window !== 'undefined' && "Notification" in window ? Notification.permission : "unsupported"
-            );
+            // In-App Notification State
+            const [notifications, setNotifications] = useState([]);
             const alertedLocsRef = useRef(new Set());
             const initialAlertShownRef = useRef(false);
             
@@ -281,46 +279,23 @@
                 return () => navigator.geolocation.clearWatch(watchId);
             }, []);
 
-            // Helper to trigger Native Notification
-            const triggerNotification = (loc, isStartup) => {
-                if (!("Notification" in window) || Notification.permission !== "granted") return;
-
-                const title = isStartup ? 'Closest to you' : 'Nearby Location';
-                const body = `${loc.name} is ${formatDistance(loc.currentDistance)} away. Tap to view.`;
-                
-                try {
-                    const notification = new Notification(title, {
-                        body: body,
-                        // FIX: Ensure we only pass the first photo string, not the array
-                        icon: (Array.isArray(loc.photos) && loc.photos.length > 0) ? loc.photos : 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Globe_icon.svg/1024px-Globe_icon.svg.png',
-                        tag: 'wander-alert' // Groups notifications together so they don't spam your screen
-                    });
-
-                    notification.onclick = function(event) {
-                        // Prevent default browser behavior to ensure our manual routing works
-                        if (event && event.preventDefault) {
-                            event.preventDefault();
-                        }
-                        
-                        // Wake up the PWA window
-                        if (typeof window.focus === 'function') {
-                            window.focus();
-                        }
-
-                        // Delay the state update by 150ms. 
-                        // This gives the iOS WebView enough time to fully resume from the background
-                        // before asking React to re-render the screen.
-                        setTimeout(() => {
-                            setLocationReturnView('cities');
-                            setSelectedLocId(loc.id);
-                            setView('location_detail');
-                        }, 150);
-                        
-                        this.close();
-                    };
-                } catch (error) {
-                    console.error("Notification Error:", error);
-                }
+            // Helper to add In-App Notification
+            const addNotification = (loc, isStartup) => {
+                setNotifications(prev => {
+                    // Prevent duplicate unread notifications for the same location
+                    if (prev.some(n => n.locId === loc.id && !n.read)) return prev;
+                    
+                    return [{
+                        id: Date.now().toString() + Math.random(),
+                        locId: loc.id,
+                        name: loc.name,
+                        distance: loc.currentDistance,
+                        photos: loc.photos,
+                        isStartup: isStartup,
+                        timestamp: Date.now(),
+                        read: false
+                    }, ...prev];
+                });
             };
 
             // Nearby Alert Checker
@@ -353,11 +328,11 @@
                 });
 
                 if (!initialAlertShownRef.current && closestOverall) {
-                    triggerNotification(closestOverall, true);
+                    addNotification(closestOverall, true);
                     alertedLocsRef.current.add(closestOverall.id);
                     initialAlertShownRef.current = true;
                 } else if (closestNearby) {
-                    triggerNotification(closestNearby, false);
+                    addNotification(closestNearby, false);
                     alertedLocsRef.current.add(closestNearby.id);
                 }
             }, [liveLocation, locations, view, selectedLocId]);
@@ -409,6 +384,7 @@
                 if (view === 'photo_viewer') { setView(previousView); setFullScreenPhoto(null); } 
                 else if (view === 'form') { setView(previousView); } 
                 else if (view === 'city_form') { setView('cities'); } 
+                else if (view === 'notifications') { setView(previousView || 'cities'); }
                 else if (view === 'location_detail') { setView(locationReturnView); setSelectedLocId(null); } 
                 else if (view === 'category_list') { setView('categories'); setActiveCategory(null); } 
                 else if (view === 'categories') { setView('cities'); setActiveCity(null); } 
@@ -416,13 +392,6 @@
                 else if (view === 'itinerary_form') { setView('itineraries'); } 
                 else if (view === 'itinerary_select_location') { setView('itinerary_detail'); } 
                 else if (view === 'itinerary_item_form') { setView(previousView === 'itinerary_select_location' ? 'itinerary_select_location' : 'itinerary_detail'); }
-            };
-
-            const requestNotificationPermission = async () => {
-                if ("Notification" in window) {
-                    const permission = await Notification.requestPermission();
-                    setNotifPermission(permission);
-                }
             };
 
             // --- FORM HANDLERS ---
@@ -634,6 +603,7 @@
                 if (view === 'categories') return activeCity;
                 if (view === 'category_list') return activeCategory;
                 if (view === 'location_detail') return 'Details';
+                if (view === 'notifications') return 'Notifications';
                 if (view === 'itineraries') return 'Itineraries';
                 if (view === 'itinerary_detail') return 'Timesheet';
                 if (view === 'itinerary_form') return editId ? 'Edit Itinerary' : 'Plan a Day';
@@ -643,6 +613,7 @@
             };
 
             const canShowAddButton = ['cities', 'categories', 'category_list', 'itineraries', 'itinerary_detail'].includes(view);
+            const unreadCount = notifications.filter(n => !n.read).length;
 
             // --- RENDER VIEWS ---
             return (
@@ -719,13 +690,17 @@
 
                             {/* Right: Add Button & Notif Bell */}
                             <div className="w-1/3 flex items-center justify-end">
-                                {notifPermission === 'default' && (
+                                {view !== 'notifications' && (
                                     <button 
-                                        onClick={requestNotificationPermission} 
-                                        className="text-[#007AFF] text-xl active:opacity-50 transition-opacity mr-3"
-                                        title="Enable System Notifications"
+                                        onClick={() => { setPreviousView(view); setView('notifications'); }} 
+                                        className="relative text-[#007AFF] text-xl active:opacity-50 transition-opacity mr-3"
                                     >
-                                        <i className="fa-regular fa-bell"></i>
+                                        <i className={unreadCount > 0 ? "fa-solid fa-bell" : "fa-regular fa-bell"}></i>
+                                        {unreadCount > 0 && (
+                                            <span className="absolute -top-1.5 -right-1.5 bg-[#FF3B30] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border-2 border-[var(--ios-bg)] shadow-sm">
+                                                {unreadCount}
+                                            </span>
+                                        )}
                                     </button>
                                 )}
                                 {canShowAddButton && (
@@ -750,6 +725,55 @@
                         {/* ========================================================= */}
                         {/* MAIN VIEWS - LOCATIONS / PLACES                           */}
                         {/* ========================================================= */}
+
+                        {/* VIEW: NOTIFICATIONS LIST */}
+                        {view === 'notifications' && (
+                            <div className="pb-6">
+                                {notifications.length === 0 ? (
+                                    <div className="text-center p-10 mt-10">
+                                        <i className="fa-regular fa-bell text-5xl text-[#8E8E93] mb-4 opacity-50"></i>
+                                        <h3 className="text-lg font-semibold text-[#1C1C1E] mb-1">No Notifications</h3>
+                                        <p className="text-[#8E8E93] text-sm">Alerts for nearby locations will appear here.</p>
+                                    </div>
+                                ) : (
+                                    <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60">
+                                        {notifications.map((notif, index) => (
+                                            <div 
+                                                key={notif.id} 
+                                                className={`flex items-center justify-between p-3 pl-4 cursor-pointer transition-colors ${!notif.read ? 'bg-[#007AFF]/5' : 'active:bg-black/5'} ${index !== notifications.length - 1 ? 'border-b border-black/5' : ''}`}
+                                                onClick={() => {
+                                                    // Mark as read
+                                                    setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
+                                                    setLocationReturnView('notifications');
+                                                    setSelectedLocId(notif.locId);
+                                                    setView('location_detail');
+                                                }}
+                                            >
+                                                <div className="flex items-center flex-1 overflow-hidden">
+                                                    {Array.isArray(notif.photos) && notif.photos.length > 0 ? (
+                                                        <img src={notif.photos} className="w-12 h-12 rounded-[12px] object-cover shrink-0 mr-3 shadow-sm" alt="" />
+                                                    ) : (
+                                                        <div className="w-12 h-12 rounded-[12px] bg-[#007AFF] flex items-center justify-center text-white shrink-0 mr-3 shadow-sm">
+                                                            <i className={notif.isStartup ? "fa-solid fa-map-pin" : "fa-solid fa-location-dot"}></i>
+                                                        </div>
+                                                    )}
+                                                    <div className="truncate pr-2">
+                                                        <h4 className="text-[15px] font-semibold text-[#1C1C1E] truncate">{notif.name}</h4>
+                                                        <p className="text-[13px] text-[#8E8E93] truncate">
+                                                            {notif.isStartup ? 'Closest to you' : 'Nearby'} &bull; {formatDistance(notif.distance)}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center shrink-0 space-x-2 pl-2">
+                                                    {!notif.read && <div className="w-2.5 h-2.5 rounded-full bg-[#007AFF] shadow-sm"></div>}
+                                                    <i className="fa-solid fa-chevron-right text-[#C7C7CC] text-sm pr-1"></i>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* VIEW: CITIES */}
                         {view === 'cities' && (
