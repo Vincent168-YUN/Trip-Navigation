@@ -211,7 +211,11 @@
                 }
                 const watchId = navigator.geolocation.watchPosition(
                     (pos) => { setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGeoError(''); },
-                    (err) => { setGeoError("Mock Location Active"); setLiveLocation({ lat: 11.5564, lng: 104.9282 }); },
+                    (err) => { 
+                        // Removed the hardcoded mock location that was causing incorrect distances.
+                        // Now properly alerts the user if location access is blocked or unavailable.
+                        setGeoError("Location access denied or unavailable. Please enable GPS permissions."); 
+                    },
                     { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
                 );
                 return () => navigator.geolocation.clearWatch(watchId);
