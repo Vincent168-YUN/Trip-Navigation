@@ -40,6 +40,10 @@
             from { opacity: 0; }
             to { opacity: 1; }
         }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         .animate-slide-in { animation: slideIn 0.2s ease-out forwards; }
         .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
     </style>
@@ -126,6 +130,11 @@
             const [selectedLocId, setSelectedLocId] = useState(null);
             const [previousView, setPreviousView] = useState('cities');
             const [locationReturnView, setLocationReturnView] = useState('category_list');
+            
+            // Nearby Alert State
+            const [nearbyAlert, setNearbyAlert] = useState(null);
+            const alertedLocsRef = useRef(new Set());
+            const alertTimerRef = useRef(null);
             
             // Full Screen Image Viewer State
             const [fullScreenPhoto, setFullScreenPhoto] = useState(null); // { photos: [], index: 0 }
@@ -216,6 +225,41 @@
                 );
                 return () => navigator.geolocation.clearWatch(watchId);
             }, []);
+
+            // Nearby Alert Distance Checker
+            useEffect(() => {
+                if (!liveLocation || locations.length === 0) return;
+
+                let closestNearby = null;
+                let minDistance = 1.0; // 1km threshold
+
+                locations.forEach(loc => {
+                    if (loc.isCityMarker || loc.lat == null || loc.lng == null) return;
+                    
+                    const dist = calculateDistance(liveLocation.lat, liveLocation.lng, loc.lat, loc.lng);
+                    
+                    // If within 1km, hasn't been alerted this session, and user isn't already viewing it
+                    if (dist !== null && dist < 1.0) { 
+                        if (!alertedLocsRef.current.has(loc.id) && !(view === 'location_detail' && selectedLocId === loc.id)) {
+                            if (dist < minDistance) {
+                                minDistance = dist;
+                                closestNearby = { ...loc, currentDistance: dist };
+                            }
+                        }
+                    }
+                });
+
+                if (closestNearby) {
+                    setNearbyAlert(closestNearby);
+                    alertedLocsRef.current.add(closestNearby.id);
+                    
+                    // Auto-dismiss after 8 seconds
+                    if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
+                    alertTimerRef.current = setTimeout(() => {
+                        setNearbyAlert(null);
+                    }, 8000);
+                }
+            }, [liveLocation, locations, view, selectedLocId]);
 
             // 4. Auto-scroll Full Screen Image Carousel
             useEffect(() => {
@@ -308,6 +352,23 @@
                 } else if (view === 'itinerary_item_form') {
                     setView(previousView === 'itinerary_select_location' ? 'itinerary_select_location' : 'itinerary_detail');
                 }
+            };
+
+            const handleAlertClick = () => {
+                if (nearbyAlert) {
+                    if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
+                    setPreviousView(view);
+                    setLocationReturnView(view); // Return to whatever view we were currently on
+                    setSelectedLocId(nearbyAlert.id);
+                    setView('location_detail');
+                    setNearbyAlert(null);
+                }
+            };
+
+            const dismissAlert = (e) => {
+                e.stopPropagation();
+                if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
+                setNearbyAlert(null);
             };
 
             // --- FORM HANDLERS ---
@@ -702,6 +763,30 @@
             return (
                 <div className="min-h-screen bg-slate-50 pb-20 safe-bottom relative">
                     
+                    {/* NEARBY ALERT POPUP (iOS Style) */}
+                    {nearbyAlert && (
+                        <div className="fixed top-4 left-4 right-4 z- flex justify-center pointer-events-none safe-top" style={{ animation: 'slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards' }}>
+                            <div 
+                                onClick={handleAlertClick}
+                                className="bg-white/90 backdrop-blur-xl shadow-xl shadow-slate-200/50 border border-slate-200/60 rounded-2xl p-3.5 w-full max-w-sm flex items-center pointer-events-auto cursor-pointer transition-transform active:scale-95"
+                            >
+                                <div className="bg-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center shrink-0 mr-3 shadow-md shadow-indigo-200">
+                                    <i className="fa-solid fa-location-dot"></i>
+                                </div>
+                                <div className="flex-1 pr-2 overflow-hidden">
+                                    <h4 className="text-sm font-bold text-slate-900 truncate">Nearby: {nearbyAlert.name}</h4>
+                                    <p className="text-xs text-indigo-600 font-semibold truncate">{formatDistance(nearbyAlert.currentDistance)}</p>
+                                </div>
+                                <button 
+                                    onClick={dismissAlert}
+                                    className="w-8 h-8 rounded-full bg-slate-100/80 text-slate-400 flex items-center justify-center hover:bg-slate-200 active:bg-slate-300 transition-colors shrink-0"
+                                >
+                                    <i className="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     {/* FULL SCREEN PHOTO VIEWER PAGE */}
                     {view === 'photo_viewer' && fullScreenPhoto && (
                         <div className="fixed inset-0 z-50 bg-black flex flex-col animate-slide-in">
