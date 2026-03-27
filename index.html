@@ -497,10 +497,20 @@
                                 if (l.isCityMarker) return updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', l.id), { city: trimmedCity, photos: cityPhotos });
                                 return updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', l.id), { city: trimmedCity });
                             });
+                            
+                            // If there is no existing city profile marker, we create one now to hold the photos
+                            if (!cityMarker && cityPhotos.length > 0) {
+                                updatePromises.push(setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', Date.now().toString()), { isCityMarker: true, city: trimmedCity, photos: cityPhotos, timestamp: Date.now() }));
+                            }
                             await Promise.all(updatePromises);
-                        } else if (cityMarker) {
-                            // Just update the photos if name didn't change
-                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', cityMarker.id), { photos: cityPhotos });
+                        } else {
+                            if (cityMarker) {
+                                // Just update the photos if name didn't change
+                                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', cityMarker.id), { photos: cityPhotos });
+                            } else if (cityPhotos.length > 0) {
+                                // City exists but has no profile marker yet. Create it to save the photo.
+                                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', Date.now().toString()), { isCityMarker: true, city: trimmedCity, photos: cityPhotos, timestamp: Date.now() });
+                            }
                         }
                     } else {
                         await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', Date.now().toString()), { isCityMarker: true, city: trimmedCity, photos: cityPhotos, timestamp: Date.now() });
