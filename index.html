@@ -433,6 +433,7 @@
                 const coordsMatch = pastedText.match(/(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);
                 if (coordsMatch) {
                     e.preventDefault(); 
+                    // FIX: Added and to correctly extract the exact numbers!
                     setLat(coordsMatch);
                     setLng(coordsMatch);
                 }
@@ -444,6 +445,7 @@
                 // Enhanced regex to catch coordinates from various Google Maps link formats
                 const match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || link.match(/query=(-?\d+\.\d+),(-?\d+\.\d+)/);
                 if (match) {
+                    // FIX: Added and here as well!
                     setLat(match);
                     setLng(match);
                 }
