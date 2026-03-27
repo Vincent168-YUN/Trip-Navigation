@@ -137,7 +137,8 @@
             
             const [city, setCity] = useState('');
             const [category, setCategory] = useState('');
-            const [coordinates, setCoordinates] = useState('');
+            const [lat, setLat] = useState('');
+            const [lng, setLng] = useState('');
             const [mapLink, setMapLink] = useState('');
             const [photos, setPhotos] = useState([]); 
             const [saveError, setSaveError] = useState('');
@@ -237,7 +238,8 @@
                 setName('');
                 setCity(activeCity || 'Ho Chi Minh City');
                 setCategory(activeCategory || '');
-                setCoordinates('');
+                setLat('');
+                setLng('');
                 setMapLink('');
                 setPhotos([]);
                 setSaveError('');
@@ -250,7 +252,8 @@
                     setName(loc.name || '');
                     setCity(loc.city || 'Ho Chi Minh City');
                     setCategory(loc.category || 'Uncategorized');
-                    setCoordinates(`${loc.lat}, ${loc.lng}`);
+                    setLat(loc.lat != null ? loc.lat : '');
+                    setLng(loc.lng != null ? loc.lng : '');
                     setMapLink(loc.mapLink || '');
                     setPhotos([...(loc.photos || [])]);
                 } else {
@@ -306,7 +309,10 @@
                 const link = e.target.value;
                 setMapLink(link);
                 const match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-                if (match) setCoordinates(`${match}, ${match}`);
+                if (match) {
+                    setLat(match);
+                    setLng(match);
+                }
             };
 
             const processImage = (file) => {
@@ -352,7 +358,8 @@
 
             const useCurrentLocation = () => {
                 if (liveLocation) {
-                    setCoordinates(`${liveLocation.lat.toFixed(6)}, ${liveLocation.lng.toFixed(6)}`);
+                    setLat(liveLocation.lat.toFixed(6));
+                    setLng(liveLocation.lng.toFixed(6));
                     setSaveError('');
                 } else {
                     setSaveError("Live location not ready yet. Please ensure GPS is enabled.");
@@ -397,15 +404,10 @@
                 e.preventDefault();
                 setSaveError('');
                 
-                let parsedLat = null; let parsedLng = null;
-                if (coordinates) {
-                    const coordsMatch = coordinates.match(/(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);
-                    if (coordsMatch) {
-                        parsedLat = parseFloat(coordsMatch); parsedLng = parseFloat(coordsMatch);
-                    }
-                }
+                const parsedLat = parseFloat(lat);
+                const parsedLng = parseFloat(lng);
 
-                if (!name || !city || !category || parsedLat === null || parsedLng === null || isNaN(parsedLat) || isNaN(parsedLng)) {
+                if (!name || !city || !category || isNaN(parsedLat) || isNaN(parsedLng)) {
                     setSaveError("Please provide Name, City, Category, and valid Coordinates.");
                     return;
                 }
@@ -451,7 +453,7 @@
                             setActiveCity(null);
                         }
                     } catch (err) {
-                        alert("Delete failed: " + err.message);
+                        console.error("Delete failed: ", err.message);
                     }
                 });
             };
@@ -468,6 +470,7 @@
             // --- ITINERARY HANDLERS ---
             const openItineraryForm = (itin = null) => {
                 setPreviousView(view);
+                setSaveError('');
                 if (itin && itin.id) {
                     setEditId(itin.id);
                     setItinTitle(itin.title || '');
@@ -483,6 +486,7 @@
             const handleSaveItinerary = async (e) => {
                 e.preventDefault();
                 setIsSaving(true);
+                setSaveError('');
                 const data = { title: itinTitle, date: itinDate };
                 let isNew = false;
                 let currentItinId = editId;
@@ -513,11 +517,12 @@
                     } else {
                         handleBack();
                     }
-                } catch (err) { alert("Save failed: " + err.message); }
+                } catch (err) { setSaveError("Save failed: " + err.message); }
                 setIsSaving(false);
             };
 
             const openItineraryItemForm = (item = null) => {
+                setSaveError('');
                 if (item) {
                     setPreviousView(view);
                     setEditItinItemId(item.id);
@@ -547,6 +552,7 @@
             const handleSaveItineraryItem = async (e) => {
                 e.preventDefault();
                 setIsSaving(true);
+                setSaveError('');
                 const itin = itineraries.find(i => i.id === activeItinId);
                 if (!itin) return;
                 
@@ -1044,17 +1050,27 @@
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 gap-4 pt-2">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 flex justify-between">
-                                            Coordinates (Lat, Lng)
-                                            <button type="button" onClick={useCurrentLocation} className="text-indigo-600 font-bold active:opacity-70"><i className="fa-solid fa-crosshairs mr-1"></i>Current</button>
-                                        </label>
-                                        <input type="text" required value={coordinates} onChange={e => setCoordinates(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="11.5564, 104.9282" />
+                                <div className="pt-2">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Coordinates</label>
+                                        <button type="button" onClick={useCurrentLocation} className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-100 active:scale-95 transition-all">
+                                            <i className="fa-solid fa-crosshairs mr-1"></i> Use Current GPS
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Latitude</label>
+                                            <input type="number" step="any" required value={lat} onChange={e => setLat(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="11.5564" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Longitude</label>
+                                            <input type="number" step="any" required value={lng} onChange={e => setLng(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="104.9282" />
+                                        </div>
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Google Maps Link <span className="text-slate-400 font-normal lowercase">(optional)</span></label>
                                         <input type="url" value={mapLink} onChange={handleMapLinkChange} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Paste link to auto-fill coordinates" />
+                                        <p className="text-[10px] text-slate-400 mt-1"><i className="fa-solid fa-circle-info mr-1"></i>Pasting a Google Maps link will automatically extract Lat/Lng if available.</p>
                                     </div>
                                 </div>
 
@@ -1209,6 +1225,11 @@
                         {view === 'itinerary_form' && (
                             <form onSubmit={handleSaveItinerary} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
                                 <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2 mb-4">Plan a Day</h2>
+                                {saveError && (
+                                    <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200">
+                                        <i className="fa-solid fa-triangle-exclamation mr-2"></i>{saveError}
+                                    </div>
+                                )}
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Itinerary Title</label>
                                     <input type="text" required value={itinTitle} onChange={e => setItinTitle(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="e.g. Day 1: City Tour" />
@@ -1285,6 +1306,11 @@
                         {view === 'itinerary_item_form' && (
                             <form onSubmit={handleSaveItineraryItem} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
                                 <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2 mb-4">Event Details</h2>
+                                {saveError && (
+                                    <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200">
+                                        <i className="fa-solid fa-triangle-exclamation mr-2"></i>{saveError}
+                                    </div>
+                                )}
                                 
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Selected Location</label>
@@ -1343,7 +1369,7 @@
                     
                     {/* CUSTOM CONFIRM MODAL */}
                     {confirmDialog && (
-                        <div className="fixed inset-0 z- bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">
+                        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">
                             <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl animate-fade-in">
                                 <h3 className="text-lg font-bold text-slate-900 mb-2">Confirm Action</h3>
                                 <p className="text-slate-600 mb-6">{confirmDialog.message}</p>
