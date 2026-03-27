@@ -851,7 +851,7 @@
                                         onClick={() => { setLocationReturnView('category_list'); setSelectedLocId(loc.id); setView('location_detail'); }}
                                     >
                                         {/* Swipeable Image Carousel (Mini) */}
-                                        {loc.photos && loc.photos.length > 0 ? (
+                                        {Array.isArray(loc.photos) && loc.photos.length > 0 ? (
                                             <div className="relative w-full h-48 bg-slate-100 group">
                                                 <div className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide">
                                                     {loc.photos.map((p, idx) => (
@@ -911,7 +911,7 @@
                         {view === 'location_detail' && locDetail && (
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden pb-4">
                                 {/* Carousel (Large) */}
-                                {locDetail.photos && locDetail.photos.length > 0 ? (
+                                {Array.isArray(locDetail.photos) && locDetail.photos.length > 0 ? (
                                     <div className="relative w-full h-72 bg-slate-100">
                                         <div className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide">
                                             {locDetail.photos.map((p, idx) => (
@@ -972,7 +972,7 @@
                                                 <i className="fa-solid fa-map-pin mr-2 text-slate-400"></i> GPS Coordinates
                                             </span>
                                             <span className="text-sm font-mono text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm inline-block">
-                                                {locDetail.lat.toFixed(6)}, {locDetail.lng.toFixed(6)}
+                                                {locDetail.lat != null ? Number(locDetail.lat).toFixed(6) : 'N/A'}, {locDetail.lng != null ? Number(locDetail.lng).toFixed(6) : 'N/A'}
                                             </span>
                                         </div>
                                         
@@ -1177,7 +1177,7 @@
                                                                     
                                                                     {loc ? (
                                                                         <div className="flex items-center space-x-3 mt-2 bg-slate-50 p-2 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100" onClick={() => { setLocationReturnView('itinerary_detail'); setSelectedLocId(loc.id); setView('location_detail'); }}>
-                                                                            {loc.photos && loc.photos.length > 0 ? (
+                                                                            {Array.isArray(loc.photos) && loc.photos.length > 0 ? (
                                                                                 <img src={loc.photos} className="w-12 h-12 rounded object-cover" alt="Location preview" />
                                                                             ) : (
                                                                                 <div className="w-12 h-12 rounded bg-slate-200 flex items-center justify-center text-slate-400"><i className="fa-regular fa-image"></i></div>
@@ -1259,7 +1259,7 @@
                                                     onClick={() => handleSelectLocationForItinerary(loc.id)}
                                                 >
                                                     <div className="flex items-center flex-1 overflow-hidden">
-                                                        {loc.photos && loc.photos.length > 0 ? (
+                                                        {Array.isArray(loc.photos) && loc.photos.length > 0 ? (
                                                             <img src={loc.photos} className="w-12 h-12 rounded-xl object-cover shrink-0 mr-4" alt="" />
                                                         ) : (
                                                             <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 shrink-0 mr-4"><i className="fa-regular fa-image"></i></div>
