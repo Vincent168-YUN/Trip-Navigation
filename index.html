@@ -16,11 +16,6 @@
     
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Leaflet CSS & JS for Interactive Map Picker -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -142,24 +137,11 @@
             
             const [city, setCity] = useState('');
             const [category, setCategory] = useState('');
-            const [lat, setLat] = useState('');
-            const [lng, setLng] = useState('');
+            const [coordinates, setCoordinates] = useState('');
             const [mapLink, setMapLink] = useState('');
             const [photos, setPhotos] = useState([]); 
             const [saveError, setSaveError] = useState('');
             const [isSaving, setIsSaving] = useState(false);
-            
-            // Recommendation State
-            const [showRecommendation, setShowRecommendation] = useState(true);
-
-            // Nearby Alerts State
-            const [nearbyAlerts, setNearbyAlerts] = useState([]);
-            const [notifiedLocationIds, setNotifiedLocationIds] = useState(new Set());
-
-            // Leaflet Map Refs
-            const mapRef = useRef(null);
-            const leafletMap = useRef(null);
-            const leafletMarker = useRef(null);
 
             // --- EFFECTS ---
             // 1. Authenticate
@@ -222,50 +204,11 @@
                 }
                 const watchId = navigator.geolocation.watchPosition(
                     (pos) => { setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGeoError(''); },
-                    (err) => { 
-                        // Removed the hardcoded mock location that was causing incorrect distances.
-                        // Now properly alerts the user if location access is blocked or unavailable.
-                        setGeoError("Location access denied or unavailable. Please enable GPS permissions."); 
-                    },
+                    (err) => { setGeoError("Mock Location Active"); setLiveLocation({ lat: 11.5564, lng: 104.9282 }); },
                     { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
                 );
                 return () => navigator.geolocation.clearWatch(watchId);
             }, []);
-
-            // 3.5 Check for nearby locations (within 1km)
-            useEffect(() => {
-                if (!liveLocation || locations.length === 0) return;
-
-                const newAlerts = [];
-                const newNotifiedIds = new Set(notifiedLocationIds);
-
-                locations.forEach(loc => {
-                    if (loc.isCityMarker || loc.lat == null || loc.lng == null) return;
-                    
-                    const dist = calculateDistance(liveLocation.lat, liveLocation.lng, loc.lat, loc.lng);
-                    
-                    // If within 1km and hasn't been notified yet in this session
-                    if (dist !== null && dist <= 1.0 && !newNotifiedIds.has(loc.id)) {
-                        newAlerts.push({ ...loc, currentDistance: dist });
-                        newNotifiedIds.add(loc.id); // Mark as notified
-                    }
-                });
-
-                if (newAlerts.length > 0) {
-                    setNearbyAlerts(prev => [...prev, ...newAlerts]);
-                    setNotifiedLocationIds(newNotifiedIds);
-                }
-            }, [liveLocation, locations]);
-
-            // Auto-dismiss nearby alerts after 8 seconds
-            useEffect(() => {
-                if (nearbyAlerts.length > 0) {
-                    const timer = setTimeout(() => {
-                        setNearbyAlerts(prev => prev.slice(1)); // Remove the oldest alert
-                    }, 8000);
-                    return () => clearTimeout(timer);
-                }
-            }, [nearbyAlerts]);
 
             // 4. Auto-scroll Full Screen Image Carousel
             useEffect(() => {
@@ -288,77 +231,13 @@
                 }
             }, [view]);
 
-            // 6. Interactive Leaflet Map Initialization
-            useEffect(() => {
-                if (view === 'form') {
-                    // Small delay to ensure the div is fully rendered with height/width
-                    const timer = setTimeout(() => {
-                        if (mapRef.current && !leafletMap.current) {
-                            const initLat = parseFloat(lat) || (liveLocation ? liveLocation.lat : 11.5564);
-                            const initLng = parseFloat(lng) || (liveLocation ? liveLocation.lng : 104.9282);
-
-                            leafletMap.current = L.map(mapRef.current).setView([initLat, initLng], 15);
-                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                maxZoom: 19,
-                                attribution: '© OpenStreetMap'
-                            }).addTo(leafletMap.current);
-
-                            const customIcon = L.icon({
-                                iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-                                iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-                                shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-                                iconSize:,
-                                iconAnchor:
-                            });
-
-                            leafletMarker.current = L.marker([initLat, initLng], {draggable: true, icon: customIcon}).addTo(leafletMap.current);
-                            
-                            leafletMarker.current.on('dragend', function () {
-                                const position = leafletMarker.current.getLatLng();
-                                setLat(position.lat.toFixed(6));
-                                setLng(position.lng.toFixed(6));
-                            });
-
-                            leafletMap.current.on('click', function(event) {
-                                leafletMarker.current.setLatLng(event.latlng);
-                                setLat(event.latlng.lat.toFixed(6));
-                                setLng(event.latlng.lng.toFixed(6));
-                            });
-                        }
-                    }, 100);
-                    return () => clearTimeout(timer);
-                } else {
-                    if (leafletMap.current) {
-                        leafletMap.current.remove();
-                        leafletMap.current = null;
-                        leafletMarker.current = null;
-                    }
-                }
-            }, [view]);
-
-            // 7. Keep Map in Sync with Manual Input
-            useEffect(() => {
-                if (view === 'form' && leafletMap.current && leafletMarker.current) {
-                    const pLat = parseFloat(lat);
-                    const pLng = parseFloat(lng);
-                    if (!isNaN(pLat) && !isNaN(pLng)) {
-                        const currentLatLng = leafletMarker.current.getLatLng();
-                        if (Math.abs(currentLatLng.lat - pLat) > 0.0001 || Math.abs(currentLatLng.lng - pLng) > 0.0001) {
-                             leafletMarker.current.setLatLng([pLat, pLng]);
-                             leafletMap.current.setView([pLat, pLng]);
-                        }
-                    }
-                }
-            }, [lat, lng, view]);
-
             // --- NAVIGATION HANDLERS ---
             const resetForm = () => {
                 setEditId(null);
                 setName('');
                 setCity(activeCity || 'Ho Chi Minh City');
                 setCategory(activeCategory || '');
-                setLat('');
-                setLng('');
+                setCoordinates('');
                 setMapLink('');
                 setPhotos([]);
                 setSaveError('');
@@ -371,8 +250,7 @@
                     setName(loc.name || '');
                     setCity(loc.city || 'Ho Chi Minh City');
                     setCategory(loc.category || 'Uncategorized');
-                    setLat(loc.lat != null ? String(loc.lat) : '');
-                    setLng(loc.lng != null ? String(loc.lng) : '');
+                    setCoordinates(`${loc.lat}, ${loc.lng}`);
                     setMapLink(loc.mapLink || '');
                     setPhotos([...(loc.photos || [])]);
                 } else {
@@ -423,32 +301,12 @@
                 }
             };
 
-            const dismissNearbyAlert = (id) => {
-                setNearbyAlerts(prev => prev.filter(alert => alert.id !== id));
-            };
-
             // --- FORM HANDLERS ---
-            const handleCoordinatePaste = (e) => {
-                const pastedText = e.clipboardData.getData('text');
-                const coordsMatch = pastedText.match(/(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);
-                if (coordsMatch) {
-                    e.preventDefault(); 
-                    // Restored the missing and indices
-                    setLat(coordsMatch);
-                    setLng(coordsMatch);
-                }
-            };
-
             const handleMapLinkChange = (e) => {
                 const link = e.target.value;
                 setMapLink(link);
-                // Enhanced regex to catch coordinates from various Google Maps link formats
-                const match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || link.match(/query=(-?\d+\.\d+),(-?\d+\.\d+)/);
-                if (match) {
-                    // Restored the missing and indices
-                    setLat(match);
-                    setLng(match);
-                }
+                const match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+                if (match) setCoordinates(`${match}, ${match}`);
             };
 
             const processImage = (file) => {
@@ -494,8 +352,7 @@
 
             const useCurrentLocation = () => {
                 if (liveLocation) {
-                    setLat(liveLocation.lat.toFixed(6));
-                    setLng(liveLocation.lng.toFixed(6));
+                    setCoordinates(`${liveLocation.lat.toFixed(6)}, ${liveLocation.lng.toFixed(6)}`);
                     setSaveError('');
                 } else {
                     setSaveError("Live location not ready yet. Please ensure GPS is enabled.");
@@ -540,10 +397,15 @@
                 e.preventDefault();
                 setSaveError('');
                 
-                const parsedLat = parseFloat(lat); 
-                const parsedLng = parseFloat(lng);
+                let parsedLat = null; let parsedLng = null;
+                if (coordinates) {
+                    const coordsMatch = coordinates.match(/(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);
+                    if (coordsMatch) {
+                        parsedLat = parseFloat(coordsMatch); parsedLng = parseFloat(coordsMatch);
+                    }
+                }
 
-                if (!name || !city || !category || isNaN(parsedLat) || isNaN(parsedLng)) {
+                if (!name || !city || !category || parsedLat === null || parsedLng === null || isNaN(parsedLat) || isNaN(parsedLng)) {
                     setSaveError("Please provide Name, City, Category, and valid Coordinates.");
                     return;
                 }
@@ -797,13 +659,6 @@
                     sortedCategories: Object.keys(grouped).sort()
                 };
             }, [sortedLocationsForItinerary, searchQuery]);
-
-            // Find absolute closest location for recommendation
-            const closestLocation = useMemo(() => {
-                if (!liveLocation || sortedLocationsForItinerary.length === 0) return null;
-                // Since sortedLocationsForItinerary is already sorted by distance, the first item is the closest!
-                return sortedLocationsForItinerary;
-            }, [sortedLocationsForItinerary, liveLocation]);
             
             const locDetail = view === 'location_detail' && selectedLocId 
                 ? locations.find(l => l.id === selectedLocId) 
@@ -853,25 +708,6 @@
                         </div>
                     )}
 
-                    {/* NEARBY ALERTS TOAST */}
-                    <div className="fixed top-16 left-0 right-0 z-50 flex flex-col items-center space-y-2 px-4 pointer-events-none">
-                        {nearbyAlerts.map(alert => (
-                            <div key={alert.id} className="bg-indigo-600 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center justify-between w-full max-w-sm pointer-events-auto animate-slide-in border border-indigo-500">
-                                <div className="flex items-center space-x-3 cursor-pointer flex-1" onClick={() => { setLocationReturnView(view); setSelectedLocId(alert.id); setView('location_detail'); dismissNearbyAlert(alert.id); }}>
-                                    <div className="bg-white/20 w-10 h-10 rounded-full shrink-0 flex items-center justify-center">
-                                        <i className="fa-solid fa-bell animate-bounce"></i>
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Nearby Alert ({formatDistance(alert.currentDistance)})</p>
-                                        <p className="font-bold text-sm leading-tight truncate max-w-[200px]">{alert.name}</p>
-                                    </div>
-                                </div>
-                                <button onClick={() => dismissNearbyAlert(alert.id)} className="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-700/50 hover:bg-indigo-700 text-indigo-200 hover:text-white transition-colors ml-2 shrink-0 active:scale-90">
-                                    <i className="fa-solid fa-xmark"></i>
-                                </button>
-                            </div>
-                        ))}
-                    </div>
 
                     {/* APP HEADER */}
                     <header className="bg-white shadow-sm sticky top-0 z-40 border-b border-slate-200 safe-top">
@@ -937,30 +773,6 @@
                         {/* VIEW: CITIES */}
                         {view === 'cities' && (
                             <div className="space-y-3">
-                                {showRecommendation && closestLocation && closestLocation.currentDistance != null && (
-                                    <div className="mb-6 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-2xl p-4 shadow-md text-white relative animate-fade-in cursor-pointer hover:shadow-lg transition-shadow active:scale-[0.98]"
-                                         onClick={() => { setLocationReturnView('cities'); setSelectedLocId(closestLocation.id); setView('location_detail'); }}>
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); setShowRecommendation(false); }} 
-                                            className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center bg-white/20 hover:bg-white/30 rounded-full transition-colors"
-                                        >
-                                            <i className="fa-solid fa-xmark text-xs text-white"></i>
-                                        </button>
-                                        <div className="flex items-start">
-                                            <div className="bg-white/20 p-3 rounded-xl mr-4 flex items-center justify-center shrink-0">
-                                                <i className="fa-solid fa-location-crosshairs text-xl text-white"></i>
-                                            </div>
-                                            <div className="pr-4">
-                                                <p className="text-teal-50 text-xs font-bold uppercase tracking-wider mb-0.5">Closest to You</p>
-                                                <h3 className="font-bold text-lg leading-tight mb-1 text-white">{closestLocation.name}</h3>
-                                                <p className="text-sm font-medium text-emerald-100">
-                                                    {formatDistance(closestLocation.currentDistance)} &bull; {closestLocation.city}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
                                 <p className="text-sm text-slate-500 font-medium mb-4 px-1">Your Cities</p>
                                 {dataHierarchy.uniqueCities.length === 0 ? (
                                     <div className="text-center p-8 bg-white rounded-2xl border border-dashed border-slate-300 mt-8">
@@ -1232,24 +1044,13 @@
                                     </div>
                                 </div>
 
-                                <div className="pt-2">
-                                    <div className="flex justify-between items-end mb-1">
-                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Coordinates</label>
-                                        <button type="button" onClick={useCurrentLocation} className="text-indigo-600 text-xs font-bold active:opacity-70 bg-indigo-50 px-2 py-1 rounded"><i className="fa-solid fa-crosshairs mr-1"></i>Current GPS</button>
-                                    </div>
-                                    
-                                    {/* INTERACTIVE MAP PICKER */}
-                                    <div className="w-full h-48 bg-slate-200 rounded-xl mb-3 border border-slate-300 overflow-hidden relative z-0" ref={mapRef}>
-                                         <div className="absolute inset-0 flex items-center justify-center text-slate-400 font-medium">Loading Map...</div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4 mb-4">
-                                        <div>
-                                            <input type="text" onPaste={handleCoordinatePaste} required value={lat} onChange={e => setLat(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Lat (e.g. 11.55)" />
-                                        </div>
-                                        <div>
-                                            <input type="text" onPaste={handleCoordinatePaste} required value={lng} onChange={e => setLng(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Lng (e.g. 104.92)" />
-                                        </div>
+                                <div className="grid grid-cols-1 gap-4 pt-2">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 flex justify-between">
+                                            Coordinates (Lat, Lng)
+                                            <button type="button" onClick={useCurrentLocation} className="text-indigo-600 font-bold active:opacity-70"><i className="fa-solid fa-crosshairs mr-1"></i>Current</button>
+                                        </label>
+                                        <input type="text" required value={coordinates} onChange={e => setCoordinates(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="11.5564, 104.9282" />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Google Maps Link <span className="text-slate-400 font-normal lowercase">(optional)</span></label>
