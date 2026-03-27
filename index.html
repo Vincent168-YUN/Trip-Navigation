@@ -136,6 +136,7 @@
             const [nearbyAlert, setNearbyAlert] = useState(null);
             const alertedLocsRef = useRef(new Set());
             const alertTimerRef = useRef(null);
+            const initialAlertShownRef = useRef(false);
             
             // Full Screen Image Viewer State
             const [fullScreenPhoto, setFullScreenPhoto] = useState(null); // { photos: [], index: 0 }
@@ -236,33 +237,49 @@
                 if (!liveLocation || locations.length === 0) return;
 
                 let closestNearby = null;
-                let minDistance = 1.0; // 1km threshold
+                let closestOverall = null;
+                let minDistOverall = Infinity;
+                let minDistNearby = 1.0; // 1km threshold
 
                 locations.forEach(loc => {
                     if (loc.isCityMarker || loc.lat == null || loc.lng == null) return;
                     
                     const dist = calculateDistance(liveLocation.lat, liveLocation.lng, loc.lat, loc.lng);
+                    if (dist === null) return;
+
+                    // Track the absolute closest location for the startup alert
+                    if (dist < minDistOverall) {
+                        minDistOverall = dist;
+                        closestOverall = { ...loc, currentDistance: dist };
+                    }
                     
                     // If within 1km, hasn't been alerted this session, and user isn't already viewing it
-                    if (dist !== null && dist < 1.0) { 
+                    if (dist < 1.0) { 
                         if (!alertedLocsRef.current.has(loc.id) && !(view === 'location_detail' && selectedLocId === loc.id)) {
-                            if (dist < minDistance) {
-                                minDistance = dist;
+                            if (dist < minDistNearby) {
+                                minDistNearby = dist;
                                 closestNearby = { ...loc, currentDistance: dist };
                             }
                         }
                     }
                 });
 
-                if (closestNearby) {
-                    setNearbyAlert(closestNearby);
+                // Trigger startup alert for the absolute closest location on first GPS lock
+                if (!initialAlertShownRef.current && closestOverall) {
+                    setNearbyAlert({ ...closestOverall, isStartup: true });
+                    alertedLocsRef.current.add(closestOverall.id);
+                    initialAlertShownRef.current = true;
+                    
+                    if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
+                    alertTimerRef.current = setTimeout(() => { setNearbyAlert(null); }, 8000);
+                } 
+                // Trigger regular nearby alerts if within 1km
+                else if (closestNearby) {
+                    setNearbyAlert({ ...closestNearby, isStartup: false });
                     alertedLocsRef.current.add(closestNearby.id);
                     
-                    // Auto-dismiss after 8 seconds
                     if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
-                    alertTimerRef.current = setTimeout(() => {
-                        setNearbyAlert(null);
-                    }, 8000);
+                    alertTimerRef.current = setTimeout(() => { setNearbyAlert(null); }, 8000);
                 }
             }, [liveLocation, locations, view, selectedLocId]);
 
@@ -771,16 +788,18 @@
                     
                     {/* NEARBY ALERT POPUP (iOS Style) */}
                     {nearbyAlert && (
-                        <div className="fixed top-4 left-4 right-4 z- flex justify-center pointer-events-none safe-top" style={{ animation: 'slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards' }}>
+                        <div className="fixed top-4 left-4 right-4 z-50 flex justify-center pointer-events-none safe-top" style={{ animation: 'slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards' }}>
                             <div 
                                 onClick={handleAlertClick}
                                 className="bg-white/90 backdrop-blur-xl shadow-xl shadow-slate-200/50 border border-slate-200/60 rounded-2xl p-3.5 w-full max-w-sm flex items-center pointer-events-auto cursor-pointer transition-transform active:scale-95"
                             >
                                 <div className="bg-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center shrink-0 mr-3 shadow-md shadow-indigo-200">
-                                    <i className="fa-solid fa-location-dot"></i>
+                                    <i className={nearbyAlert.isStartup ? "fa-solid fa-map-pin" : "fa-solid fa-location-dot"}></i>
                                 </div>
                                 <div className="flex-1 pr-2 overflow-hidden">
-                                    <h4 className="text-sm font-bold text-slate-900 truncate">Nearby: {nearbyAlert.name}</h4>
+                                    <h4 className="text-sm font-bold text-slate-900 truncate">
+                                        {nearbyAlert.isStartup ? 'Closest to you:' : 'Nearby:'} {nearbyAlert.name}
+                                    </h4>
                                     <p className="text-xs text-indigo-600 font-semibold truncate">{formatDistance(nearbyAlert.currentDistance)}</p>
                                 </div>
                                 <button 
