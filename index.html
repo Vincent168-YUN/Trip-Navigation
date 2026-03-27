@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <!-- This meta tag ensures the app looks native on iOS and Android without awkward zooming -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WanderTracker Live</title>
+    <title>Vincent's Travelling System</title>
     
     <!-- Apple/iOS Web App settings for adding to Home Screen -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -184,7 +184,7 @@
             const [locationReturnView, setLocationReturnView] = useState('category_list');
             
             // Derived active bottom tab
-            const activeTab = (view.includes('itinerar')) ? 'itineraries' : 'places';
+            const activeTab = view === 'notifications' ? 'notifications' : (view.includes('itinerar') ? 'itineraries' : 'places');
 
             // In-App Notification State
             const [notifications, setNotifications] = useState([]);
@@ -201,8 +201,11 @@
             // Form State
             const [editId, setEditId] = useState(null);
             const [name, setName] = useState('');
+            
             const [editingCityName, setEditingCityName] = useState(null); 
             const [newCityName, setNewCityName] = useState(''); 
+            const [cityPhotos, setCityPhotos] = useState([]); // Array for custom city photos
+            
             const [city, setCity] = useState('');
             const [category, setCategory] = useState('');
             const [lat, setLat] = useState('');
@@ -298,6 +301,11 @@
                 });
             };
 
+            const deleteNotification = (e, id) => {
+                e.stopPropagation();
+                setNotifications(prev => prev.filter(n => n.id !== id));
+            };
+
             // Nearby Alert Checker
             useEffect(() => {
                 if (!liveLocation || locations.length === 0) return;
@@ -375,8 +383,13 @@
 
             const openCityForm = (cityName = null) => {
                 setPreviousView(view); setSaveError('');
-                if (cityName) { setEditingCityName(cityName); setNewCityName(cityName); } 
-                else { setEditingCityName(null); setNewCityName(''); }
+                if (cityName) { 
+                    setEditingCityName(cityName); setNewCityName(cityName); 
+                    const cityMarker = locations.find(l => l.isCityMarker && (l.city || 'Ho Chi Minh City') === cityName);
+                    setCityPhotos(cityMarker && cityMarker.photos ? [...cityMarker.photos] : []);
+                } else { 
+                    setEditingCityName(null); setNewCityName(''); setCityPhotos([]); 
+                }
                 setView('city_form');
             };
 
@@ -434,6 +447,18 @@
             };
             const removePhoto = (index) => { setPhotos(prev => prev.filter((_, i) => i !== index)); };
 
+            const handleCityFiles = async (e) => {
+                const files = Array.from(e.target.files).filter(f => f.type.startsWith('image'));
+                if (!files.length) return;
+                setIsSaving(true);
+                try {
+                    const newPhotos = await Promise.all(files.map(processImage));
+                    setCityPhotos(prev => [...prev, ...newPhotos]);
+                } catch (err) { setSaveError("Error processing images."); } 
+                finally { setIsSaving(false); e.target.value = null; }
+            };
+            const removeCityPhoto = (index) => { setCityPhotos(prev => prev.filter((_, i) => i !== index)); };
+
             const useCurrentLocation = () => {
                 if (liveLocation && liveLocation.lat != null && liveLocation.lng != null) {
                     setLat(liveLocation.lat.toFixed(6)); setLng(liveLocation.lng.toFixed(6)); setSaveError('');
@@ -455,15 +480,24 @@
                 setIsSaving(true);
                 try {
                     if (editingCityName) {
+                        const cityMarker = locations.find(l => l.isCityMarker && (l.city || 'Ho Chi Minh City') === editingCityName);
+
                         if (trimmedCity !== editingCityName) {
+                            // Update names across all locations inside the city
                             const locsToUpdate = locations.filter(l => (l.city || 'Ho Chi Minh City') === editingCityName);
-                            const updatePromises = locsToUpdate.map(l => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', l.id), { city: trimmedCity }));
+                            const updatePromises = locsToUpdate.map(l => {
+                                if (l.isCityMarker) return updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', l.id), { city: trimmedCity, photos: cityPhotos });
+                                return updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', l.id), { city: trimmedCity });
+                            });
                             await Promise.all(updatePromises);
+                        } else if (cityMarker) {
+                            // Just update the photos if name didn't change
+                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', cityMarker.id), { photos: cityPhotos });
                         }
                     } else {
-                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', Date.now().toString()), { isCityMarker: true, city: trimmedCity, timestamp: Date.now() });
+                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', Date.now().toString()), { isCityMarker: true, city: trimmedCity, photos: cityPhotos, timestamp: Date.now() });
                     }
-                    setNewCityName(''); setEditingCityName(null); setActiveCity(trimmedCity); setPreviousView('cities'); setView('categories'); 
+                    setNewCityName(''); setEditingCityName(null); setCityPhotos([]); setActiveCity(trimmedCity); setPreviousView('cities'); setView('categories'); 
                 } catch (err) { setSaveError("Save failed: " + err.message); } finally { setIsSaving(false); }
             };
 
@@ -567,8 +601,15 @@
                 const cities = {}; const allCategories = new Set();
                 locations.forEach(loc => {
                     const cName = loc.city || 'Ho Chi Minh City';
-                    if (!cities[cName]) cities[cName] = { count: 0, categories: {} };
-                    if (loc.isCityMarker) return; 
+                    if (!cities[cName]) cities[cName] = { count: 0, categories: {}, photos: [] };
+                    
+                    if (loc.isCityMarker) {
+                        if (loc.photos && loc.photos.length > 0) {
+                            cities[cName].photos = loc.photos;
+                        }
+                        return; 
+                    }
+                    
                     const catName = loc.category || 'Uncategorized'; allCategories.add(catName);
                     if (!cities[cName].categories[catName]) cities[cName].categories[catName] = [];
                     const dist = liveLocation ? calculateDistance(liveLocation.lat, liveLocation.lng, loc.lat, loc.lng) : null;
@@ -598,7 +639,7 @@
 
             // HELPER: iOS Native Header Title
             const getHeaderTitle = () => {
-                if (view === 'cities') return 'Places';
+                if (view === 'cities') return "Vincent's Travelling System";
                 if (view === 'city_form') return editingCityName ? 'Edit City' : 'Add City';
                 if (view === 'categories') return activeCity;
                 if (view === 'category_list') return activeCategory;
@@ -657,7 +698,7 @@
                         <div className="max-w-3xl mx-auto px-4 h-12 flex justify-between items-center relative">
                             {/* Left: Back Button or GPS */}
                             <div className="w-1/3 flex items-center justify-start">
-                                {view !== 'cities' && view !== 'itineraries' ? (
+                                {view !== 'cities' && view !== 'itineraries' && view !== 'notifications' ? (
                                     <button onClick={handleBack} className="text-[#007AFF] flex items-center -ml-2 active:opacity-50 transition-opacity">
                                         <i className="fa-solid fa-chevron-left text-xl mr-1.5"></i>
                                         <span className="text-[17px]">Back</span>
@@ -688,21 +729,8 @@
                                 </h1>
                             </div>
 
-                            {/* Right: Add Button & Notif Bell */}
+                            {/* Right: Add Button */}
                             <div className="w-1/3 flex items-center justify-end">
-                                {view !== 'notifications' && (
-                                    <button 
-                                        onClick={() => { setPreviousView(view); setView('notifications'); }} 
-                                        className="relative text-[#007AFF] text-xl active:opacity-50 transition-opacity mr-3"
-                                    >
-                                        <i className={unreadCount > 0 ? "fa-solid fa-bell" : "fa-regular fa-bell"}></i>
-                                        {unreadCount > 0 && (
-                                            <span className="absolute -top-1.5 -right-1.5 bg-[#FF3B30] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border-2 border-[var(--ios-bg)] shadow-sm">
-                                                {unreadCount}
-                                            </span>
-                                        )}
-                                    </button>
-                                )}
                                 {canShowAddButton && (
                                     <button 
                                         onClick={() => {
@@ -764,9 +792,11 @@
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center shrink-0 space-x-2 pl-2">
+                                                <div className="flex items-center shrink-0 space-x-3 pl-2">
                                                     {!notif.read && <div className="w-2.5 h-2.5 rounded-full bg-[#007AFF] shadow-sm"></div>}
-                                                    <i className="fa-solid fa-chevron-right text-[#C7C7CC] text-sm pr-1"></i>
+                                                    <button onClick={(e) => deleteNotification(e, notif.id)} className="text-[#FF3B30] active:opacity-50 p-2">
+                                                        <i className="fa-solid fa-trash-can"></i>
+                                                    </button>
                                                 </div>
                                             </div>
                                         ))}
@@ -789,9 +819,13 @@
                                         {dataHierarchy.uniqueCities.map((cityName, index) => (
                                             <div key={cityName} className={`flex items-center justify-between p-3 pl-4 ${index !== dataHierarchy.uniqueCities.length - 1 ? 'border-b border-black/5' : ''}`}>
                                                 <div className="flex items-center flex-1 cursor-pointer active:opacity-50 transition-opacity" onClick={() => { setActiveCity(cityName); setView('categories'); }}>
-                                                    <div className="bg-[#007AFF]/10 w-9 h-9 rounded-lg flex items-center justify-center mr-3 shrink-0">
-                                                        <i className="fa-solid fa-city text-[#007AFF] text-sm"></i>
-                                                    </div>
+                                                    {dataHierarchy.cities[cityName].photos && dataHierarchy.cities[cityName].photos.length > 0 ? (
+                                                        <img src={dataHierarchy.cities[cityName].photos} className="w-12 h-12 rounded-[12px] object-cover shrink-0 mr-3 shadow-sm" alt={cityName} />
+                                                    ) : (
+                                                        <div className="bg-[#007AFF]/10 w-12 h-12 rounded-[12px] flex items-center justify-center mr-3 shrink-0">
+                                                            <i className="fa-solid fa-city text-[#007AFF] text-lg"></i>
+                                                        </div>
+                                                    )}
                                                     <div>
                                                         <h3 className="text-[17px] font-normal text-[#1C1C1E]">{cityName}</h3>
                                                         <p className="text-[13px] text-[#8E8E93] mt-0.5">{dataHierarchy.cities[cityName].count} Places</p>
@@ -959,17 +993,43 @@
 
                         {/* VIEW: ADD OR EDIT CITY FORM */}
                         {view === 'city_form' && (
-                            <form onSubmit={handleSaveCity} className="bg-[var(--ios-glass)] backdrop-blur-2xl p-5 rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 space-y-5">
+                            <form onSubmit={handleSaveCity} className="space-y-4 pb-6">
                                 {saveError && (
                                     <div className="p-3 bg-[#FF3B30]/10 text-[#FF3B30] text-[13px] rounded-[10px]">
                                         <i className="fa-solid fa-circle-exclamation mr-1.5"></i>{saveError}
                                     </div>
                                 )}
-                                <div>
-                                    <label className="block text-[13px] font-medium text-[#8E8E93] mb-1.5 uppercase ml-1">City Name</label>
-                                    <input type="text" required value={newCityName} onChange={e => setNewCityName(e.target.value)} className="w-full px-4 py-3.5 ios-input focus:outline-none text-[17px]" placeholder="Tokyo, Japan" autoFocus />
+                                
+                                <div className="bg-[var(--ios-glass)] backdrop-blur-2xl p-5 rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 space-y-5">
+                                    <div>
+                                        <label className="block text-[13px] font-medium text-[#8E8E93] mb-1.5 uppercase ml-1">City Name</label>
+                                        <input type="text" required value={newCityName} onChange={e => setNewCityName(e.target.value)} className="w-full px-4 py-3.5 ios-input focus:outline-none text-[17px]" placeholder="Tokyo, Japan" autoFocus />
+                                    </div>
                                 </div>
-                                <button type="submit" disabled={isSaving || !newCityName.trim()} className="w-full py-3.5 bg-[#007AFF] disabled:opacity-50 text-white font-semibold text-[17px] rounded-[14px] active:scale-[0.98] transition-transform">
+
+                                <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 p-4">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-[17px] text-[#1C1C1E]">City Photo</span>
+                                        <label className="text-[15px] font-medium text-[#007AFF] cursor-pointer active:opacity-50">
+                                            Add Photo
+                                            <input type="file" accept="image/*" className="hidden" onChange={handleCityFiles} disabled={isSaving} />
+                                        </label>
+                                    </div>
+                                    {cityPhotos.length > 0 ? (
+                                        <div className="flex overflow-x-auto space-x-3 pb-2 scrollbar-hide snap-x">
+                                            {cityPhotos.map((p, i) => (
+                                                <div key={i} className="relative w-20 h-20 flex-shrink-0 snap-start rounded-[14px] overflow-hidden border border-black/5">
+                                                    <img src={p} className="w-full h-full object-cover" alt="Preview" />
+                                                    <button type="button" onClick={() => removeCityPhoto(i)} className="absolute top-1 right-1 bg-black/50 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px]"><i className="fa-solid fa-xmark"></i></button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-[13px] text-[#8E8E93]">No photos added.</p>
+                                    )}
+                                </div>
+
+                                <button type="submit" disabled={isSaving || !newCityName.trim()} className="w-full py-3.5 bg-[#007AFF] disabled:opacity-50 text-white font-semibold text-[17px] rounded-[14px] active:scale-[0.98] transition-transform mt-4">
                                     {isSaving ? <i className="fa-solid fa-spinner fa-spin"></i> : editingCityName ? 'Update' : 'Add City'}
                                 </button>
                             </form>
@@ -1270,6 +1330,20 @@
                             >
                                 <i className="fa-solid fa-map-location-dot text-[20px] mb-0.5"></i>
                                 <span className="text-[10px] font-medium tracking-wide">Places</span>
+                            </button>
+                            <button 
+                                onClick={() => setView('notifications')} 
+                                className={`flex flex-col items-center justify-center w-full h-full pt-1 relative ${activeTab === 'notifications' ? 'text-[#007AFF]' : 'text-[#999999]'}`}
+                            >
+                                <div className="relative">
+                                    <i className={unreadCount > 0 ? "fa-solid fa-bell text-[20px] mb-0.5" : "fa-regular fa-bell text-[20px] mb-0.5"}></i>
+                                    {unreadCount > 0 && (
+                                        <span className="absolute -top-1.5 -right-2 bg-[#FF3B30] text-white text-[10px] font-bold px-1 rounded-full min-w-[16px] text-center border-2 border-[var(--ios-glass)]">
+                                            {unreadCount}
+                                        </span>
+                                    )}
+                                </div>
+                                <span className="text-[10px] font-medium tracking-wide mt-0.5">Alerts</span>
                             </button>
                             <button 
                                 onClick={() => setView('itineraries')} 
