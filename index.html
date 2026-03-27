@@ -60,8 +60,13 @@
             from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
         .animate-slide-in { animation: slideIn 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
         .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        .animate-pop-in { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 
         /* Custom Input Styling for iOS look */
         .ios-input {
@@ -612,25 +617,43 @@
                         <div className="orb-3"></div>
                     </div>
 
-                    {/* NEARBY ALERT POPUP (iOS Style) */}
+                    {/* NEARBY ALERT POPUP (iOS Style - Centered) */}
                     {nearbyAlert && (
-                        <div className="fixed top-4 left-4 right-4 z- flex justify-center pointer-events-none safe-top" style={{ animation: 'slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards' }}>
-                            <div onClick={handleAlertClick} className="bg-[var(--ios-glass)] backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-[24px] p-3.5 w-full max-w-sm flex items-center pointer-events-auto cursor-pointer transition-transform active:scale-95 border border-white/40">
+                        <div className="fixed inset-0 z- flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-fade-in pointer-events-auto" onClick={dismissAlert}>
+                            <div 
+                                onClick={(e) => { e.stopPropagation(); handleAlertClick(); }}
+                                className="bg-[var(--ios-glass)] backdrop-blur-3xl shadow-[0_20px_40px_rgb(0,0,0,0.2)] rounded-[32px] p-6 w-full max-w-[300px] flex flex-col items-center cursor-pointer transition-transform active:scale-95 border border-white/60 animate-pop-in relative"
+                            >
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); dismissAlert(e); }}
+                                    className="absolute top-4 right-4 w-7 h-7 rounded-full bg-black/5 text-[#8E8E93] flex items-center justify-center hover:bg-black/10 transition-colors"
+                                >
+                                    <i className="fa-solid fa-xmark text-sm"></i>
+                                </button>
+
                                 {nearbyAlert.photos && nearbyAlert.photos.length > 0 ? (
-                                    <img src={nearbyAlert.photos} alt="thumb" className="w-11 h-11 rounded-full object-cover shrink-0 mr-3 shadow-sm border border-black/5" />
+                                    <img src={nearbyAlert.photos} alt="thumb" className="w-24 h-24 rounded-full object-cover shrink-0 shadow-md border-4 border-white mb-4" />
                                 ) : (
-                                    <div className="bg-[#007AFF] text-white w-11 h-11 rounded-full flex items-center justify-center shrink-0 mr-3 shadow-sm">
-                                        <i className={nearbyAlert.isStartup ? "fa-solid fa-map-pin" : "fa-solid fa-location-dot"}></i>
+                                    <div className="bg-[#007AFF] text-white w-24 h-24 rounded-full flex items-center justify-center shrink-0 shadow-md border-4 border-white mb-4">
+                                        <i className={`${nearbyAlert.isStartup ? "fa-solid fa-map-pin" : "fa-solid fa-location-dot"} text-4xl`}></i>
                                     </div>
                                 )}
-                                <div className="flex-1 pr-2 overflow-hidden">
-                                    <h4 className="text-[15px] font-semibold text-[#1C1C1E] truncate tracking-tight">
-                                        {nearbyAlert.isStartup ? 'Closest to you' : 'Nearby'}
-                                    </h4>
-                                    <p className="text-[13px] text-[#8E8E93] truncate">{nearbyAlert.name} &bull; {formatDistance(nearbyAlert.currentDistance)}</p>
-                                </div>
-                                <button onClick={dismissAlert} className="w-8 h-8 rounded-full bg-black/5 text-[#8E8E93] flex items-center justify-center hover:bg-black/10 transition-colors shrink-0">
-                                    <i className="fa-solid fa-xmark text-sm"></i>
+                                
+                                <h4 className="text-[13px] font-bold text-[#8E8E93] uppercase tracking-wider mb-1.5">
+                                    {nearbyAlert.isStartup ? 'Closest to you' : 'Nearby'}
+                                </h4>
+                                <h3 className="text-[24px] font-bold text-[#1C1C1E] text-center leading-tight tracking-tight mb-1">
+                                    {nearbyAlert.name}
+                                </h3>
+                                <p className="text-[16px] text-[#007AFF] font-semibold mb-6">
+                                    {formatDistance(nearbyAlert.currentDistance)}
+                                </p>
+                                
+                                <button 
+                                    className="w-full py-3.5 bg-[#007AFF] text-white font-semibold text-[17px] rounded-[14px] active:opacity-80 transition-opacity"
+                                    onClick={(e) => { e.stopPropagation(); handleAlertClick(); }}
+                                >
+                                    View Details
                                 </button>
                             </div>
                         </div>
