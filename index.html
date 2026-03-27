@@ -119,6 +119,7 @@
             const [activeCategory, setActiveCategory] = useState(null);
             const [selectedLocId, setSelectedLocId] = useState(null);
             const [previousView, setPreviousView] = useState('cities');
+            const [locationReturnView, setLocationReturnView] = useState('category_list');
             
             // Full Screen Image Viewer State
             const [fullScreenPhoto, setFullScreenPhoto] = useState(null); // { photos: [], index: 0 }
@@ -280,7 +281,7 @@
                 } else if (view === 'city_form') {
                     setView('cities');
                 } else if (view === 'location_detail') {
-                    setView('category_list');
+                    setView(locationReturnView);
                     setSelectedLocId(null);
                 } else if (view === 'category_list') {
                     setView('categories');
@@ -847,7 +848,7 @@
                                     <div 
                                         key={loc.id} 
                                         className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow active:bg-slate-50"
-                                        onClick={() => { setSelectedLocId(loc.id); setView('location_detail'); }}
+                                        onClick={() => { setLocationReturnView('category_list'); setSelectedLocId(loc.id); setView('location_detail'); }}
                                     >
                                         {/* Swipeable Image Carousel (Mini) */}
                                         {loc.photos && loc.photos.length > 0 ? (
@@ -1175,16 +1176,17 @@
                                                                     </div>
                                                                     
                                                                     {loc ? (
-                                                                        <div className="flex items-center space-x-3 mt-2 bg-slate-50 p-2 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100" onClick={() => { setSelectedLocId(loc.id); setView('location_detail'); }}>
+                                                                        <div className="flex items-center space-x-3 mt-2 bg-slate-50 p-2 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100" onClick={() => { setLocationReturnView('itinerary_detail'); setSelectedLocId(loc.id); setView('location_detail'); }}>
                                                                             {loc.photos && loc.photos.length > 0 ? (
                                                                                 <img src={loc.photos} className="w-12 h-12 rounded object-cover" alt="Location preview" />
                                                                             ) : (
                                                                                 <div className="w-12 h-12 rounded bg-slate-200 flex items-center justify-center text-slate-400"><i className="fa-regular fa-image"></i></div>
                                                                             )}
-                                                                            <div>
+                                                                            <div className="flex-1">
                                                                                 <p className="font-bold text-slate-800 text-sm">{loc.name}</p>
                                                                                 <p className="text-xs text-slate-500">{loc.city || 'Ho Chi Minh City'} &bull; {loc.category || 'Uncategorized'}</p>
                                                                             </div>
+                                                                            <i className="fa-solid fa-chevron-right text-slate-300 text-xs pr-2"></i>
                                                                         </div>
                                                                     ) : item.locationId ? (
                                                                         <p className="text-sm text-red-500 italic mt-2"><i className="fa-solid fa-triangle-exclamation mr-1"></i>Location was deleted</p>
