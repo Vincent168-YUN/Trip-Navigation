@@ -579,9 +579,17 @@
             const handleSaveLocation = async (e) => {
                 e.preventDefault(); setSaveError('');
                 const parsedLat = parseFloat(lat); const parsedLng = parseFloat(lng);
-                if (!name || !city || !category || isNaN(parsedLat) || isNaN(parsedLng)) { setSaveError("Please provide Name, City, Category, and valid Coordinates."); return; }
+                
+                // Removed the requirement for parsedLat and parsedLng
+                if (!name || !city || !category) { setSaveError("Please provide Name, City, and Category."); return; }
+                
                 setIsSaving(true);
-                const locationData = { name, city, category, lat: parsedLat, lng: parsedLng, mapLink, photos };
+                const locationData = { 
+                    name, city, category, 
+                    lat: !isNaN(parsedLat) ? parsedLat : null, 
+                    lng: !isNaN(parsedLng) ? parsedLng : null, 
+                    mapLink, photos 
+                };
                 if (!editId) locationData.timestamp = Date.now();
                 try {
                     if (editId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', editId), locationData); } 
@@ -1186,7 +1194,7 @@
 
                                 <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 overflow-hidden">
                                     <div className="p-3.5 border-b border-black/5 flex justify-between items-center bg-[#007AFF]/5">
-                                        <span className="text-[15px] font-medium text-[#007AFF]">GPS Coordinates</span>
+                                        <span className="text-[15px] font-medium text-[#007AFF]">GPS Coordinates (Optional)</span>
                                         <div className="flex space-x-2">
                                             <button type="button" onClick={useCurrentLocation} className="text-[13px] font-semibold text-white bg-[#007AFF] px-3 py-1 rounded-full active:opacity-70">
                                                 Get Current
@@ -1195,11 +1203,11 @@
                                     </div>
                                     <div className="p-3.5 border-b border-black/5 flex items-center">
                                         <label className="w-24 text-[17px] text-[#1C1C1E]">Lat</label>
-                                        <input type="number" step="any" required value={lat} onChange={e => setLat(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[17px] text-[#8E8E93] font-mono" placeholder="0.0000" />
+                                        <input type="number" step="any" value={lat} onChange={e => setLat(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[17px] text-[#8E8E93] font-mono" placeholder="Optional" />
                                     </div>
                                     <div className="p-3.5 border-b border-black/5 flex items-center">
                                         <label className="w-24 text-[17px] text-[#1C1C1E]">Lng</label>
-                                        <input type="number" step="any" required value={lng} onChange={e => setLng(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[17px] text-[#8E8E93] font-mono" placeholder="0.0000" />
+                                        <input type="number" step="any" value={lng} onChange={e => setLng(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[17px] text-[#8E8E93] font-mono" placeholder="Optional" />
                                     </div>
                                     <div className="p-3.5 flex flex-col">
                                         <input type="url" value={mapLink} onChange={handleMapLinkChange} className="w-full bg-transparent focus:outline-none text-[15px] text-[#8E8E93] mb-1" placeholder="Paste Maps Link (Auto-fills GPS)" />
