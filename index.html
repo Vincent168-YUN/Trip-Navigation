@@ -422,10 +422,10 @@
                 const link = e.target.value; setMapLink(link);
                 
                 // Look for exact pin (!3d... !4d...) OR map center (@lat,lng) OR search query (?q=lat,lng) OR path (/place/lat,lng)
-                const exactPinMatch = link.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
-                const atMatch = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-                const queryMatch = link.match(/[?&]q=([-+]?\d+\.\d+),([-+]?\d+\.\d+)/) || link.match(/[?&]ll=([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
-                const placeMatch = link.match(/place\/([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
+                const exactPinMatch = link.match(/!3d([-+]?\d*\.\d+)!4d([-+]?\d*\.\d+)/);
+                const atMatch = link.match(/@([-+]?\d*\.\d+),([-+]?\d*\.\d+)/);
+                const queryMatch = link.match(/[?&]q=([-+]?\d*\.\d+),([-+]?\d*\.\d+)/) || link.match(/[?&]ll=([-+]?\d*\.\d+),([-+]?\d*\.\d+)/);
+                const placeMatch = link.match(/place\/([-+]?\d*\.\d+),([-+]?\d*\.\d+)/);
                 
                 const match = exactPinMatch || atMatch || queryMatch || placeMatch;
                 
@@ -493,6 +493,28 @@
                         (err) => { setSaveError("GPS Error: Could not get live location."); setLat((11.5564).toFixed(6)); setLng((104.9282).toFixed(6)); },
                         { enableHighAccuracy: true, timeout: 5000 }
                     );
+                }
+            };
+
+            const searchAddressForGPS = async () => {
+                const queryStr = `${name} ${city}`.trim();
+                if (!queryStr) {
+                    setSaveError("Please enter a Name or City to search.");
+                    return;
+                }
+                setSaveError("Searching map database...");
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryStr)}&limit=1`);
+                    const data = await response.json();
+                    if (data && data.length > 0) {
+                        setLat(parseFloat(data.lat).toFixed(6));
+                        setLng(parseFloat(data.lon).toFixed(6));
+                        setSaveError('');
+                    } else {
+                        setSaveError("Couldn't find GPS for this name. Try pasting a maps link instead.");
+                    }
+                } catch (err) {
+                    setSaveError("Search failed. Check your connection.");
                 }
             };
 
@@ -1102,9 +1124,14 @@
                                 <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 overflow-hidden">
                                     <div className="p-3.5 border-b border-black/5 flex justify-between items-center bg-[#007AFF]/5">
                                         <span className="text-[15px] font-medium text-[#007AFF]">GPS Coordinates</span>
-                                        <button type="button" onClick={useCurrentLocation} className="text-[13px] font-semibold text-white bg-[#007AFF] px-3 py-1 rounded-full active:opacity-70">
-                                            Get Current
-                                        </button>
+                                        <div className="flex space-x-2">
+                                            <button type="button" onClick={searchAddressForGPS} className="text-[13px] font-semibold text-[#007AFF] bg-[#007AFF]/10 px-3 py-1 rounded-full active:opacity-70">
+                                                <i className="fa-solid fa-magnifying-glass mr-1"></i>Search
+                                            </button>
+                                            <button type="button" onClick={useCurrentLocation} className="text-[13px] font-semibold text-white bg-[#007AFF] px-3 py-1 rounded-full active:opacity-70">
+                                                Get Current
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="p-3.5 border-b border-black/5 flex items-center">
                                         <label className="w-24 text-[17px] text-[#1C1C1E]">Lat</label>
