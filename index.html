@@ -422,10 +422,10 @@
                 const link = e.target.value; setMapLink(link);
                 
                 // Look for exact pin (!3d... !4d...) OR map center (@lat,lng) OR search query (?q=lat,lng) OR path (/place/lat,lng)
-                const exactPinMatch = link.match(/!3d([-+]?\d*\.\d+)!4d([-+]?\d*\.\d+)/);
-                const atMatch = link.match(/@([-+]?\d*\.\d+),([-+]?\d*\.\d+)/);
-                const queryMatch = link.match(/[?&]q=([-+]?\d*\.\d+),([-+]?\d*\.\d+)/) || link.match(/[?&]ll=([-+]?\d*\.\d+),([-+]?\d*\.\d+)/);
-                const placeMatch = link.match(/place\/([-+]?\d*\.\d+),([-+]?\d*\.\d+)/);
+                const exactPinMatch = link.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+                const atMatch = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+                const queryMatch = link.match(/[?&]q=([-+]?\d+\.\d+),([-+]?\d+\.\d+)/) || link.match(/[?&]ll=([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
+                const placeMatch = link.match(/place\/([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
                 
                 const match = exactPinMatch || atMatch || queryMatch || placeMatch;
                 
@@ -496,6 +496,7 @@
                 }
             };
 
+            // NEW ALTERNATIVE: Address Search feature
             const searchAddressForGPS = async () => {
                 const queryStr = `${name} ${city}`.trim();
                 if (!queryStr) {
