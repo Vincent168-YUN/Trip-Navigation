@@ -297,12 +297,19 @@
                 return () => navigator.geolocation.clearWatch(watchId);
             }, []);
 
-            // 4. Live Place Autocomplete Search
+            // 4. Live Place Autocomplete Search (Now with Location Bias!)
             useEffect(() => {
                 const delayDebounceFn = setTimeout(() => {
                     if (formSearchQuery.trim().length > 2) {
                         setIsSearching(true);
-                        fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(formSearchQuery)}&limit=5`)
+                        
+                        // Build the search URL. If we have live GPS, bias the results around the user!
+                        let url = `https://photon.komoot.io/api/?q=${encodeURIComponent(formSearchQuery)}&limit=6`;
+                        if (liveLocation && liveLocation.lat && liveLocation.lng) {
+                            url += `&lat=${liveLocation.lat}&lon=${liveLocation.lng}`;
+                        }
+
+                        fetch(url)
                             .then(res => res.json())
                             .then(data => {
                                 setSearchResults(data.features || []);
@@ -317,7 +324,7 @@
                     }
                 }, 500);
                 return () => clearTimeout(delayDebounceFn);
-            }, [formSearchQuery]);
+            }, [formSearchQuery, liveLocation]);
 
             // Helper to add In-App Notification
             const addNotification = (loc, isStartup) => {
