@@ -21,12 +21,14 @@
     
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     
     <!-- Babel for in-browser JSX compiling -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
     <style>
         :root {
             --ios-blue: #007AFF;
@@ -418,8 +420,19 @@
             // --- FORM HANDLERS ---
             const handleMapLinkChange = (e) => {
                 const link = e.target.value; setMapLink(link);
-                const match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-                if (match && match.length >= 3) { setLat(match); setLng(match); }
+                
+                // Look for exact pin (!3d... !4d...) OR map center (@lat,lng) OR search query (?q=lat,lng) OR path (/place/lat,lng)
+                const exactPinMatch = link.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+                const atMatch = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+                const queryMatch = link.match(/[?&]q=([-+]?\d+\.\d+),([-+]?\d+\.\d+)/) || link.match(/[?&]ll=([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
+                const placeMatch = link.match(/place\/([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
+                
+                const match = exactPinMatch || atMatch || queryMatch || placeMatch;
+                
+                if (match && match.length >= 3) { 
+                    setLat(parseFloat(match).toFixed(6)); 
+                    setLng(parseFloat(match).toFixed(6)); 
+                }
             };
 
             const processImage = (file) => {
@@ -537,6 +550,7 @@
             };
 
             const confirmAction = (message, onConfirm) => { setConfirmDialog({ message, onConfirm }); };
+            
             const deleteCity = async (cityToDelete) => {
                 confirmAction(`Delete "${cityToDelete}" and ALL places inside it?`, async () => {
                     try {
@@ -546,6 +560,7 @@
                     } catch (err) { console.error("Delete failed: ", err.message); }
                 });
             };
+            
             const deleteLocation = async (id, isDetailView = false) => {
                 confirmAction("Delete this location completely?", async () => {
                     try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', id)); if (isDetailView) handleBack(); } 
@@ -1396,6 +1411,7 @@
                 </div>
             );
         }
+        
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
