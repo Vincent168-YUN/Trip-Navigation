@@ -953,24 +953,36 @@
                                     </div>
                                 ) : (
                                     <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60">
-                                        {Object.keys(dataHierarchy.cities[activeCity].categories).sort().map((catName, index, arr) => (
-                                            <div 
-                                                key={catName}
-                                                onClick={() => { setActiveCategory(catName); setView('category_list'); }}
-                                                className={`flex items-center justify-between p-3 pl-4 cursor-pointer active:bg-black/5 transition-colors ${index !== arr.length - 1 ? 'border-b border-black/5' : ''}`}
-                                            >
-                                                <div className="flex items-center">
-                                                    <div className="bg-[#007AFF]/10 w-9 h-9 rounded-lg flex items-center justify-center mr-3">
-                                                        <i className="fa-solid fa-folder-open text-[#007AFF] text-sm"></i>
+                                        {Object.keys(dataHierarchy.cities[activeCity].categories).sort().map((catName, index, arr) => {
+                                            const categoryPlaces = dataHierarchy.cities[activeCity].categories[catName];
+                                            // The places are automatically sorted by distance! 
+                                            // We find the closest one that has a photo to use as the dynamic cover.
+                                            const closestPlaceWithPhoto = categoryPlaces.find(loc => Array.isArray(loc.photos) && loc.photos.length > 0);
+                                            const coverPhoto = closestPlaceWithPhoto ? closestPlaceWithPhoto.photos : null;
+
+                                            return (
+                                                <div 
+                                                    key={catName}
+                                                    onClick={() => { setActiveCategory(catName); setView('category_list'); }}
+                                                    className={`flex items-center justify-between p-3 pl-4 cursor-pointer active:bg-black/5 transition-colors ${index !== arr.length - 1 ? 'border-b border-black/5' : ''}`}
+                                                >
+                                                    <div className="flex items-center">
+                                                        {coverPhoto ? (
+                                                            <img src={coverPhoto} alt={catName} className="w-12 h-12 rounded-[12px] object-cover shrink-0 mr-3 shadow-sm border border-black/5" />
+                                                        ) : (
+                                                            <div className="bg-[#007AFF]/10 w-12 h-12 rounded-[12px] flex items-center justify-center shrink-0 mr-3">
+                                                                <i className="fa-solid fa-folder-open text-[#007AFF] text-lg"></i>
+                                                            </div>
+                                                        )}
+                                                        <div>
+                                                            <h3 className="text-[17px] font-normal text-[#1C1C1E]">{catName}</h3>
+                                                            <p className="text-[13px] text-[#8E8E93] mt-0.5">{categoryPlaces.length} Places</p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <h3 className="text-[17px] font-normal text-[#1C1C1E]">{catName}</h3>
-                                                        <p className="text-[13px] text-[#8E8E93] mt-0.5">{dataHierarchy.cities[activeCity].categories[catName].length} Places</p>
-                                                    </div>
+                                                    <i className="fa-solid fa-chevron-right text-[#C7C7CC] text-sm pr-2"></i>
                                                 </div>
-                                                <i className="fa-solid fa-chevron-right text-[#C7C7CC] text-sm pr-2"></i>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>
@@ -1077,13 +1089,17 @@
                                         <p className="text-[13px] text-[#8E8E93] ml-6">Straight-line distance</p>
                                     </div>
 
-                                    {/* Notes Section */}
-                                    {locDetail.comment && (
-                                        <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 p-4 mb-6">
-                                            <h3 className="text-[15px] font-medium text-[#1C1C1E] mb-1.5"><i className="fa-regular fa-clipboard mr-1.5 text-[#8E8E93]"></i>Notes</h3>
+                                    {/* Notes Section - Now permanently visible */}
+                                    <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 p-4 mb-6">
+                                        <h3 className="text-[15px] font-medium text-[#1C1C1E] mb-1.5 flex items-center">
+                                            <i className="fa-regular fa-clipboard mr-2 text-[#8E8E93]"></i>Notes & Additional Info
+                                        </h3>
+                                        {locDetail.comment ? (
                                             <p className="text-[15px] text-[#8E8E93] leading-relaxed whitespace-pre-wrap">{locDetail.comment}</p>
-                                        </div>
-                                    )}
+                                        ) : (
+                                            <p className="text-[14px] text-[#8E8E93] italic">No notes added. Tap the pen icon above to add some!</p>
+                                        )}
+                                    </div>
 
                                     {/* Hidden Coordinates Toggle */}
                                     <div className="text-center mb-8">
