@@ -230,6 +230,9 @@
             const [photos, setPhotos] = useState([]); 
             const [saveError, setSaveError] = useState('');
             const [isSaving, setIsSaving] = useState(false);
+            
+            // Detail View State
+            const [showCoords, setShowCoords] = useState(false);
 
             // --- EFFECTS ---
             // 1. Authenticate
@@ -722,6 +725,9 @@
             const locDetail = view === 'location_detail' && selectedLocId ? locations.find(l => l.id === selectedLocId) : null;
                 
             useEffect(() => { if (view === 'location_detail' && selectedLocId && !locDetail && locations.length > 0) handleBack(); }, [locations, locDetail, view, selectedLocId]);
+            
+            // Reset coordinate toggle when opening a new location
+            useEffect(() => { setShowCoords(false); }, [selectedLocId]);
 
             // HELPER: iOS Native Header Title
             const getHeaderTitle = () => {
@@ -1051,6 +1057,18 @@
                                         </div>
                                     </div>
                                     
+                                    {/* Primary Action: Open in Maps */}
+                                    {(() => {
+                                        const mapsUrl = locDetail.mapLink || (locDetail.lat != null && locDetail.lng != null ? `https://www.google.com/maps/search/?api=1&query=${locDetail.lat},${locDetail.lng}` : null);
+                                        if (!mapsUrl) return null;
+                                        return (
+                                            <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full bg-[#007AFF] text-white py-3.5 rounded-[14px] font-semibold text-[17px] active:scale-[0.98] transition-transform mb-4 shadow-sm shadow-[#007AFF]/20">
+                                                <i className="fa-solid fa-map-location-dot mr-2.5"></i> Open in Google Maps
+                                            </a>
+                                        );
+                                    })()}
+                                    
+                                    {/* Distance Indicator */}
                                     <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 p-4 mb-4">
                                         <div className="flex items-center text-[#1C1C1E] mb-1">
                                             <i className="fa-solid fa-location-arrow text-[#007AFF] w-6"></i>
@@ -1059,28 +1077,33 @@
                                         <p className="text-[13px] text-[#8E8E93] ml-6">Straight-line distance</p>
                                     </div>
 
+                                    {/* Notes Section */}
                                     {locDetail.comment && (
-                                        <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 p-4 mb-4">
-                                            <h3 className="text-[15px] font-medium text-[#1C1C1E] mb-1.5">Notes</h3>
+                                        <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 p-4 mb-6">
+                                            <h3 className="text-[15px] font-medium text-[#1C1C1E] mb-1.5"><i className="fa-regular fa-clipboard mr-1.5 text-[#8E8E93]"></i>Notes</h3>
                                             <p className="text-[15px] text-[#8E8E93] leading-relaxed whitespace-pre-wrap">{locDetail.comment}</p>
                                         </div>
                                     )}
 
-                                    <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 overflow-hidden mb-8">
-                                        <div className="p-4 border-b border-black/5 flex justify-between items-center">
-                                            <span className="text-[15px] text-[#1C1C1E]">Coordinates</span>
-                                            <span className="text-[15px] text-[#8E8E93] font-mono">
-                                                {locDetail.lat != null ? Number(locDetail.lat).toFixed(5) : 'N/A'}, {locDetail.lng != null ? Number(locDetail.lng).toFixed(5) : 'N/A'}
-                                            </span>
-                                        </div>
-                                        {locDetail.mapLink && (
-                                            <a href={locDetail.mapLink} target="_blank" rel="noopener noreferrer" className="block p-4 text-center text-[#007AFF] text-[17px] font-medium active:bg-black/5 transition-colors">
-                                                Open in Maps
-                                            </a>
+                                    {/* Hidden Coordinates Toggle */}
+                                    <div className="text-center mb-8">
+                                        <button onClick={() => setShowCoords(!showCoords)} className="text-[13px] text-[#8E8E93] font-medium active:opacity-50 flex items-center justify-center mx-auto">
+                                            <i className={`fa-solid fa-chevron-${showCoords ? 'up' : 'down'} mr-1.5 text-[10px]`}></i>
+                                            {showCoords ? 'Hide Technical Details' : 'View Exact Coordinates'}
+                                        </button>
+                                        
+                                        {showCoords && (
+                                            <div className="mt-4 bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[16px] border border-white/60 p-3.5 flex justify-between items-center text-[13px] font-mono text-[#8E8E93] shadow-sm text-left">
+                                                <div>
+                                                    <div className="mb-1"><span className="text-[#1C1C1E] font-medium mr-2">Lat:</span> {locDetail.lat != null ? Number(locDetail.lat).toFixed(6) : 'N/A'}</div>
+                                                    <div><span className="text-[#1C1C1E] font-medium mr-2">Lng:</span> {locDetail.lng != null ? Number(locDetail.lng).toFixed(6) : 'N/A'}</div>
+                                                </div>
+                                                <i className="fa-solid fa-satellite-dish text-[#C7C7CC] text-xl opacity-50"></i>
+                                            </div>
                                         )}
                                     </div>
 
-                                    <div className="text-center pb-8">
+                                    <div className="text-center pb-8 border-t border-black/5 pt-6">
                                         <button onClick={() => deleteLocation(locDetail.id, true)} className="text-[#FF3B30] text-[15px] font-medium active:opacity-50">
                                             Delete Location
                                         </button>
