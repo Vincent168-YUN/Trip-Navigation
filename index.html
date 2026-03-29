@@ -216,6 +216,7 @@
             // Form State
             const [editId, setEditId] = useState(null);
             const [name, setName] = useState('');
+            const [comment, setComment] = useState('');
             
             const [editingCityName, setEditingCityName] = useState(null); 
             const [newCityName, setNewCityName] = useState(''); 
@@ -413,14 +414,14 @@
             // --- NAVIGATION HANDLERS ---
             const resetForm = () => {
                 setEditId(null); setName(''); setCity(activeCity || 'Ho Chi Minh City'); setCategory(activeCategory || '');
-                setLat(''); setLng(''); setMapLink(''); setPhotos([]); setSaveError('');
+                setLat(''); setLng(''); setMapLink(''); setPhotos([]); setComment(''); setSaveError('');
             };
 
             const openForm = (loc = null) => {
                 setPreviousView(view); 
                 if (loc) {
                     setEditId(loc.id); setName(loc.name || ''); setCity(loc.city || 'Ho Chi Minh City'); setCategory(loc.category || 'Uncategorized');
-                    setLat(loc.lat != null ? loc.lat : ''); setLng(loc.lng != null ? loc.lng : ''); setMapLink(loc.mapLink || ''); setPhotos([...(loc.photos || [])]);
+                    setLat(loc.lat != null ? loc.lat : ''); setLng(loc.lng != null ? loc.lng : ''); setMapLink(loc.mapLink || ''); setPhotos([...(loc.photos || [])]); setComment(loc.comment || '');
                 } else { resetForm(); }
                 setView('form');
             };
@@ -585,7 +586,7 @@
                 
                 setIsSaving(true);
                 const locationData = { 
-                    name, city, category, 
+                    name, city, category, comment,
                     lat: !isNaN(parsedLat) ? parsedLat : null, 
                     lng: !isNaN(parsedLng) ? parsedLng : null, 
                     mapLink, photos 
@@ -1058,6 +1059,13 @@
                                         <p className="text-[13px] text-[#8E8E93] ml-6">Straight-line distance</p>
                                     </div>
 
+                                    {locDetail.comment && (
+                                        <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 p-4 mb-4">
+                                            <h3 className="text-[15px] font-medium text-[#1C1C1E] mb-1.5">Notes</h3>
+                                            <p className="text-[15px] text-[#8E8E93] leading-relaxed whitespace-pre-wrap">{locDetail.comment}</p>
+                                        </div>
+                                    )}
+
                                     <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 overflow-hidden mb-8">
                                         <div className="p-4 border-b border-black/5 flex justify-between items-center">
                                             <span className="text-[15px] text-[#1C1C1E]">Coordinates</span>
@@ -1189,6 +1197,13 @@
                                         <label className="w-24 text-[17px] text-[#1C1C1E]">Category</label>
                                         <input type="text" required list="categories-list" value={category} onChange={e => setCategory(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[17px] text-[#8E8E93]" placeholder="Select or type" />
                                         <datalist id="categories-list">{dataHierarchy.allCategories.map(c => <option key={c} value={c} />)}</datalist>
+                                    </div>
+                                </div>
+                                
+                                <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 overflow-hidden">
+                                    <div className="p-3.5 flex flex-col">
+                                        <label className="text-[15px] font-medium text-[#1C1C1E] mb-2">Notes & Additional Info</label>
+                                        <textarea value={comment} onChange={e => setComment(e.target.value)} rows="3" className="w-full bg-black/5 rounded-[12px] p-3 focus:outline-none text-[15px] text-[#1C1C1E] placeholder:text-[#8E8E93]" placeholder="Add comments, tips, or what to order here..."></textarea>
                                     </div>
                                 </div>
 
