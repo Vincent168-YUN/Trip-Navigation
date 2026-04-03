@@ -823,9 +823,10 @@
                                             else if (view === 'cities') openCityForm();
                                             else openForm();
                                         }}
-                                        className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-[#1D1D1F] active:scale-95 transition-transform shadow-sm"
+                                        className="h-10 min-w-[44px] px-3.5 rounded-full glass-panel flex items-center justify-center text-[#1D1D1F] active:scale-95 transition-transform shadow-sm space-x-1.5 -mr-2 bg-white/50"
                                     >
-                                        <i className="fa-solid fa-plus text-[16px]"></i>
+                                        <span className="text-[15px] font-bold">Add</span>
+                                        <i className="fa-solid fa-plus text-[14px]"></i>
                                     </button>
                                 )}
                             </div>
@@ -1368,12 +1369,19 @@
                                 {(() => {
                                     const itin = itineraries.find(i => i.id === activeItinId);
                                     if (!itin) return null;
+                                    const totalDayCost = (itin.items || []).reduce((sum, item) => sum + (parseFloat(item.billTotal) || 0), 0);
                                     return (
                                         <>
                                             <div className="px-2 mb-8 flex justify-between items-end">
                                                 <div>
                                                     <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{itin.title}</h2>
                                                     <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1">{itin.date || 'Unscheduled'}</p>
+                                                    {totalDayCost > 0 && (
+                                                        <div className="mt-2 inline-flex items-center px-3 py-1 bg-[var(--ios-accent)]/10 rounded-full border border-[var(--ios-accent)]/20 shadow-sm">
+                                                            <i className="fa-solid fa-wallet text-[var(--ios-accent)] text-[12px] mr-1.5"></i>
+                                                            <span className="text-[13px] font-bold text-[var(--ios-accent)]">Day Total: ${totalDayCost.toFixed(2)}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <button onClick={() => openItineraryForm(itin)} className="w-9 h-9 rounded-full glass-panel flex items-center justify-center text-[#1D1D1F] active:bg-black/10 transition-colors shadow-sm mb-1">
                                                     <i className="fa-solid fa-pen text-[11px]"></i>
@@ -1581,19 +1589,25 @@
                                         <textarea value={itinItemNotes} onChange={e => setItinItemNotes(e.target.value)} rows="3" className="w-full glass-input p-4 text-[15px] font-medium placeholder-[#8E8E93]/50 resize-none" placeholder="Optional notes for this event" />
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-black/5">
-                                        <div>
-                                            <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Total Bill</label>
-                                            <div className="relative">
-                                                <span className="absolute left-4 top-[13px] text-[#8E8E93] font-bold">$</span>
-                                                <input type="number" step="any" min="0" value={itinItemBillTotal} onChange={e => setItinItemBillTotal(e.target.value)} className="w-full pl-8 pr-4 py-3.5 glass-input text-[16px] font-medium" placeholder="0.00" />
+                                    <div className="pt-4 border-t border-black/5 mt-2">
+                                        <h3 className="text-[13px] font-bold text-[#1D1D1F] mb-3 flex items-center">
+                                            <i className="fa-solid fa-money-bill-wave text-[var(--ios-accent)] mr-2"></i>
+                                            Split Bill Calculator
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Total Bill</label>
+                                                <div className="relative">
+                                                    <span className="absolute left-4 top-[13px] text-[#8E8E93] font-bold">$</span>
+                                                    <input type="number" step="any" min="0" value={itinItemBillTotal} onChange={e => setItinItemBillTotal(e.target.value)} className="w-full pl-8 pr-4 py-3.5 glass-input text-[16px] font-medium" placeholder="0.00" />
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Split Among</label>
-                                            <div className="relative">
-                                                <i className="fa-solid fa-users absolute left-4 top-[16px] text-[#8E8E93] text-[13px]"></i>
-                                                <input type="number" min="1" value={itinItemBillSplit} onChange={e => setItinItemBillSplit(e.target.value)} className="w-full pl-10 pr-4 py-3.5 glass-input text-[16px] font-medium" placeholder="1" />
+                                            <div>
+                                                <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Split Among</label>
+                                                <div className="relative">
+                                                    <i className="fa-solid fa-users absolute left-4 top-[16px] text-[#8E8E93] text-[13px]"></i>
+                                                    <input type="number" min="1" value={itinItemBillSplit} onChange={e => setItinItemBillSplit(e.target.value)} className="w-full pl-10 pr-4 py-3.5 glass-input text-[16px] font-medium" placeholder="1" />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
