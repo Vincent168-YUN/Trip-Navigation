@@ -31,81 +31,93 @@
     
     <style>
         :root {
-            --ios-blue: #007AFF;
-            --ios-green: #34C759;
-            --ios-red: #FF3B30;
-            --ios-bg: #F2F2F7;
-            --ios-text: #1C1C1E;
-            --ios-gray: #8E8E93;
-            --ios-glass: rgba(255, 255, 255, 0.75);
+            --ios-accent: #C68E58; /* Brushed Copper / Premium Amber */
+            --ios-green: #32D74B; 
+            --ios-red: #FF3B30; 
+            --ios-bg: #F2F4F7; /* Bright, clean off-white */
+            --ios-text: #1D1D1F; /* Deep Charcoal/Titanium Black */
+            --ios-gray: #8E8E93; /* Classic Apple Slate Gray */
         }
         body { 
             -webkit-tap-highlight-color: transparent; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--ios-bg);
             color: var(--ios-text);
+            color-scheme: light;
         }
         
         /* iOS Safe Area paddings */
-        .safe-top { padding-top: env(safe-area-inset-top, 44px); } /* Fallback for desktop viewing */
+        .safe-top { padding-top: env(safe-area-inset-top, 44px); }
         .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 34px); }
-        .safe-pb-nav { padding-bottom: calc(env(safe-area-inset-bottom, 34px) + 65px); }
+        .safe-pb-nav { padding-bottom: calc(env(safe-area-inset-bottom, 34px) + 100px); }
         
         /* Hide scrollbar for photo carousel but keep functionality */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes popIn {
-            0% { opacity: 0; transform: scale(0.9); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-        .animate-slide-in { animation: slideIn 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
-        .animate-pop-in { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-slide-in { animation: slideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
 
         /* Art Design Font */
         .font-art { font-family: 'Playfair Display', serif; }
 
-        /* Custom Input Styling for iOS look */
-        .ios-input {
-            background-color: rgba(118, 118, 128, 0.08);
-            border-radius: 10px;
+        /* --- PREMIUM LIGHT GLASS UI UTILITIES --- */
+        
+        /* Liquid Blob Animations */
+        @keyframes blob {
+            0% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0px, 0px) scale(1); }
         }
-        .ios-input:focus {
-            background-color: rgba(118, 118, 128, 0.12);
+        .animate-blob { animation: blob 12s infinite alternate ease-in-out; }
+        .animation-delay-2000 { animation-delay: 2s; }
+        .animation-delay-4000 { animation-delay: 4s; }
+
+        /* Light Frosted Crystal Panels */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(32px);
+            -webkit-backdrop-filter: blur(32px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04), inset 0 1px 0 rgba(255,255,255,1);
+            border-radius: 28px;
         }
         
-        /* Subtle animated background mesh */
-        .bg-mesh {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            z-index: -1;
-            overflow: hidden;
-            background-color: #F8F8F7; /* Warm gallery white */
+        /* Floating Light Glass Pill (Nav) */
+        .glass-pill {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 1);
+            box-shadow: 0 12px 40px -10px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,1);
+            border-radius: 9999px;
         }
-        .orb-1 {
-            position: absolute; top: -10%; left: -10%; width: 50vw; height: 50vw;
-            background: rgba(210, 190, 180, 0.4); border-radius: 50%; filter: blur(60px); /* Soft clay */
+
+        /* Light Glass Header */
+        .glass-header {
+            background: linear-gradient(to bottom, rgba(242, 244, 247, 0.95) 0%, rgba(242, 244, 247, 0) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
         }
-        .orb-2 {
-            position: absolute; bottom: 10%; right: -10%; width: 60vw; height: 60vw;
-            background: rgba(180, 190, 200, 0.4); border-radius: 50%; filter: blur(80px); /* Dusty slate */
+
+        /* Light Glass Inputs */
+        .glass-input {
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 16px;
+            transition: all 0.2s ease;
+            color: #1D1D1F;
         }
-        .orb-3 {
-            position: absolute; top: 40%; left: 30%; width: 40vw; height: 40vw;
-            background: rgba(220, 215, 200, 0.5); border-radius: 50%; filter: blur(70px); /* Warm linen */
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: var(--ios-accent);
+            outline: none;
+            box-shadow: 0 4px 16px rgba(198, 142, 88, 0.2);
         }
     </style>
 </head>
@@ -204,7 +216,6 @@
             // In-App Notification State
             const [notifications, setNotifications] = useState([]);
             const alertedLocsRef = useRef(new Set());
-            const initialAlertShownRef = useRef(false);
             
             // Photo Viewer State
             const [fullScreenPhoto, setFullScreenPhoto] = useState(null); 
@@ -220,7 +231,7 @@
             
             const [editingCityName, setEditingCityName] = useState(null); 
             const [newCityName, setNewCityName] = useState(''); 
-            const [cityPhotos, setCityPhotos] = useState([]); // Array for custom city photos
+            const [cityPhotos, setCityPhotos] = useState([]); 
             
             const [city, setCity] = useState('');
             const [category, setCategory] = useState('');
@@ -301,13 +312,12 @@
                 return () => navigator.geolocation.clearWatch(watchId);
             }, []);
 
-            // 4. Live Place Autocomplete Search (Now with Location Bias!)
+            // 4. Live Place Autocomplete Search
             useEffect(() => {
                 const delayDebounceFn = setTimeout(() => {
                     if (formSearchQuery.trim().length > 2) {
                         setIsSearching(true);
                         
-                        // Build the search URL. If we have live GPS, bias the results around the user!
                         let url = `https://photon.komoot.io/api/?q=${encodeURIComponent(formSearchQuery)}&limit=6`;
                         if (liveLocation && liveLocation.lat && liveLocation.lng) {
                             url += `&lat=${liveLocation.lat}&lon=${liveLocation.lng}`;
@@ -324,7 +334,7 @@
                                 setIsSearching(false);
                             });
                     } else {
-                        setSearchResults([]);
+                        searchResults.length > 0 && setSearchResults([]);
                     }
                 }, 500);
                 return () => clearTimeout(delayDebounceFn);
@@ -333,9 +343,7 @@
             // Helper to add In-App Notification
             const addNotification = (loc, isStartup) => {
                 setNotifications(prev => {
-                    // Prevent duplicate unread notifications for the same location
                     if (prev.some(n => n.locId === loc.id && !n.read)) return prev;
-                    
                     return [{
                         id: Date.now().toString() + Math.random(),
                         locId: loc.id,
@@ -358,39 +366,19 @@
             useEffect(() => {
                 if (!liveLocation || locations.length === 0) return;
 
-                let closestNearby = null;
-                let closestOverall = null;
-                let minDistOverall = Infinity;
-                let minDistNearby = 1.0; 
-
                 locations.forEach(loc => {
                     if (loc.isCityMarker || loc.lat == null || loc.lng == null) return;
                     const dist = calculateDistance(liveLocation.lat, liveLocation.lng, loc.lat, loc.lng);
                     if (dist === null) return;
-
-                    if (dist < minDistOverall) {
-                        minDistOverall = dist;
-                        closestOverall = { ...loc, currentDistance: dist };
-                    }
                     
-                    if (dist < 1.0) { 
+                    // Track and alert for ALL locations within 1km radius
+                    if (dist <= 1.0) { 
                         if (!alertedLocsRef.current.has(loc.id) && !(view === 'location_detail' && selectedLocId === loc.id)) {
-                            if (dist < minDistNearby) {
-                                minDistNearby = dist;
-                                closestNearby = { ...loc, currentDistance: dist };
-                            }
+                            addNotification({ ...loc, currentDistance: dist }, false);
+                            alertedLocsRef.current.add(loc.id);
                         }
                     }
                 });
-
-                if (!initialAlertShownRef.current && closestOverall) {
-                    addNotification(closestOverall, true);
-                    alertedLocsRef.current.add(closestOverall.id);
-                    initialAlertShownRef.current = true;
-                } else if (closestNearby) {
-                    addNotification(closestNearby, false);
-                    alertedLocsRef.current.add(closestNearby.id);
-                }
             }, [liveLocation, locations, view, selectedLocId]);
 
             // Photo viewer scrolling
@@ -459,7 +447,6 @@
             const handleMapLinkChange = (e) => {
                 const link = e.target.value; setMapLink(link);
                 
-                // Look for exact pin (!3d... !4d...) OR map center (@lat,lng) OR search query (?q=lat,lng) OR path (/place/lat,lng)
                 const exactPinMatch = link.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
                 const atMatch = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
                 const queryMatch = link.match(/[?&]q=([-+]?\d+\.\d+),([-+]?\d+\.\d+)/) || link.match(/[?&]ll=([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
@@ -468,8 +455,8 @@
                 const match = exactPinMatch || atMatch || queryMatch || placeMatch;
                 
                 if (match && match.length >= 3) { 
-                    setLat(parseFloat(match).toFixed(6)); 
-                    setLng(parseFloat(match).toFixed(6)); 
+                    setLat(parseFloat(match || match).toFixed(6)); 
+                    setLng(parseFloat(match || match).toFixed(6)); 
                 }
             };
 
@@ -538,8 +525,8 @@
                 const { properties, geometry } = place;
                 setName(properties.name || properties.street || 'Selected Location');
                 setCity(properties.city || properties.state || properties.country || activeCity || 'Ho Chi Minh City');
-                setLat(geometry.coordinates.toFixed(6));
-                setLng(geometry.coordinates.toFixed(6));
+                setLat(geometry.coordinates.toFixed(6)); 
+                setLng(geometry.coordinates.toFixed(6)); 
                 setFormSearchQuery('');
                 setSearchResults([]);
             };
@@ -552,24 +539,20 @@
                         const cityMarker = locations.find(l => l.isCityMarker && (l.city || 'Ho Chi Minh City') === editingCityName);
 
                         if (trimmedCity !== editingCityName) {
-                            // Update names across all locations inside the city
                             const locsToUpdate = locations.filter(l => (l.city || 'Ho Chi Minh City') === editingCityName);
                             const updatePromises = locsToUpdate.map(l => {
                                 if (l.isCityMarker) return updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', l.id), { city: trimmedCity, photos: cityPhotos });
                                 return updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', l.id), { city: trimmedCity });
                             });
                             
-                            // If there is no existing city profile marker, we create one now to hold the photos
                             if (!cityMarker && cityPhotos.length > 0) {
                                 updatePromises.push(setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', Date.now().toString()), { isCityMarker: true, city: trimmedCity, photos: cityPhotos, timestamp: Date.now() }));
                             }
                             await Promise.all(updatePromises);
                         } else {
                             if (cityMarker) {
-                                // Just update the photos if name didn't change
                                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', cityMarker.id), { photos: cityPhotos });
                             } else if (cityPhotos.length > 0) {
-                                // City exists but has no profile marker yet. Create it to save the photo.
                                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', Date.now().toString()), { isCityMarker: true, city: trimmedCity, photos: cityPhotos, timestamp: Date.now() });
                             }
                         }
@@ -584,7 +567,6 @@
                 e.preventDefault(); setSaveError('');
                 const parsedLat = parseFloat(lat); const parsedLng = parseFloat(lng);
                 
-                // Removed the requirement for parsedLat and parsedLng
                 if (!name || !city || !category) { setSaveError("Please provide Name, City, and Category."); return; }
                 
                 setIsSaving(true);
@@ -731,15 +713,15 @@
 
             // HELPER: iOS Native Header Title
             const getHeaderTitle = () => {
-                if (view === 'cities') return ""; // Empty to make room for large editorial header
+                if (view === 'cities') return ""; 
                 if (view === 'city_form') return editingCityName ? 'Edit City' : 'Add City';
                 if (view === 'categories') return activeCity;
                 if (view === 'category_list') return activeCategory;
                 if (view === 'location_detail') return 'Details';
-                if (view === 'notifications') return 'Notifications';
-                if (view === 'itineraries') return 'Itineraries';
+                if (view === 'notifications') return 'Radar';
+                if (view === 'itineraries') return 'Journeys';
                 if (view === 'itinerary_detail') return 'Timesheet';
-                if (view === 'itinerary_form') return editId ? 'Edit Itinerary' : 'Plan a Day';
+                if (view === 'itinerary_form') return editId ? 'Edit Day' : 'Plan a Day';
                 if (view === 'itinerary_select_location') return 'Select Location';
                 if (editId || editItinItemId) return 'Edit Item';
                 return 'Create Item';
@@ -750,73 +732,73 @@
 
             // --- RENDER VIEWS ---
             return (
-                <div className="min-h-screen relative flex flex-col">
+                <div className="min-h-screen relative flex flex-col selection:bg-[var(--ios-accent)]/20">
                     
-                    {/* Animated Background Mesh */}
-                    <div className="bg-mesh">
-                        <div className="orb-1"></div>
-                        <div className="orb-2"></div>
-                        <div className="orb-3"></div>
+                    {/* LIQUID GRADIENT BACKGROUND - BRIGHT PREMIUM */}
+                    <div className="fixed inset-0 z-[-1] overflow-hidden bg-[var(--ios-bg)]">
+                        <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-tr from-[#C68E58]/30 to-transparent filter blur-[80px] animate-blob"></div>
+                        <div className="absolute top-[20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-bl from-slate-400/30 to-transparent filter blur-[80px] animate-blob animation-delay-2000"></div>
+                        <div className="absolute bottom-[-10%] left-[10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-tr from-stone-400/30 to-transparent filter blur-[80px] animate-blob animation-delay-4000"></div>
                     </div>
 
-                    {/* FULL SCREEN PHOTO VIEWER PAGE */}
+                    {/* FULL SCREEN PHOTO VIEWER PAGE (Always dark for media viewing) */}
                     {view === 'photo_viewer' && fullScreenPhoto && (
-                        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col animate-slide-in" style={{ zIndex: 120 }}>
+                        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-3xl flex flex-col animate-slide-in" style={{ zIndex: 120 }}>
                             <div className="flex items-center px-4 py-3 h-14 safe-top flex-shrink-0">
-                                <button onClick={handleBack} className="text-white px-2 py-1.5 -ml-2 rounded-full flex items-center active:opacity-50">
-                                    <i className="fa-solid fa-chevron-left text-xl mr-1.5"></i>
-                                    <span className="text-[17px] font-normal">Back</span>
+                                <button onClick={handleBack} className="text-white px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center transition-colors">
+                                    <i className="fa-solid fa-chevron-left text-lg mr-2"></i>
+                                    <span className="text-[16px] font-medium">Close</span>
                                 </button>
                             </div>
                             <div ref={fullScreenScrollRef} className="flex-1 w-full flex overflow-x-auto snap-x snap-mandatory scrollbar-hide items-center">
                                 {fullScreenPhoto.photos.map((p, idx) => (
                                     <div key={idx} className="w-full h-full flex-shrink-0 snap-center flex items-center justify-center p-4">
-                                        <img src={p} className="max-w-full max-h-[80vh] object-contain rounded-lg" alt={`Photo ${idx + 1}`} />
+                                        <img src={p} className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl" alt={`Photo ${idx + 1}`} />
                                     </div>
                                 ))}
                             </div>
                             {fullScreenPhoto.photos.length > 1 && (
-                                <div className="absolute bottom-10 left-0 right-0 flex justify-center pointer-events-none safe-bottom">
-                                    <div className="bg-[#1C1C1E]/60 backdrop-blur-xl text-white/90 text-xs font-medium px-4 py-2 rounded-full">
-                                        Swipe to view more
+                                <div className="absolute bottom-12 left-0 right-0 flex justify-center pointer-events-none safe-bottom">
+                                    <div className="bg-white/20 backdrop-blur-3xl border border-white/40 rounded-full px-5 py-2 text-white text-[13px] font-medium tracking-wide shadow-lg">
+                                        Swipe for more
                                     </div>
                                 </div>
                             )}
                         </div>
                     )}
 
-                    {/* NATIVE iOS HEADER */}
-                    <header className="fixed top-0 left-0 right-0 z-40 bg-[var(--ios-glass)] backdrop-blur-xl border-b border-black/5 safe-top">
-                        <div className="max-w-3xl mx-auto px-4 h-12 flex justify-between items-center relative">
+                    {/* LIQUID GLASS HEADER */}
+                    <header className="fixed top-0 left-0 right-0 z-40 safe-top glass-header h-24 pointer-events-none"></header>
+                    <header className="fixed top-0 left-0 right-0 z-40 safe-top h-14">
+                        <div className="max-w-3xl mx-auto px-6 h-full flex justify-between items-center">
                             {/* Left: Back Button or GPS */}
                             <div className="w-1/3 flex items-center justify-start">
                                 {view !== 'cities' && view !== 'itineraries' && view !== 'notifications' ? (
-                                    <button onClick={handleBack} className="text-[#1C1C1E] flex items-center -ml-2 active:opacity-50 transition-opacity">
-                                        <i className="fa-solid fa-chevron-left text-xl mr-1.5"></i>
-                                        <span className="text-[17px]">Back</span>
+                                    <button onClick={handleBack} className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-[#1D1D1F] active:scale-95 transition-transform shadow-sm">
+                                        <i className="fa-solid fa-chevron-left text-[15px] pr-0.5"></i>
                                     </button>
                                 ) : (
-                                    <div className="flex items-center space-x-1.5">
+                                    <div className="glass-panel px-3 py-1.5 flex items-center space-x-1.5 shadow-sm">
                                         {geoError ? (
-                                            <i className="fa-solid fa-location-crosshairs text-[#FF3B30] text-sm opacity-80" title={geoError}></i>
+                                            <i className="fa-solid fa-location-crosshairs text-[var(--ios-red)] text-sm" title={geoError}></i>
                                         ) : liveLocation ? (
-                                            <div className="flex items-center space-x-1" title={gpsAccuracy ? `Accuracy: ±${Math.round(gpsAccuracy)}m` : 'GPS Active'}>
+                                            <div className="flex items-center space-x-1.5" title={gpsAccuracy ? `Accuracy: ±${Math.round(gpsAccuracy)}m` : 'GPS Active'}>
                                                 <span className="relative flex h-2 w-2">
-                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#34C759] opacity-75"></span>
-                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#34C759]"></span>
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ios-green)] opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--ios-green)]"></span>
                                                 </span>
-                                                <span className="text-[10px] font-medium text-[#8E8E93]">
+                                                <span className="text-[11px] font-bold text-[#1D1D1F] tracking-wide">
                                                     {gpsAccuracy ? `±${Math.round(gpsAccuracy)}m` : 'GPS'}
                                                 </span>
                                             </div>
-                                        ) : null}
+                                        ) : <i className="fa-solid fa-spinner fa-spin text-[#8E8E93] text-xs"></i>}
                                     </div>
                                 )}
                             </div>
 
                             {/* Center: Title */}
                             <div className="w-1/3 text-center">
-                                <h1 className="text-[17px] font-semibold text-[#1C1C1E] tracking-tight truncate">
+                                <h1 className="text-[16px] font-bold text-[#1D1D1F] tracking-wide truncate">
                                     {getHeaderTitle()}
                                 </h1>
                             </div>
@@ -831,16 +813,16 @@
                                             else if (view === 'cities') openCityForm();
                                             else openForm();
                                         }}
-                                        className="text-[#1C1C1E] text-2xl active:opacity-50 transition-opacity -mr-1"
+                                        className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-[#1D1D1F] active:scale-95 transition-transform shadow-sm"
                                     >
-                                        <i className="fa-regular fa-square-plus font-light"></i>
+                                        <i className="fa-solid fa-plus text-[16px]"></i>
                                     </button>
                                 )}
                             </div>
                         </div>
                     </header>
 
-                    <main className="flex-1 w-full max-w-3xl mx-auto px-4 safe-pb-nav pt-[env(safe-area-inset-top,44px)] mt-16 animate-slide-in">
+                    <main className="flex-1 w-full max-w-3xl mx-auto px-5 safe-pb-nav pt-[env(safe-area-inset-top,44px)] mt-20 animate-slide-in relative z-10">
                         
                         {/* ========================================================= */}
                         {/* MAIN VIEWS - LOCATIONS / PLACES                           */}
@@ -848,51 +830,51 @@
 
                         {/* VIEW: NOTIFICATIONS LIST */}
                         {view === 'notifications' && (
-                            <div className="pb-6">
+                            <div className="pb-6 space-y-4">
                                 {notifications.length === 0 ? (
-                                    <div className="text-center p-10 mt-10">
-                                        <i className="fa-regular fa-bell text-5xl text-[#8E8E93] mb-4 opacity-50"></i>
-                                        <h3 className="text-lg font-semibold text-[#1C1C1E] mb-1">No Notifications</h3>
-                                        <p className="text-[#8E8E93] text-sm">Alerts for nearby locations will appear here.</p>
+                                    <div className="glass-panel flex flex-col items-center justify-center py-16 px-6 text-center mt-4">
+                                        <div className="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-4">
+                                            <i className="fa-regular fa-bell text-2xl text-[#8E8E93]"></i>
+                                        </div>
+                                        <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-1">Clear Radar</h3>
+                                        <p className="text-[#8E8E93] text-[14px] font-medium">No saved locations within 1km.</p>
                                     </div>
                                 ) : (
-                                    <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60">
-                                        {notifications.map((notif, index) => (
-                                            <div 
-                                                key={notif.id} 
-                                                className={`flex items-center justify-between p-3 pl-4 cursor-pointer transition-colors ${!notif.read ? 'bg-[#007AFF]/5' : 'active:bg-black/5'} ${index !== notifications.length - 1 ? 'border-b border-black/5' : ''}`}
-                                                onClick={() => {
-                                                    // Mark as read
-                                                    setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
-                                                    setLocationReturnView('notifications');
-                                                    setSelectedLocId(notif.locId);
-                                                    setView('location_detail');
-                                                }}
-                                            >
-                                                <div className="flex items-center flex-1 overflow-hidden">
-                                                    {Array.isArray(notif.photos) && notif.photos.length > 0 ? (
-                                                        <img src={notif.photos} className="w-12 h-12 rounded-[12px] object-cover shrink-0 mr-3 shadow-sm" alt="" />
-                                                    ) : (
-                                                        <div className="w-12 h-12 rounded-[12px] bg-[#007AFF] flex items-center justify-center text-white shrink-0 mr-3 shadow-sm">
-                                                            <i className={notif.isStartup ? "fa-solid fa-map-pin" : "fa-solid fa-location-dot"}></i>
-                                                        </div>
-                                                    )}
-                                                    <div className="truncate pr-2">
-                                                        <h4 className="text-[15px] font-semibold text-[#1C1C1E] truncate">{notif.name}</h4>
-                                                        <p className="text-[13px] text-[#8E8E93] truncate">
-                                                            {notif.isStartup ? 'Closest to you' : 'Nearby'} &bull; {formatDistance(notif.distance)}
-                                                        </p>
+                                    notifications.map((notif) => (
+                                        <div 
+                                            key={notif.id} 
+                                            className={`glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform ${!notif.read ? 'border-[var(--ios-accent)] shadow-[0_4px_20px_rgba(198,142,88,0.2)]' : ''}`}
+                                            onClick={() => {
+                                                setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
+                                                setLocationReturnView('notifications');
+                                                setSelectedLocId(notif.locId);
+                                                setView('location_detail');
+                                            }}
+                                        >
+                                            <div className="flex items-center flex-1 overflow-hidden">
+                                                {Array.isArray(notif.photos) && notif.photos.length > 0 ? (
+                                                    <img src={notif.photos} className="w-14 h-14 rounded-[16px] object-cover shrink-0 mr-4 shadow-sm border border-white/60" alt="" />
+                                                ) : (
+                                                    <div className="w-14 h-14 rounded-[16px] bg-gradient-to-br from-[#1D1D1F] to-[#434343] flex items-center justify-center text-white shrink-0 mr-4 shadow-sm border border-white/60">
+                                                        <i className="fa-solid fa-location-dot text-lg"></i>
                                                     </div>
-                                                </div>
-                                                <div className="flex items-center shrink-0 space-x-3 pl-2">
-                                                    {!notif.read && <div className="w-2.5 h-2.5 rounded-full bg-[#007AFF] shadow-sm"></div>}
-                                                    <button onClick={(e) => deleteNotification(e, notif.id)} className="text-[#FF3B30] active:opacity-50 p-2">
-                                                        <i className="fa-solid fa-trash-can"></i>
-                                                    </button>
+                                                )}
+                                                <div className="truncate pr-2">
+                                                    <div className="flex items-center space-x-2 mb-0.5">
+                                                        {!notif.read && <div className="w-2 h-2 rounded-full bg-[var(--ios-accent)] shadow-sm"></div>}
+                                                        <h4 className="text-[16px] font-bold text-[#1D1D1F] truncate leading-tight">{notif.name}</h4>
+                                                    </div>
+                                                    <p className="text-[13px] text-[#8E8E93] font-medium truncate flex items-center mt-1">
+                                                        <i className="fa-solid fa-location-arrow text-[10px] mr-1.5 opacity-70 text-[var(--ios-accent)]"></i>
+                                                        Nearby &bull; {formatDistance(notif.distance)}
+                                                    </p>
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
+                                            <button onClick={(e) => deleteNotification(e, notif.id)} className="w-10 h-10 rounded-full bg-black/5 text-[var(--ios-red)] flex items-center justify-center active:bg-black/10 transition-colors shrink-0 ml-2">
+                                                <i className="fa-solid fa-xmark text-sm"></i>
+                                            </button>
+                                        </div>
+                                    ))
                                 )}
                             </div>
                         )}
@@ -900,129 +882,147 @@
                         {/* VIEW: CITIES */}
                         {view === 'cities' && (
                             <div className="pb-6">
-                                <div className="pt-2 pb-8 px-2">
-                                    <h1 className="text-[40px] font-bold font-art leading-[1.05] text-[#1C1C1E] tracking-tight">
-                                        Vincent's<br/><span className="text-[#8E8E93] italic font-normal">Travelling</span><br/>System
+                                <div className="pt-4 pb-8 px-2">
+                                    <h1 className="text-[44px] font-bold font-art leading-[1.05] text-[#1D1D1F] tracking-tight">
+                                        Vincent's<br/><span className="text-[#8E8E93] italic font-normal opacity-80">Travelling</span><br/>System
                                     </h1>
                                 </div>
-                                {dataHierarchy.uniqueCities.length === 0 ? (
-                                    <div className="text-center p-10 mt-2">
-                                        <i className="fa-regular fa-map text-5xl text-[#8E8E93] mb-4 opacity-50"></i>
-                                        <h3 className="text-lg font-semibold text-[#1C1C1E] mb-1">No Places Yet</h3>
-                                        <p className="text-[#8E8E93] text-sm">Tap the + button to add your first city or location.</p>
-                                    </div>
-                                ) : (
-                                    <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60">
-                                        {dataHierarchy.uniqueCities.map((cityName, index) => (
-                                            <div key={cityName} className={`flex items-center justify-between p-3 pl-4 ${index !== dataHierarchy.uniqueCities.length - 1 ? 'border-b border-black/5' : ''}`}>
-                                                <div className="flex items-center flex-1 cursor-pointer active:opacity-50 transition-opacity" onClick={() => { setActiveCity(cityName); setView('categories'); }}>
+                                
+                                <div className="space-y-4">
+                                    {dataHierarchy.uniqueCities.length === 0 ? (
+                                        <div className="glass-panel flex flex-col items-center justify-center py-16 px-6 text-center">
+                                            <div className="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-4">
+                                                <i className="fa-regular fa-compass text-2xl text-[#8E8E93]"></i>
+                                            </div>
+                                            <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-1">Your Journey Begins</h3>
+                                            <p className="text-[#8E8E93] font-medium text-[14px]">Tap the + icon to add your first destination.</p>
+                                        </div>
+                                    ) : (
+                                        dataHierarchy.uniqueCities.map((cityName) => (
+                                            <div key={cityName} className="glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform">
+                                                <div className="flex items-center flex-1" onClick={() => { setActiveCity(cityName); setView('categories'); }}>
                                                     {dataHierarchy.cities[cityName].photos && dataHierarchy.cities[cityName].photos.length > 0 ? (
-                                                        <img src={dataHierarchy.cities[cityName].photos} className="w-16 h-20 rounded-[12px] object-cover shrink-0 mr-4 shadow-sm" alt={cityName} />
+                                                        <img src={dataHierarchy.cities[cityName].photos} className="w-16 h-20 rounded-[20px] object-cover shrink-0 mr-4 shadow-sm border border-white/60" alt={cityName} />
                                                     ) : (
-                                                        <div className="bg-[#1C1C1E]/5 w-16 h-20 rounded-[12px] flex items-center justify-center mr-4 shrink-0">
-                                                            <i className="fa-solid fa-image text-[#1C1C1E]/20 text-xl"></i>
+                                                        <div className="bg-black/5 w-16 h-20 rounded-[20px] flex items-center justify-center mr-4 shrink-0 shadow-inner border border-white/60">
+                                                            <i className="fa-solid fa-city text-[#1D1D1F]/20 text-xl"></i>
                                                         </div>
                                                     )}
                                                     <div>
-                                                        <h3 className="text-[20px] font-art font-bold text-[#1C1C1E] mb-1">{cityName}</h3>
-                                                        <p className="text-[11px] font-bold tracking-wider text-[#8E8E93] uppercase">{dataHierarchy.cities[cityName].count} Places</p>
+                                                        <h3 className="text-[22px] font-art font-bold text-[#1D1D1F] mb-0.5">{cityName}</h3>
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-black/5 text-[11px] font-bold tracking-wide text-[var(--ios-accent)] uppercase">
+                                                            {dataHierarchy.cities[cityName].count} Places
+                                                        </span>
                                                     </div>
                                                 </div>
-                                                <div className="flex space-x-2 shrink-0">
-                                                    <button onClick={(e) => { e.stopPropagation(); openCityForm(cityName); }} className="w-8 h-8 rounded-full bg-black/5 text-[#8E8E93] flex items-center justify-center active:bg-black/10">
-                                                        <i className="fa-solid fa-pen text-xs"></i>
+                                                <div className="flex flex-col space-y-2 shrink-0 ml-2">
+                                                    <button onClick={(e) => { e.stopPropagation(); openCityForm(cityName); }} className="w-8 h-8 rounded-full bg-black/5 text-[#8E8E93] flex items-center justify-center active:bg-black/10 transition-colors">
+                                                        <i className="fa-solid fa-pen text-[10px]"></i>
                                                     </button>
-                                                    <button onClick={(e) => { e.stopPropagation(); deleteCity(cityName); }} className="w-8 h-8 rounded-full bg-[#FF3B30]/10 text-[#FF3B30] flex items-center justify-center active:bg-[#FF3B30]/20">
-                                                        <i className="fa-solid fa-trash text-xs"></i>
+                                                    <button onClick={(e) => { e.stopPropagation(); deleteCity(cityName); }} className="w-8 h-8 rounded-full bg-[var(--ios-red)]/10 text-[var(--ios-red)] flex items-center justify-center active:bg-[var(--ios-red)]/20 transition-colors">
+                                                        <i className="fa-solid fa-trash text-[10px]"></i>
                                                     </button>
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
+                                        ))
+                                    )}
+                                </div>
                             </div>
                         )}
 
                         {/* VIEW: CATEGORIES IN CITY */}
                         {view === 'categories' && activeCity && dataHierarchy.cities[activeCity] && (
-                            <div className="pb-6">
+                            <div className="pb-6 space-y-4">
+                                <div className="px-2 mb-6">
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{activeCity}</h2>
+                                    <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1">Curated Collections</p>
+                                </div>
+
                                 {Object.keys(dataHierarchy.cities[activeCity].categories).length === 0 ? (
-                                    <div className="text-center p-10 mt-10">
-                                        <i className="fa-regular fa-folder-open text-5xl text-[#8E8E93] mb-4 opacity-50"></i>
-                                        <p className="text-[#8E8E93] text-sm">No places in this city yet.</p>
+                                    <div className="glass-panel flex flex-col items-center justify-center py-16 px-6 text-center">
+                                        <div className="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-4">
+                                            <i className="fa-regular fa-folder-open text-2xl text-[#8E8E93]"></i>
+                                        </div>
+                                        <p className="text-[#8E8E93] font-medium text-[14px]">No places in this city yet.</p>
                                     </div>
                                 ) : (
-                                    <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60">
-                                        {Object.keys(dataHierarchy.cities[activeCity].categories).sort().map((catName, index, arr) => {
-                                            const categoryPlaces = dataHierarchy.cities[activeCity].categories[catName];
-                                            // The places are automatically sorted by distance! 
-                                            // We find the closest one that has a photo to use as the dynamic cover.
-                                            const closestPlaceWithPhoto = categoryPlaces.find(loc => Array.isArray(loc.photos) && loc.photos.length > 0);
-                                            const coverPhoto = closestPlaceWithPhoto ? closestPlaceWithPhoto.photos : null;
+                                    Object.keys(dataHierarchy.cities[activeCity].categories).sort().map((catName) => {
+                                        const categoryPlaces = dataHierarchy.cities[activeCity].categories[catName];
+                                        const closestPlaceWithPhoto = categoryPlaces.find(loc => Array.isArray(loc.photos) && loc.photos.length > 0);
+                                        const coverPhoto = closestPlaceWithPhoto ? closestPlaceWithPhoto.photos : null;
 
-                                            return (
-                                                <div 
-                                                    key={catName}
-                                                    onClick={() => { setActiveCategory(catName); setView('category_list'); }}
-                                                    className={`flex items-center justify-between p-3 pl-4 cursor-pointer active:bg-black/5 transition-colors ${index !== arr.length - 1 ? 'border-b border-black/5' : ''}`}
-                                                >
-                                                    <div className="flex items-center">
-                                                        {coverPhoto ? (
-                                                            <img src={coverPhoto} alt={catName} className="w-12 h-12 rounded-[12px] object-cover shrink-0 mr-3 shadow-sm border border-black/5" />
-                                                        ) : (
-                                                            <div className="bg-[#007AFF]/10 w-12 h-12 rounded-[12px] flex items-center justify-center shrink-0 mr-3">
-                                                                <i className="fa-solid fa-folder-open text-[#007AFF] text-lg"></i>
-                                                            </div>
-                                                        )}
-                                                        <div>
-                                                            <h3 className="text-[17px] font-normal text-[#1C1C1E]">{catName}</h3>
-                                                            <p className="text-[13px] text-[#8E8E93] mt-0.5">{categoryPlaces.length} Places</p>
+                                        return (
+                                            <div 
+                                                key={catName}
+                                                onClick={() => { setActiveCategory(catName); setView('category_list'); }}
+                                                className="glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform"
+                                            >
+                                                <div className="flex items-center">
+                                                    {coverPhoto ? (
+                                                        <img src={coverPhoto} alt={catName} className="w-14 h-14 rounded-[16px] object-cover shrink-0 mr-4 shadow-sm border border-white/60" />
+                                                    ) : (
+                                                        <div className="bg-black/5 w-14 h-14 rounded-[16px] flex items-center justify-center shrink-0 mr-4 shadow-inner border border-white/60">
+                                                            <i className="fa-solid fa-layer-group text-[var(--ios-accent)] text-lg opacity-80"></i>
                                                         </div>
+                                                    )}
+                                                    <div>
+                                                        <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-0.5">{catName}</h3>
+                                                        <p className="text-[13px] font-medium text-[#8E8E93]">{categoryPlaces.length} Destinations</p>
                                                     </div>
-                                                    <i className="fa-solid fa-chevron-right text-[#C7C7CC] text-sm pr-2"></i>
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
+                                                <div className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center text-[#8E8E93]">
+                                                    <i className="fa-solid fa-chevron-right text-[10px]"></i>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
                                 )}
                             </div>
                         )}
 
                         {/* VIEW: CATEGORY LIST (LOCATIONS) */}
                         {view === 'category_list' && activeCity && activeCategory && dataHierarchy.cities[activeCity]?.categories[activeCategory] && (
-                            <div className="space-y-4 pb-6">
+                            <div className="space-y-5 pb-6">
+                                <div className="px-2 mb-6">
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{activeCategory}</h2>
+                                    <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1">{activeCity}</p>
+                                </div>
+
                                 {dataHierarchy.cities[activeCity].categories[activeCategory].map(loc => (
                                     <div 
                                         key={loc.id} 
-                                        className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
+                                        className="glass-panel p-2 flex flex-col cursor-pointer active:scale-[0.98] transition-transform"
                                         onClick={() => { setLocationReturnView('category_list'); setSelectedLocId(loc.id); setView('location_detail'); }}
                                     >
                                         {Array.isArray(loc.photos) && loc.photos.length > 0 ? (
-                                            <div className="relative w-full h-48 bg-black/5">
+                                            <div className="relative w-full h-52 rounded-[22px] overflow-hidden mb-3 border border-white/60">
                                                 <div className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide">
                                                     {loc.photos.map((p, idx) => (
                                                         <img key={idx} src={p} alt="Location" className="w-full h-full object-cover shrink-0 snap-center" />
                                                     ))}
                                                 </div>
                                                 {loc.photos.length > 1 && (
-                                                    <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-1.5 pointer-events-none">
+                                                    <div className="absolute bottom-3 left-0 right-0 flex justify-center space-x-1.5 pointer-events-none bg-gradient-to-t from-black/50 to-transparent pt-6 pb-1">
                                                         {loc.photos.map((_, i) => (<div key={i} className="w-1.5 h-1.5 rounded-full bg-white shadow-sm" />))}
                                                     </div>
                                                 )}
                                             </div>
                                         ) : (
-                                            <div className="h-16 w-full bg-black/5 flex items-center justify-center text-[#8E8E93]">
-                                                <i className="fa-regular fa-image text-xl opacity-50"></i>
+                                            <div className="h-20 w-full rounded-[22px] bg-black/5 flex items-center justify-center text-[#8E8E93] mb-3 shadow-inner border border-white/60">
+                                                <i className="fa-solid fa-camera-retro text-xl opacity-40"></i>
                                             </div>
                                         )}
 
-                                        <div className="p-4 flex items-center justify-between">
-                                            <div>
-                                                <h4 className="text-[17px] font-semibold text-[#1C1C1E]">{loc.name}</h4>
-                                                <p className="text-[13px] text-[#8E8E93] mt-0.5">{formatDistance(loc.currentDistance)} away</p>
+                                        <div className="px-3 pb-2 flex items-start justify-between">
+                                            <div className="pr-4">
+                                                <h4 className="text-[18px] font-bold text-[#1D1D1F] leading-tight mb-1">{loc.name}</h4>
+                                                <p className="text-[13px] font-bold tracking-wide text-[var(--ios-accent)] flex items-center">
+                                                    <i className="fa-solid fa-location-arrow text-[10px] mr-1.5"></i>
+                                                    {formatDistance(loc.currentDistance)}
+                                                </p>
                                             </div>
-                                            <button onClick={(e) => { e.stopPropagation(); openForm(loc); }} className="w-8 h-8 rounded-full bg-black/5 text-[#007AFF] flex items-center justify-center active:bg-black/10">
-                                                <i className="fa-solid fa-pen text-xs"></i>
+                                            <button onClick={(e) => { e.stopPropagation(); openForm(loc); }} className="w-9 h-9 shrink-0 rounded-full bg-black/5 text-[#1D1D1F] flex items-center justify-center active:bg-black/10 transition-colors">
+                                                <i className="fa-solid fa-pen text-[11px]"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -1032,186 +1032,187 @@
 
                         {/* VIEW: LOCATION DETAIL */}
                         {view === 'location_detail' && locDetail && (
-                            <div className="pb-6 -mx-4 -mt-4">
-                                {/* Edge-to-Edge Hero Image */}
-                                {Array.isArray(locDetail.photos) && locDetail.photos.length > 0 ? (
-                                    <div className="relative w-full h-80 bg-black/5">
-                                        <div className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide">
-                                            {locDetail.photos.map((p, idx) => (
-                                                <img 
-                                                    key={idx} src={p} alt="Detail" 
-                                                    className="w-full h-full object-cover shrink-0 snap-center active:opacity-90 transition-opacity cursor-pointer" 
-                                                    onClick={() => { setPreviousView(view); setView('photo_viewer'); setFullScreenPhoto({ photos: locDetail.photos, index: idx }); }} 
-                                                />
-                                            ))}
-                                        </div>
-                                        {locDetail.photos.length > 1 && (
-                                            <div className="absolute bottom-8 left-0 right-0 flex justify-center space-x-1.5 pointer-events-none">
-                                                {locDetail.photos.map((_, i) => (<div key={i} className="w-1.5 h-1.5 rounded-full bg-white shadow-sm" />))}
+                            <div className="pb-6 space-y-4">
+                                <div className="glass-panel p-2 flex flex-col">
+                                    {Array.isArray(locDetail.photos) && locDetail.photos.length > 0 ? (
+                                        <div className="relative w-full h-72 rounded-[22px] overflow-hidden mb-4 border border-white/60">
+                                            <div className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide">
+                                                {locDetail.photos.map((p, idx) => (
+                                                    <img 
+                                                        key={idx} src={p} alt="Detail" 
+                                                        className="w-full h-full object-cover shrink-0 snap-center active:opacity-90 transition-opacity cursor-pointer" 
+                                                        onClick={() => { setPreviousView(view); setView('photo_viewer'); setFullScreenPhoto({ photos: locDetail.photos, index: idx }); }} 
+                                                    />
+                                                ))}
                                             </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="w-full h-40 bg-black/5 flex items-center justify-center text-[#8E8E93]">
-                                        <i className="fa-regular fa-image text-3xl opacity-50"></i>
-                                    </div>
-                                )}
-                                
-                                {/* Content Sheet */}
-                                <div className="relative z-10 bg-[var(--ios-bg)] rounded-t-[32px] -mt-6 pt-6 px-4 min-h-[50vh]">
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div>
-                                            <h2 className="text-[32px] font-art font-bold text-[#1C1C1E] leading-tight tracking-tight mb-1">{locDetail.name}</h2>
-                                            <span className="text-[13px] tracking-widest uppercase font-semibold text-[#8E8E93]">{locDetail.category || 'Uncategorized'}</span>
-                                        </div>
-                                        <div className="flex space-x-2 shrink-0">
-                                            <button onClick={() => openForm(locDetail)} className="w-9 h-9 rounded-full bg-black/5 text-[#1C1C1E] flex items-center justify-center active:bg-black/10"><i className="fa-solid fa-pen text-sm"></i></button>
-                                        </div>
-                                    </div>
-                                    
-                                    {/* Primary Action: Open in Maps */}
-                                    {(() => {
-                                        const mapsUrl = locDetail.mapLink || (locDetail.lat != null && locDetail.lng != null ? `https://www.google.com/maps/search/?api=1&query=${locDetail.lat},${locDetail.lng}` : null);
-                                        if (!mapsUrl) return null;
-                                        return (
-                                            <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full bg-[#007AFF] text-white py-3.5 rounded-[14px] font-semibold text-[17px] active:scale-[0.98] transition-transform mb-4 shadow-sm shadow-[#007AFF]/20">
-                                                <i className="fa-solid fa-map-location-dot mr-2.5"></i> Open in Google Maps
-                                            </a>
-                                        );
-                                    })()}
-                                    
-                                    {/* Distance Indicator */}
-                                    <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 p-4 mb-4">
-                                        <div className="flex items-center text-[#1C1C1E] mb-1">
-                                            <i className="fa-solid fa-location-arrow text-[#007AFF] w-6"></i>
-                                            <span className="text-[17px] font-medium">{formatDistance(liveLocation && locDetail.lat != null && locDetail.lng != null ? calculateDistance(liveLocation.lat, liveLocation.lng, locDetail.lat, locDetail.lng) : null)} away</span>
-                                        </div>
-                                        <p className="text-[13px] text-[#8E8E93] ml-6">Straight-line distance</p>
-                                    </div>
-
-                                    {/* Notes Section - Now permanently visible */}
-                                    <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 p-4 mb-6">
-                                        <h3 className="text-[15px] font-medium text-[#1C1C1E] mb-1.5 flex items-center">
-                                            <i className="fa-regular fa-clipboard mr-2 text-[#8E8E93]"></i>Notes & Additional Info
-                                        </h3>
-                                        {locDetail.comment ? (
-                                            <p className="text-[15px] text-[#8E8E93] leading-relaxed whitespace-pre-wrap">{locDetail.comment}</p>
-                                        ) : (
-                                            <p className="text-[14px] text-[#8E8E93] italic">No notes added. Tap the pen icon above to add some!</p>
-                                        )}
-                                    </div>
-
-                                    {/* Hidden Coordinates Toggle */}
-                                    <div className="text-center mb-8">
-                                        <button onClick={() => setShowCoords(!showCoords)} className="text-[13px] text-[#8E8E93] font-medium active:opacity-50 flex items-center justify-center mx-auto">
-                                            <i className={`fa-solid fa-chevron-${showCoords ? 'up' : 'down'} mr-1.5 text-[10px]`}></i>
-                                            {showCoords ? 'Hide Technical Details' : 'View Exact Coordinates'}
-                                        </button>
-                                        
-                                        {showCoords && (
-                                            <div className="mt-4 bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[16px] border border-white/60 p-3.5 flex justify-between items-center text-[13px] font-mono text-[#8E8E93] shadow-sm text-left">
-                                                <div>
-                                                    <div className="mb-1"><span className="text-[#1C1C1E] font-medium mr-2">Lat:</span> {locDetail.lat != null ? Number(locDetail.lat).toFixed(6) : 'N/A'}</div>
-                                                    <div><span className="text-[#1C1C1E] font-medium mr-2">Lng:</span> {locDetail.lng != null ? Number(locDetail.lng).toFixed(6) : 'N/A'}</div>
+                                            {locDetail.photos.length > 1 && (
+                                                <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-1.5 pointer-events-none bg-gradient-to-t from-black/50 to-transparent pt-6 pb-1">
+                                                    {locDetail.photos.map((_, i) => (<div key={i} className="w-1.5 h-1.5 rounded-full bg-white shadow-sm" />))}
                                                 </div>
-                                                <i className="fa-solid fa-satellite-dish text-[#C7C7CC] text-xl opacity-50"></i>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="h-32 w-full rounded-[22px] bg-black/5 flex items-center justify-center text-[#8E8E93] mb-4 shadow-inner border border-white/60">
+                                            <i className="fa-solid fa-camera-retro text-2xl opacity-40"></i>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="px-3 pb-2">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div>
+                                                <h2 className="text-[28px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight mb-1.5">{locDetail.name}</h2>
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-black/5 text-[11px] font-bold tracking-wide text-[#1D1D1F] uppercase">
+                                                        {locDetail.category || 'Uncategorized'}
+                                                    </span>
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--ios-accent)]/10 text-[11px] font-bold tracking-wide text-[var(--ios-accent)] uppercase border border-[var(--ios-accent)]/20">
+                                                        <i className="fa-solid fa-location-arrow text-[9px] mr-1"></i>
+                                                        {formatDistance(liveLocation && locDetail.lat != null && locDetail.lng != null ? calculateDistance(liveLocation.lat, liveLocation.lng, locDetail.lat, locDetail.lng) : null)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <button onClick={() => openForm(locDetail)} className="w-10 h-10 shrink-0 rounded-full bg-black/5 text-[#1D1D1F] flex items-center justify-center active:bg-black/10 transition-colors ml-4">
+                                                <i className="fa-solid fa-pen text-[12px]"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        {(() => {
+                                            const mapsUrl = locDetail.mapLink || (locDetail.lat != null && locDetail.lng != null ? `https://www.google.com/maps/search/?api=1&query=${locDetail.lat},${locDetail.lng}` : null);
+                                            if (!mapsUrl) return null;
+                                            return (
+                                                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full bg-[#1D1D1F] text-white py-3.5 rounded-[16px] font-semibold text-[16px] active:scale-[0.98] transition-transform mb-5 shadow-lg shadow-black/10">
+                                                    Open in Maps <i className="fa-solid fa-arrow-up-right-from-square ml-2 text-[12px] opacity-70"></i>
+                                                </a>
+                                            );
+                                        })()}
+                                        
+                                        {locDetail.comment && (
+                                            <div className="mb-5 p-4 rounded-[16px] bg-black/5 border border-black/5 shadow-inner">
+                                                <p className="text-[15px] font-medium text-[#1D1D1F] leading-relaxed whitespace-pre-wrap">{locDetail.comment}</p>
                                             </div>
                                         )}
-                                    </div>
 
-                                    <div className="text-center pb-8 border-t border-black/5 pt-6">
-                                        <button onClick={() => deleteLocation(locDetail.id, true)} className="text-[#FF3B30] text-[15px] font-medium active:opacity-50">
-                                            Delete Location
-                                        </button>
+                                        <div className="text-center pt-2">
+                                            <button onClick={() => setShowCoords(!showCoords)} className="text-[13px] text-[#8E8E93] font-bold tracking-wide active:opacity-50 flex items-center justify-center mx-auto transition-opacity">
+                                                {showCoords ? 'HIDE COORDINATES' : 'SHOW COORDINATES'}
+                                                <i className={`fa-solid fa-chevron-${showCoords ? 'up' : 'down'} ml-1.5 text-[10px]`}></i>
+                                            </button>
+                                            
+                                            {showCoords && (
+                                                <div className="mt-4 p-4 rounded-[16px] bg-black/5 border border-black/5 shadow-inner flex justify-between items-center text-[13px] font-mono text-[#8E8E93] text-left">
+                                                    <div>
+                                                        <div className="mb-1"><span className="text-[#1D1D1F] font-bold mr-2">LAT</span> {locDetail.lat != null ? Number(locDetail.lat).toFixed(6) : '—'}</div>
+                                                        <div><span className="text-[#1D1D1F] font-bold mr-2">LNG</span> {locDetail.lng != null ? Number(locDetail.lng).toFixed(6) : '—'}</div>
+                                                    </div>
+                                                    <i className="fa-solid fa-satellite-dish text-[#1D1D1F] text-xl opacity-20"></i>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
+                                </div>
+
+                                <div className="text-center pt-2 pb-6">
+                                    <button onClick={() => deleteLocation(locDetail.id, true)} className="text-[var(--ios-red)] text-[15px] font-bold active:opacity-50 bg-[var(--ios-red)]/10 px-5 py-2.5 rounded-full transition-colors border border-[var(--ios-red)]/20">
+                                        Delete Location
+                                    </button>
                                 </div>
                             </div>
                         )}
 
                         {/* VIEW: ADD OR EDIT CITY FORM */}
                         {view === 'city_form' && (
-                            <form onSubmit={handleSaveCity} className="space-y-4 pb-6">
+                            <form onSubmit={handleSaveCity} className="space-y-5 pb-6">
+                                <div className="px-2 mb-4">
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{editingCityName ? 'Edit City' : 'New City'}</h2>
+                                </div>
+
                                 {saveError && (
-                                    <div className="p-3 bg-[#FF3B30]/10 text-[#FF3B30] text-[13px] rounded-[10px]">
-                                        <i className="fa-solid fa-circle-exclamation mr-1.5"></i>{saveError}
+                                    <div className="p-3 bg-[var(--ios-red)]/10 text-[var(--ios-red)] text-[13px] font-medium rounded-[16px] border border-[var(--ios-red)]/20 flex items-center">
+                                        <i className="fa-solid fa-circle-exclamation mr-2"></i>{saveError}
                                     </div>
                                 )}
                                 
-                                <div className="bg-[var(--ios-glass)] backdrop-blur-2xl p-5 rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 space-y-5">
+                                <div className="glass-panel p-5 space-y-5">
                                     <div>
-                                        <label className="block text-[13px] font-medium text-[#8E8E93] mb-1.5 uppercase ml-1">City Name</label>
-                                        <input type="text" required value={newCityName} onChange={e => setNewCityName(e.target.value)} className="w-full px-4 py-3.5 ios-input focus:outline-none text-[17px]" placeholder="Tokyo, Japan" autoFocus />
+                                        <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">City Name</label>
+                                        <input type="text" required value={newCityName} onChange={e => setNewCityName(e.target.value)} className="w-full px-4 py-3.5 glass-input text-[16px] font-medium placeholder-[#8E8E93]/50" placeholder="Tokyo, Japan" autoFocus />
                                     </div>
                                 </div>
 
-                                <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 p-4">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-[17px] text-[#1C1C1E]">City Photo</span>
-                                        <label className="text-[15px] font-medium text-[#007AFF] cursor-pointer active:opacity-50">
-                                            Add Photo
+                                <div className="glass-panel p-5">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-[14px] font-bold text-[#8E8E93] uppercase tracking-wide ml-1">Cover Photo</span>
+                                        <label className="text-[13px] font-bold bg-[#1D1D1F] text-white px-3 py-1.5 rounded-full cursor-pointer active:scale-95 transition-transform shadow-md">
+                                            <i className="fa-solid fa-plus mr-1"></i> Add
                                             <input type="file" accept="image/*" className="hidden" onChange={handleCityFiles} disabled={isSaving} />
                                         </label>
                                     </div>
                                     {cityPhotos.length > 0 ? (
                                         <div className="flex overflow-x-auto space-x-3 pb-2 scrollbar-hide snap-x">
                                             {cityPhotos.map((p, i) => (
-                                                <div key={i} className="relative w-20 h-20 flex-shrink-0 snap-start rounded-[14px] overflow-hidden border border-black/5">
+                                                <div key={i} className="relative w-24 h-24 flex-shrink-0 snap-start rounded-[16px] overflow-hidden border border-white/60 shadow-sm">
                                                     <img src={p} className="w-full h-full object-cover" alt="Preview" />
-                                                    <button type="button" onClick={() => removeCityPhoto(i)} className="absolute top-1 right-1 bg-black/50 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px]"><i className="fa-solid fa-xmark"></i></button>
+                                                    <button type="button" onClick={() => removeCityPhoto(i)} className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-md text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px]"><i className="fa-solid fa-xmark"></i></button>
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-[13px] text-[#8E8E93]">No photos added.</p>
+                                        <div className="h-24 w-full rounded-[16px] bg-black/5 flex items-center justify-center text-[#8E8E93] shadow-inner border border-black/5">
+                                            <i className="fa-solid fa-image text-xl opacity-40"></i>
+                                        </div>
                                     )}
                                 </div>
 
-                                <button type="submit" disabled={isSaving || !newCityName.trim()} className="w-full py-3.5 bg-[#007AFF] disabled:opacity-50 text-white font-semibold text-[17px] rounded-[14px] active:scale-[0.98] transition-transform mt-4">
-                                    {isSaving ? <i className="fa-solid fa-spinner fa-spin"></i> : editingCityName ? 'Update' : 'Add City'}
+                                <button type="submit" disabled={isSaving || !newCityName.trim()} className="w-full py-4 bg-[#1D1D1F] disabled:bg-[#1D1D1F]/50 text-white font-bold tracking-wide text-[16px] rounded-[18px] active:scale-[0.98] transition-all mt-4 shadow-lg shadow-black/10">
+                                    {isSaving ? <i className="fa-solid fa-spinner fa-spin"></i> : editingCityName ? 'Update City' : 'Create City'}
                                 </button>
                             </form>
                         )}
 
                         {/* VIEW: ADD / EDIT LOCATION FORM */}
                         {view === 'form' && (
-                            <form onSubmit={handleSaveLocation} className="space-y-4 pb-6">
+                            <form onSubmit={handleSaveLocation} className="space-y-5 pb-6">
+                                <div className="px-2 mb-4">
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{editId ? 'Edit Place' : 'New Place'}</h2>
+                                </div>
+
                                 {saveError && (
-                                    <div className="p-3 bg-[#FF3B30]/10 text-[#FF3B30] text-[13px] rounded-[10px]">
-                                        <i className="fa-solid fa-circle-exclamation mr-1.5"></i>{saveError}
+                                    <div className="p-3 bg-[var(--ios-red)]/10 text-[var(--ios-red)] text-[13px] font-medium rounded-[16px] border border-[var(--ios-red)]/20 flex items-center">
+                                        <i className="fa-solid fa-circle-exclamation mr-2"></i>{saveError}
                                     </div>
                                 )}
                                 
                                 {/* LIVE AUTOCOMPLETE SEARCH BAR */}
                                 {!editId && (
                                     <div className="relative z-50">
-                                        <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 p-2">
-                                            <div className="relative flex items-center bg-black/5 rounded-[12px] px-3 py-2.5">
-                                                <i className="fa-solid fa-magnifying-glass text-[#8E8E93] mr-2"></i>
+                                        <div className="glass-panel p-1.5">
+                                            <div className="relative flex items-center glass-input px-3 py-3">
+                                                <i className="fa-solid fa-magnifying-glass text-[#8E8E93] mr-2.5"></i>
                                                 <input 
                                                     type="text" 
-                                                    placeholder="Search to auto-fill (e.g. BBRAND)" 
+                                                    placeholder="Search to auto-fill..." 
                                                     value={formSearchQuery} 
                                                     onChange={(e) => setFormSearchQuery(e.target.value)}
-                                                    className="flex-1 bg-transparent focus:outline-none text-[17px] text-[#1C1C1E]"
+                                                    className="flex-1 bg-transparent focus:outline-none text-[16px] font-medium placeholder-[#8E8E93]/60"
                                                 />
-                                                {isSearching && <i className="fa-solid fa-spinner fa-spin text-[#8E8E93]"></i>}
+                                                {isSearching && <i className="fa-solid fa-spinner fa-spin text-[var(--ios-accent)] ml-2"></i>}
                                             </div>
                                         </div>
                                         
                                         {searchResults.length > 0 && (
-                                            <div className="absolute top-[calc(100%+8px)] left-0 right-0 bg-[rgba(242,242,247,0.95)] backdrop-blur-3xl rounded-[20px] shadow-lg border border-black/5 overflow-hidden max-h-64 overflow-y-auto">
+                                            <div className="absolute top-[calc(100%+8px)] left-0 right-0 glass-panel overflow-hidden max-h-64 overflow-y-auto z-50 shadow-2xl border-white/80">
                                                 {searchResults.map((result, idx) => (
                                                     <div 
                                                         key={idx} 
-                                                        className={`p-3 pl-4 cursor-pointer active:bg-black/10 flex items-center ${idx !== searchResults.length - 1 ? 'border-b border-black/5' : ''}`}
+                                                        className={`p-3 pl-4 cursor-pointer active:bg-black/5 flex items-center transition-colors ${idx !== searchResults.length - 1 ? 'border-b border-black/5' : ''}`}
                                                         onClick={() => handleSelectPlace(result)}
                                                     >
-                                                        <div className="bg-[#007AFF] w-8 h-8 rounded-full flex items-center justify-center text-white shrink-0 mr-3">
-                                                            <i className="fa-solid fa-location-dot text-sm"></i>
+                                                        <div className="bg-[#1D1D1F] w-9 h-9 rounded-[10px] flex items-center justify-center text-white shrink-0 mr-3 shadow-md">
+                                                            <i className="fa-solid fa-location-dot text-[13px]"></i>
                                                         </div>
                                                         <div className="truncate">
-                                                            <h4 className="text-[15px] font-medium text-[#1C1C1E] truncate">{result.properties.name || result.properties.street || 'Unknown'}</h4>
-                                                            <p className="text-[12px] text-[#8E8E93] truncate">
+                                                            <h4 className="text-[15px] font-bold text-[#1D1D1F] truncate">{result.properties.name || result.properties.street || 'Unknown'}</h4>
+                                                            <p className="text-[12px] font-medium text-[#8E8E93] truncate mt-0.5">
                                                                 {[result.properties.street, result.properties.city, result.properties.state, result.properties.country].filter(Boolean).join(', ')}
                                                             </p>
                                                         </div>
@@ -1222,76 +1223,79 @@
                                     </div>
                                 )}
                                 
-                                <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 overflow-hidden">
-                                    <div className="p-3.5 border-b border-black/5 flex items-center">
-                                        <label className="w-24 text-[17px] text-[#1C1C1E]">Name</label>
-                                        <input type="text" required value={name} onChange={e => setName(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[17px] text-[#8E8E93]" placeholder="Location name" />
+                                <div className="glass-panel p-2 flex flex-col space-y-1">
+                                    <div className="p-3 flex items-center">
+                                        <label className="w-24 text-[14px] font-bold text-[#8E8E93] uppercase">Name</label>
+                                        <input type="text" required value={name} onChange={e => setName(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[16px] placeholder-[#8E8E93]/40 font-bold text-[#1D1D1F]" placeholder="Location name" />
                                     </div>
-                                    <div className="p-3.5 border-b border-black/5 flex items-center">
-                                        <label className="w-24 text-[17px] text-[#1C1C1E]">City</label>
-                                        <input type="text" required list="cities-list" value={city} onChange={e => setCity(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[17px] text-[#8E8E93]" placeholder="Select or type" />
+                                    <div className="h-px bg-black/5 mx-3"></div>
+                                    <div className="p-3 flex items-center">
+                                        <label className="w-24 text-[14px] font-bold text-[#8E8E93] uppercase">City</label>
+                                        <input type="text" required list="cities-list" value={city} onChange={e => setCity(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[16px] placeholder-[#8E8E93]/40 font-bold text-[#1D1D1F]" placeholder="Select or type" />
                                         <datalist id="cities-list">{dataHierarchy.uniqueCities.map(c => <option key={c} value={c} />)}</datalist>
                                     </div>
-                                    <div className="p-3.5 flex items-center">
-                                        <label className="w-24 text-[17px] text-[#1C1C1E]">Category</label>
-                                        <input type="text" required list="categories-list" value={category} onChange={e => setCategory(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[17px] text-[#8E8E93]" placeholder="Select or type" />
+                                    <div className="h-px bg-black/5 mx-3"></div>
+                                    <div className="p-3 flex items-center">
+                                        <label className="w-24 text-[14px] font-bold text-[#8E8E93] uppercase">Category</label>
+                                        <input type="text" required list="categories-list" value={category} onChange={e => setCategory(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[16px] placeholder-[#8E8E93]/40 font-bold text-[#1D1D1F]" placeholder="Select or type" />
                                         <datalist id="categories-list">{dataHierarchy.allCategories.map(c => <option key={c} value={c} />)}</datalist>
                                     </div>
                                 </div>
                                 
-                                <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 overflow-hidden">
-                                    <div className="p-3.5 flex flex-col">
-                                        <label className="text-[15px] font-medium text-[#1C1C1E] mb-2">Notes & Additional Info</label>
-                                        <textarea value={comment} onChange={e => setComment(e.target.value)} rows="3" className="w-full bg-black/5 rounded-[12px] p-3 focus:outline-none text-[15px] text-[#1C1C1E] placeholder:text-[#8E8E93]" placeholder="Add comments, tips, or what to order here..."></textarea>
+                                <div className="glass-panel p-4">
+                                    <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Notes</label>
+                                    <textarea value={comment} onChange={e => setComment(e.target.value)} rows="3" className="w-full glass-input p-3.5 text-[15px] font-medium placeholder-[#8E8E93]/50 resize-none" placeholder="Tips, what to order, vibes..."></textarea>
+                                </div>
+
+                                <div className="glass-panel p-2 flex flex-col space-y-1">
+                                    <div className="p-3 flex justify-between items-center">
+                                        <span className="text-[14px] font-bold text-[#8E8E93] uppercase tracking-wide">Coordinates</span>
+                                        <button type="button" onClick={useCurrentLocation} className="text-[12px] font-bold tracking-wide uppercase bg-[#1D1D1F] text-white px-3 py-1.5 rounded-full active:scale-95 transition-transform shadow-md">
+                                            Get GPS
+                                        </button>
+                                    </div>
+                                    <div className="h-px bg-black/5 mx-3"></div>
+                                    <div className="p-3 flex items-center">
+                                        <label className="w-20 text-[14px] font-bold text-[#1D1D1F]">Lat</label>
+                                        <input type="number" step="any" value={lat} onChange={e => setLat(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[16px] font-mono font-medium placeholder-[#8E8E93]/30 text-[#1D1D1F]" placeholder="Optional" />
+                                    </div>
+                                    <div className="h-px bg-black/5 mx-3"></div>
+                                    <div className="p-3 flex items-center">
+                                        <label className="w-20 text-[14px] font-bold text-[#1D1D1F]">Lng</label>
+                                        <input type="number" step="any" value={lng} onChange={e => setLng(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[16px] font-mono font-medium placeholder-[#8E8E93]/30 text-[#1D1D1F]" placeholder="Optional" />
+                                    </div>
+                                    <div className="h-px bg-black/5 mx-3"></div>
+                                    <div className="p-3">
+                                        <input type="url" value={mapLink} onChange={handleMapLinkChange} className="w-full glass-input px-3 py-2.5 text-[14px] font-medium placeholder-[#8E8E93]/50" placeholder="Paste Maps Link (Auto-fills GPS)" />
                                     </div>
                                 </div>
 
-                                <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 overflow-hidden">
-                                    <div className="p-3.5 border-b border-black/5 flex justify-between items-center bg-[#007AFF]/5">
-                                        <span className="text-[15px] font-medium text-[#007AFF]">GPS Coordinates (Optional)</span>
-                                        <div className="flex space-x-2">
-                                            <button type="button" onClick={useCurrentLocation} className="text-[13px] font-semibold text-white bg-[#007AFF] px-3 py-1 rounded-full active:opacity-70">
-                                                Get Current
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className="p-3.5 border-b border-black/5 flex items-center">
-                                        <label className="w-24 text-[17px] text-[#1C1C1E]">Lat</label>
-                                        <input type="number" step="any" value={lat} onChange={e => setLat(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[17px] text-[#8E8E93] font-mono" placeholder="Optional" />
-                                    </div>
-                                    <div className="p-3.5 border-b border-black/5 flex items-center">
-                                        <label className="w-24 text-[17px] text-[#1C1C1E]">Lng</label>
-                                        <input type="number" step="any" value={lng} onChange={e => setLng(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[17px] text-[#8E8E93] font-mono" placeholder="Optional" />
-                                    </div>
-                                    <div className="p-3.5 flex flex-col">
-                                        <input type="url" value={mapLink} onChange={handleMapLinkChange} className="w-full bg-transparent focus:outline-none text-[15px] text-[#8E8E93] mb-1" placeholder="Paste Maps Link (Auto-fills GPS)" />
-                                    </div>
-                                </div>
-
-                                <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60 p-4">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-[17px] text-[#1C1C1E]">Photos</span>
-                                        <label className="text-[15px] font-medium text-[#007AFF] cursor-pointer active:opacity-50">
-                                            Add Photo
+                                <div className="glass-panel p-4">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-[14px] font-bold text-[#8E8E93] uppercase tracking-wide ml-1">Photos</span>
+                                        <label className="text-[13px] font-bold bg-[#1D1D1F] text-white px-3 py-1.5 rounded-full cursor-pointer active:scale-95 transition-transform shadow-md">
+                                            <i className="fa-solid fa-plus mr-1"></i> Add
                                             <input type="file" multiple accept="image/*" className="hidden" onChange={handleFiles} disabled={isSaving} />
                                         </label>
                                     </div>
                                     {photos.length > 0 ? (
                                         <div className="flex overflow-x-auto space-x-3 pb-2 scrollbar-hide snap-x">
                                             {photos.map((p, i) => (
-                                                <div key={i} className="relative w-20 h-20 flex-shrink-0 snap-start rounded-[14px] overflow-hidden">
+                                                <div key={i} className="relative w-24 h-24 flex-shrink-0 snap-start rounded-[16px] overflow-hidden border border-white/60 shadow-sm">
                                                     <img src={p} className="w-full h-full object-cover" alt="Preview" />
-                                                    <button type="button" onClick={() => removePhoto(i)} className="absolute top-1 right-1 bg-black/50 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px]"><i className="fa-solid fa-xmark"></i></button>
+                                                    <button type="button" onClick={() => removePhoto(i)} className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-md text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px]"><i className="fa-solid fa-xmark"></i></button>
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-[13px] text-[#8E8E93]">No photos added.</p>
+                                        <div className="h-24 w-full rounded-[16px] bg-black/5 flex items-center justify-center text-[#8E8E93] shadow-inner border border-black/5">
+                                            <i className="fa-solid fa-images text-xl opacity-40"></i>
+                                        </div>
                                     )}
                                 </div>
 
-                                <button type="submit" disabled={!user || isSaving} className="w-full py-3.5 bg-[#007AFF] disabled:opacity-50 text-white font-semibold text-[17px] rounded-[14px] active:scale-[0.98] transition-transform">
-                                    {isSaving ? <i className="fa-solid fa-spinner fa-spin"></i> : editId ? 'Save Changes' : 'Add Location'}
+                                <button type="submit" disabled={!user || isSaving} className="w-full py-4 bg-[#1D1D1F] disabled:bg-[#1D1D1F]/50 text-white font-bold tracking-wide text-[16px] rounded-[18px] active:scale-[0.98] transition-all mt-4 shadow-lg shadow-black/10">
+                                    {isSaving ? <i className="fa-solid fa-spinner fa-spin"></i> : editId ? 'Save Changes' : 'Create Place'}
                                 </button>
                             </form>
                         )}
@@ -1302,24 +1306,43 @@
 
                         {/* VIEW: ITINERARIES LIST */}
                         {view === 'itineraries' && (
-                            <div className="pb-6">
+                            <div className="pb-6 space-y-4">
+                                <div className="px-2 mb-6">
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">Journeys</h2>
+                                    <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1">Planned Days</p>
+                                </div>
+
                                 {itineraries.length === 0 ? (
-                                    <div className="text-center p-10 mt-10">
-                                        <i className="fa-regular fa-calendar text-5xl text-[#8E8E93] mb-4 opacity-50"></i>
-                                        <h3 className="text-lg font-semibold text-[#1C1C1E] mb-1">No Itineraries</h3>
-                                        <p className="text-[#8E8E93] text-sm">Tap the + button to plan a day.</p>
+                                    <div className="glass-panel flex flex-col items-center justify-center py-16 px-6 text-center">
+                                        <div className="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-4">
+                                            <i className="fa-regular fa-calendar text-2xl text-[#8E8E93]"></i>
+                                        </div>
+                                        <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-1">No Plans Yet</h3>
+                                        <p className="text-[#8E8E93] font-medium text-[14px]">Tap the + icon to plan a new day.</p>
                                     </div>
                                 ) : (
-                                    <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60">
-                                        {itineraries.map((itin, index) => (
-                                            <div key={itin.id} className={`flex items-center justify-between p-3 pl-4 cursor-pointer active:bg-black/5 transition-colors ${index !== itineraries.length - 1 ? 'border-b border-black/5' : ''}`} onClick={() => { setActiveItinId(itin.id); setView('itinerary_detail'); }}>
-                                                <div className="flex-1 pr-4">
-                                                    <h3 className="text-[17px] font-normal text-[#1C1C1E]">{itin.title}</h3>
-                                                    <p className="text-[13px] text-[#8E8E93] mt-0.5">{itin.date || 'No Date'} &bull; {(itin.items || []).length} events</p>
+                                    <div className="space-y-4">
+                                        {itineraries.map((itin) => (
+                                            <div 
+                                                key={itin.id} 
+                                                className="glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform" 
+                                                onClick={() => { setActiveItinId(itin.id); setView('itinerary_detail'); }}
+                                            >
+                                                <div className="flex items-center flex-1">
+                                                    <div className="w-14 h-14 rounded-[16px] bg-black/5 flex items-center justify-center shrink-0 mr-4 border border-black/5 shadow-inner">
+                                                        <i className="fa-solid fa-calendar-day text-[var(--ios-accent)] text-xl opacity-90"></i>
+                                                    </div>
+                                                    <div className="pr-2">
+                                                        <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-0.5 leading-tight">{itin.title}</h3>
+                                                        <p className="text-[13px] text-[#8E8E93] font-medium">
+                                                            {itin.date || 'Unscheduled'} <span className="opacity-50 mx-1">&bull;</span> {(itin.items || []).length} events
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center space-x-3 shrink-0">
-                                                    <button onClick={(e) => { e.stopPropagation(); deleteItinerary(itin.id); }} className="text-[#FF3B30] active:opacity-50 p-2"><i className="fa-solid fa-trash-can"></i></button>
-                                                    <i className="fa-solid fa-chevron-right text-[#C7C7CC] text-sm"></i>
+                                                <div className="flex flex-col space-y-2 shrink-0 ml-2">
+                                                    <button onClick={(e) => { e.stopPropagation(); deleteItinerary(itin.id); }} className="w-8 h-8 rounded-full bg-[var(--ios-red)]/10 text-[var(--ios-red)] flex items-center justify-center active:bg-[var(--ios-red)]/20 transition-colors">
+                                                        <i className="fa-solid fa-trash text-[10px]"></i>
+                                                    </button>
                                                 </div>
                                             </div>
                                         ))}
@@ -1336,54 +1359,63 @@
                                     if (!itin) return null;
                                     return (
                                         <>
-                                            <div className="text-center mb-6 px-4">
-                                                <h2 className="text-[22px] font-semibold text-[#1C1C1E]">{itin.title}</h2>
-                                                {itin.date && <p className="text-[15px] text-[#8E8E93]">{itin.date}</p>}
-                                                <button onClick={() => openItineraryForm(itin)} className="mt-2 text-[13px] text-[#007AFF] font-medium bg-[#007AFF]/10 px-3 py-1 rounded-full">Edit Info</button>
+                                            <div className="px-2 mb-8 flex justify-between items-end">
+                                                <div>
+                                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{itin.title}</h2>
+                                                    <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1">{itin.date || 'Unscheduled'}</p>
+                                                </div>
+                                                <button onClick={() => openItineraryForm(itin)} className="w-9 h-9 rounded-full glass-panel flex items-center justify-center text-[#1D1D1F] active:bg-black/10 transition-colors shadow-sm mb-1">
+                                                    <i className="fa-solid fa-pen text-[11px]"></i>
+                                                </button>
                                             </div>
                                             
                                             {(itin.items || []).length === 0 ? (
-                                                <div className="text-center p-8 bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] border border-white/60">
-                                                    <p className="text-[#8E8E93] text-[15px]">Timesheet is empty.</p>
+                                                <div className="glass-panel flex flex-col items-center justify-center py-12 px-6 text-center">
+                                                    <p className="text-[#8E8E93] font-medium text-[15px]">Timesheet is empty.</p>
                                                 </div>
                                             ) : (
-                                                <div className="relative before:absolute before:inset-0 before:ml-[34px] before:-translate-x-px before:h-full before:w-0.5 before:bg-[#C7C7CC]/50 space-y-4">
+                                                <div className="relative before:absolute before:inset-0 before:ml-[42px] before:-translate-x-px before:h-full before:w-[2px] before:bg-gradient-to-b before:from-black/5 before:via-black/20 before:to-black/5 space-y-6 mt-4">
                                                     {(itin.items || []).map((item) => {
                                                         const loc = locations.find(l => l.id === item.locationId);
                                                         return (
                                                             <div key={item.id} className="relative z-10 flex items-start pl-4">
-                                                                <div className="w-14 shrink-0 pt-1">
-                                                                    <div className="text-[13px] font-bold text-[#1C1C1E]">{item.time}</div>
+                                                                <div className="w-16 shrink-0 pt-2 text-right pr-4">
+                                                                    <div className="text-[13px] font-bold text-[#8E8E93]">{item.time}</div>
                                                                 </div>
-                                                                <div className="w-3 h-3 rounded-full border-2 border-white bg-[#007AFF] shadow-sm shrink-0 mt-1.5 ml-1 relative z-20"></div>
                                                                 
-                                                                <div className="ml-4 flex-1 bg-[var(--ios-glass)] backdrop-blur-2xl p-3.5 rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-white/60">
-                                                                    <div className="flex justify-between items-start mb-1">
-                                                                        <span className="text-[11px] font-bold text-[#8E8E93] uppercase tracking-wider">{item.label}</span>
-                                                                        <div className="flex space-x-2">
-                                                                            <button onClick={() => openItineraryItemForm(item)} className="text-[#8E8E93] active:opacity-50"><i className="fa-solid fa-pen text-[10px]"></i></button>
-                                                                            <button onClick={() => deleteItineraryItem(item.id)} className="text-[#FF3B30] active:opacity-50"><i className="fa-solid fa-xmark text-sm"></i></button>
+                                                                <div className="w-3.5 h-3.5 rounded-full border-2 border-white bg-[#1D1D1F] shadow-sm shrink-0 mt-1.5 relative z-20"></div>
+                                                                
+                                                                <div className="ml-5 flex-1 glass-panel p-4 active:scale-[0.98] transition-transform">
+                                                                    <div className="flex justify-between items-start mb-2">
+                                                                        <span className="text-[10px] font-bold text-white bg-[#1D1D1F] uppercase tracking-wider px-2 py-0.5 rounded-md shadow-sm">{item.label}</span>
+                                                                        <div className="flex space-x-1.5 bg-black/5 rounded-full px-1.5 py-1">
+                                                                            <button onClick={() => openItineraryItemForm(item)} className="w-6 h-6 rounded-full text-[#8E8E93] flex items-center justify-center hover:text-[#1D1D1F] active:bg-black/10 transition-colors"><i className="fa-solid fa-pen text-[9px]"></i></button>
+                                                                            <button onClick={() => deleteItineraryItem(item.id)} className="w-6 h-6 rounded-full text-[var(--ios-red)] flex items-center justify-center hover:text-[var(--ios-red)]/80 active:bg-[var(--ios-red)]/10 transition-colors"><i className="fa-solid fa-xmark text-[11px]"></i></button>
                                                                         </div>
                                                                     </div>
                                                                     
                                                                     {loc ? (
-                                                                        <div className="flex items-center space-x-3 mt-2 active:opacity-50 cursor-pointer" onClick={() => { setLocationReturnView('itinerary_detail'); setSelectedLocId(loc.id); setView('location_detail'); }}>
+                                                                        <div className="flex items-center space-x-3 mt-1 cursor-pointer group" onClick={() => { setLocationReturnView('itinerary_detail'); setSelectedLocId(loc.id); setView('location_detail'); }}>
                                                                             {Array.isArray(loc.photos) && loc.photos.length > 0 ? (
-                                                                                <img src={loc.photos} className="w-10 h-10 rounded-[10px] object-cover" alt="Preview" />
+                                                                                <img src={loc.photos} className="w-12 h-12 rounded-[12px] object-cover border border-white/60 shadow-sm" alt="Preview" />
                                                                             ) : (
-                                                                                <div className="w-10 h-10 rounded-[10px] bg-black/5 flex items-center justify-center text-[#8E8E93]"><i className="fa-solid fa-map-pin"></i></div>
+                                                                                <div className="w-12 h-12 rounded-[12px] bg-black/5 border border-black/5 flex items-center justify-center text-[#8E8E93] shadow-inner"><i className="fa-solid fa-map-pin"></i></div>
                                                                             )}
                                                                             <div className="flex-1">
-                                                                                <p className="font-semibold text-[#1C1C1E] text-[15px] leading-tight">{loc.name}</p>
-                                                                                <p className="text-[12px] text-[#8E8E93] truncate">{loc.category}</p>
+                                                                                <p className="font-bold text-[#1D1D1F] text-[16px] leading-tight mb-0.5 group-active:text-[var(--ios-accent)] transition-colors">{loc.name}</p>
+                                                                                <p className="text-[12px] font-medium text-[#8E8E93] truncate">{loc.category}</p>
                                                                             </div>
-                                                                            <i className="fa-solid fa-chevron-right text-[#C7C7CC] text-[10px]"></i>
+                                                                            <i className="fa-solid fa-chevron-right text-[#1D1D1F]/20 text-[12px] mr-1"></i>
                                                                         </div>
                                                                     ) : item.locationId ? (
-                                                                        <p className="text-[12px] text-[#FF3B30] italic mt-1">Location deleted</p>
+                                                                        <p className="text-[12px] text-[var(--ios-red)] font-bold bg-[var(--ios-red)]/10 inline-block px-2 py-1 rounded-md mt-1 border border-[var(--ios-red)]/20">Location deleted</p>
                                                                     ) : null}
                                                                     
-                                                                    {item.notes && <p className="text-[13px] text-[#1C1C1E] mt-2 pt-2 border-t border-black/5">{item.notes}</p>}
+                                                                    {item.notes && (
+                                                                        <div className="mt-3 pt-3 border-t border-black/5">
+                                                                            <p className="text-[13px] font-medium text-[#1D1D1F] leading-relaxed">{item.notes}</p>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         );
@@ -1398,19 +1430,28 @@
 
                         {/* VIEW: ITINERARY DAY FORM */}
                         {view === 'itinerary_form' && (
-                            <form onSubmit={handleSaveItinerary} className="bg-[var(--ios-glass)] backdrop-blur-2xl p-5 rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 space-y-4 pb-6">
+                            <form onSubmit={handleSaveItinerary} className="space-y-5 pb-6">
+                                <div className="px-2 mb-4">
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{editId ? 'Edit Day' : 'Plan Day'}</h2>
+                                </div>
+
                                 {saveError && (
-                                    <div className="p-3 bg-[#FF3B30]/10 text-[#FF3B30] text-[13px] rounded-[10px]">{saveError}</div>
+                                    <div className="p-3 bg-[var(--ios-red)]/10 text-[var(--ios-red)] text-[13px] font-medium rounded-[16px] border border-[var(--ios-red)]/20 flex items-center">
+                                        <i className="fa-solid fa-circle-exclamation mr-2"></i>{saveError}
+                                    </div>
                                 )}
-                                <div>
-                                    <label className="block text-[13px] font-medium text-[#8E8E93] mb-1.5 uppercase ml-1">Title</label>
-                                    <input type="text" required value={itinTitle} onChange={e => setItinTitle(e.target.value)} className="w-full px-4 py-3.5 ios-input focus:outline-none text-[17px]" placeholder="Day 1: Tour" />
+                                
+                                <div className="glass-panel p-5 space-y-4">
+                                    <div>
+                                        <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Title</label>
+                                        <input type="text" required value={itinTitle} onChange={e => setItinTitle(e.target.value)} className="w-full px-4 py-3.5 glass-input text-[16px] font-medium placeholder-[#8E8E93]/50" placeholder="Day 1: City Tour" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Date</label>
+                                        <input type="date" value={itinDate} onChange={e => setItinDate(e.target.value)} className="w-full px-4 py-3.5 glass-input text-[16px] font-medium" />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-[13px] font-medium text-[#8E8E93] mb-1.5 uppercase ml-1">Date</label>
-                                    <input type="date" value={itinDate} onChange={e => setItinDate(e.target.value)} className="w-full px-4 py-3.5 ios-input focus:outline-none text-[17px]" />
-                                </div>
-                                <button type="submit" disabled={isSaving} className="w-full mt-4 py-3.5 bg-[#007AFF] disabled:opacity-50 text-white font-semibold text-[17px] rounded-[14px] active:scale-[0.98] transition-transform">
+                                <button type="submit" disabled={isSaving} className="w-full py-4 bg-[#1D1D1F] disabled:bg-[#1D1D1F]/50 text-white font-bold tracking-wide text-[16px] rounded-[18px] active:scale-[0.98] transition-all mt-4 shadow-lg shadow-black/10">
                                     {isSaving ? <i className="fa-solid fa-spinner fa-spin"></i> : 'Save Day'}
                                 </button>
                             </form>
@@ -1418,141 +1459,155 @@
 
                         {/* VIEW: SELECT LOCATION FOR ITINERARY */}
                         {view === 'itinerary_select_location' && (
-                            <div className="space-y-4 pb-6">
-                                <div className="relative">
-                                    <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-[#8E8E93]"></i>
-                                    <input 
-                                        type="text" placeholder="Search places..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-3 ios-input focus:outline-none text-[17px]"
-                                    />
+                            <div className="space-y-5 pb-6">
+                                <div className="px-2 mb-2 flex justify-between items-center">
+                                    <h2 className="text-[28px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">Pick Place</h2>
+                                    <button onClick={() => handleSelectLocationForItinerary('')} className="text-[#8E8E93] font-bold text-[14px] active:opacity-50">
+                                        Skip
+                                    </button>
                                 </div>
 
-                                <button onClick={() => handleSelectLocationForItinerary('')} className="w-full py-3.5 bg-[#007AFF]/10 text-[#007AFF] font-medium text-[15px] rounded-[14px] active:bg-[#007AFF]/20 transition-colors">
-                                    Skip Location
-                                </button>
+                                <div className="glass-panel p-1.5">
+                                    <div className="relative flex items-center glass-input px-3 py-3">
+                                        <i className="fa-solid fa-magnifying-glass text-[#8E8E93] mr-2.5"></i>
+                                        <input 
+                                            type="text" placeholder="Search saved places..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="flex-1 bg-transparent focus:outline-none text-[16px] font-medium placeholder-[#8E8E93]/60"
+                                        />
+                                    </div>
+                                </div>
                                 
                                 {filteredAndGroupedLocations.sortedCategories.length === 0 ? (
-                                    <div className="text-center p-8 text-[#8E8E93]">No places found.</div>
+                                    <div className="text-center p-8 text-[#8E8E93] font-medium">No saved places found.</div>
                                 ) : (
-                                    filteredAndGroupedLocations.sortedCategories.map(cat => (
-                                        <div key={cat} className="space-y-2 pt-2">
-                                            <h3 className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider pl-4">{cat}</h3>
-                                            <div className="bg-[var(--ios-glass)] backdrop-blur-2xl rounded-[20px] overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-white/60">
-                                                {filteredAndGroupedLocations.grouped[cat].map((loc, index, arr) => (
-                                                    <div 
-                                                        key={loc.id} 
-                                                        className={`flex items-center justify-between p-3 pl-4 cursor-pointer active:bg-black/5 transition-colors ${index !== arr.length - 1 ? 'border-b border-black/5' : ''}`}
-                                                        onClick={() => handleSelectLocationForItinerary(loc.id)}
-                                                    >
-                                                        <div className="flex items-center flex-1 overflow-hidden">
-                                                            {Array.isArray(loc.photos) && loc.photos.length > 0 ? (
-                                                                <img src={loc.photos} className="w-10 h-10 rounded-[10px] object-cover shrink-0 mr-3" alt="" />
-                                                            ) : (
-                                                                <div className="w-10 h-10 rounded-[10px] bg-black/5 flex items-center justify-center text-[#8E8E93] shrink-0 mr-3"><i className="fa-solid fa-map-pin"></i></div>
-                                                            )}
-                                                            <div className="truncate pr-2">
-                                                                <h4 className="text-[15px] font-medium text-[#1C1C1E] truncate">{loc.name}</h4>
-                                                                <p className="text-[12px] text-[#8E8E93] truncate">{loc.city || 'City'}</p>
+                                    <div className="space-y-4">
+                                        {filteredAndGroupedLocations.sortedCategories.map(cat => (
+                                            <div key={cat} className="space-y-2">
+                                                <h3 className="text-[12px] font-bold text-[#8E8E93] uppercase tracking-wide pl-2">{cat}</h3>
+                                                <div className="glass-panel overflow-hidden">
+                                                    {filteredAndGroupedLocations.grouped[cat].map((loc, index, arr) => (
+                                                        <div 
+                                                            key={loc.id} 
+                                                            className={`flex items-center justify-between p-3 pl-4 cursor-pointer active:bg-black/5 transition-colors ${index !== arr.length - 1 ? 'border-b border-black/5' : ''}`}
+                                                            onClick={() => handleSelectLocationForItinerary(loc.id)}
+                                                        >
+                                                            <div className="flex items-center flex-1 overflow-hidden">
+                                                                {Array.isArray(loc.photos) && loc.photos.length > 0 ? (
+                                                                    <img src={loc.photos} className="w-12 h-12 rounded-[12px] object-cover shrink-0 mr-3 border border-white/60 shadow-sm" alt="" />
+                                                                ) : (
+                                                                    <div className="w-12 h-12 rounded-[12px] bg-black/5 flex items-center justify-center text-[#8E8E93] shrink-0 mr-3 border border-black/5 shadow-inner"><i className="fa-solid fa-map-pin"></i></div>
+                                                                )}
+                                                                <div className="truncate pr-2">
+                                                                    <h4 className="text-[16px] font-bold text-[#1D1D1F] truncate">{loc.name}</h4>
+                                                                    <p className="text-[12px] font-medium text-[#8E8E93] truncate mt-0.5">{loc.city || 'City'}</p>
+                                                                </div>
                                                             </div>
+                                                            <span className="text-[11px] font-bold text-[#1D1D1F] shrink-0 bg-black/5 px-2 py-1 rounded-md border border-black/5">{formatDistance(loc.currentDistance)}</span>
                                                         </div>
-                                                        <span className="text-[12px] text-[#8E8E93] shrink-0">{formatDistance(loc.currentDistance)}</span>
-                                                    </div>
-                                                ))}
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))
+                                        ))}
+                                    </div>
                                 )}
                             </div>
                         )}
 
                         {/* VIEW: ITINERARY ITEM FORM */}
                         {view === 'itinerary_item_form' && (
-                            <form onSubmit={handleSaveItineraryItem} className="bg-[var(--ios-glass)] backdrop-blur-2xl p-5 rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 space-y-4 pb-6">
-                                {saveError && <div className="p-3 bg-[#FF3B30]/10 text-[#FF3B30] text-[13px] rounded-[10px]">{saveError}</div>}
+                            <form onSubmit={handleSaveItineraryItem} className="space-y-5 pb-6">
+                                <div className="px-2 mb-4">
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{editItinItemId ? 'Edit Event' : 'Add Event'}</h2>
+                                </div>
+
+                                {saveError && <div className="p-3 bg-[var(--ios-red)]/10 text-[var(--ios-red)] text-[13px] font-medium rounded-[16px] border border-[var(--ios-red)]/20 flex items-center"><i className="fa-solid fa-circle-exclamation mr-2"></i>{saveError}</div>}
                                 
-                                <div>
-                                    <div className="flex justify-between items-end mb-1.5 ml-1">
-                                        <label className="block text-[13px] font-medium text-[#8E8E93] uppercase">Location</label>
-                                        {!editItinItemId && <button type="button" onClick={() => setView('itinerary_select_location')} className="text-[#007AFF] text-[13px]">Change</button>}
+                                <div className="glass-panel p-5 space-y-5">
+                                    <div>
+                                        <div className="flex justify-between items-end mb-2 ml-1">
+                                            <label className="block text-[12px] font-bold text-[#8E8E93] uppercase tracking-wide">Location</label>
+                                            {!editItinItemId && <button type="button" onClick={() => setView('itinerary_select_location')} className="text-white text-[12px] font-bold bg-[#1D1D1F] px-3 py-1 rounded-full shadow-md active:scale-95 transition-transform">Change</button>}
+                                        </div>
+                                        <div className="w-full px-4 py-3.5 glass-input text-[16px] text-[#1D1D1F] truncate font-bold">
+                                            {itinItemLocId ? (locations.find(l => l.id === itinItemLocId)?.name || 'Unknown') : 'No location attached'}
+                                        </div>
                                     </div>
-                                    <div className="w-full px-4 py-3.5 ios-input text-[17px] text-[#1C1C1E] truncate">
-                                        {itinItemLocId ? (locations.find(l => l.id === itinItemLocId)?.name || 'Unknown') : 'None'}
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Time</label>
+                                            <input type="time" required value={itinItemTime} onChange={e => setItinItemTime(e.target.value)} className="w-full px-4 py-3.5 glass-input text-[16px] font-mono font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Type</label>
+                                            <select value={itinItemLabel} onChange={e => setItinItemLabel(e.target.value)} className="w-full px-4 py-3.5 glass-input text-[15px] appearance-none font-bold">
+                                                <option value="Breakfast">Breakfast</option>
+                                                <option value="Lunch">Lunch</option>
+                                                <option value="Dinner">Dinner</option>
+                                                <option value="Tourist Attraction">Attraction</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Notes</label>
+                                        <textarea value={itinItemNotes} onChange={e => setItinItemNotes(e.target.value)} rows="3" className="w-full glass-input p-4 text-[15px] font-medium placeholder-[#8E8E93]/50 resize-none" placeholder="Optional notes for this event" />
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="block text-[13px] font-medium text-[#8E8E93] mb-1.5 uppercase ml-1">Time</label>
-                                        <input type="time" required value={itinItemTime} onChange={e => setItinItemTime(e.target.value)} className="w-full px-4 py-3.5 ios-input focus:outline-none text-[17px]" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[13px] font-medium text-[#8E8E93] mb-1.5 uppercase ml-1">Type</label>
-                                        <select value={itinItemLabel} onChange={e => setItinItemLabel(e.target.value)} className="w-full px-4 py-3.5 ios-input focus:outline-none text-[15px] appearance-none">
-                                            <option value="Breakfast">Breakfast</option>
-                                            <option value="Lunch">Lunch</option>
-                                            <option value="Dinner">Dinner</option>
-                                            <option value="Tourist Attraction">Attraction</option>
-                                            <option value="Other">Other</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div>
-                                    <label className="block text-[13px] font-medium text-[#8E8E93] mb-1.5 uppercase ml-1">Notes</label>
-                                    <textarea value={itinItemNotes} onChange={e => setItinItemNotes(e.target.value)} rows="2" className="w-full px-4 py-3 ios-input focus:outline-none text-[17px]" placeholder="Optional" />
-                                </div>
-                                <button type="submit" disabled={isSaving} className="w-full mt-4 py-3.5 bg-[#007AFF] disabled:opacity-50 text-white font-semibold text-[17px] rounded-[14px] active:scale-[0.98] transition-transform">
+                                <button type="submit" disabled={isSaving} className="w-full py-4 bg-[#1D1D1F] disabled:bg-[#1D1D1F]/50 text-white font-bold tracking-wide text-[16px] rounded-[18px] active:scale-[0.98] transition-all mt-4 shadow-lg shadow-black/10">
                                     {isSaving ? <i className="fa-solid fa-spinner fa-spin"></i> : 'Save Event'}
                                 </button>
                             </form>
                         )}
                     </main>
 
-                    {/* NATIVE iOS BOTTOM TAB BAR */}
-                    <div className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--ios-glass)] backdrop-blur-2xl border-t border-black/5 safe-bottom">
-                        <div className="max-w-3xl mx-auto flex justify-around items-center h-14">
+                    {/* FLOATING LIGHT GLASS NAV PILL */}
+                    <div className="fixed bottom-6 left-6 right-6 z-40 safe-bottom pointer-events-none flex justify-center">
+                        <div className="glass-pill w-full max-w-[400px] h-16 flex justify-around items-center px-2 pointer-events-auto">
                             <button 
                                 onClick={() => setView('cities')} 
-                                className={`flex flex-col items-center justify-center w-full h-full pt-1 ${activeTab === 'places' ? 'text-[#1C1C1E]' : 'text-[#999999]'}`}
+                                className={`flex flex-col items-center justify-center w-full h-full rounded-full transition-colors active:bg-black/5 ${activeTab === 'places' ? 'text-[#1D1D1F]' : 'text-[#8E8E93] hover:text-[#1D1D1F]'}`}
                             >
-                                <i className="fa-solid fa-map-location-dot text-[20px] mb-0.5"></i>
-                                <span className="text-[10px] font-medium tracking-wide">Places</span>
+                                <i className="fa-solid fa-map-location-dot text-[18px] mb-1"></i>
+                                <span className="text-[10px] font-bold tracking-wider uppercase">Places</span>
                             </button>
                             <button 
                                 onClick={() => setView('notifications')} 
-                                className={`flex flex-col items-center justify-center w-full h-full pt-1 relative ${activeTab === 'notifications' ? 'text-[#1C1C1E]' : 'text-[#999999]'}`}
+                                className={`flex flex-col items-center justify-center w-full h-full rounded-full transition-colors active:bg-black/5 relative ${activeTab === 'notifications' ? 'text-[#1D1D1F]' : 'text-[#8E8E93] hover:text-[#1D1D1F]'}`}
                             >
                                 <div className="relative">
-                                    <i className={unreadCount > 0 ? "fa-solid fa-bell text-[20px] mb-0.5" : "fa-regular fa-bell text-[20px] mb-0.5"}></i>
+                                    <i className={unreadCount > 0 ? "fa-solid fa-bell text-[18px] mb-1" : "fa-regular fa-bell text-[18px] mb-1"}></i>
                                     {unreadCount > 0 && (
-                                        <span className="absolute -top-1.5 -right-2 bg-[#FF3B30] text-white text-[10px] font-bold px-1 rounded-full min-w-[16px] text-center border-2 border-[var(--ios-glass)]">
+                                        <span className="absolute -top-1.5 -right-2 bg-[var(--ios-red)] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center shadow-sm border border-white">
                                             {unreadCount}
                                         </span>
                                     )}
                                 </div>
-                                <span className="text-[10px] font-medium tracking-wide mt-0.5">Alerts</span>
+                                <span className="text-[10px] font-bold tracking-wider uppercase">Radar</span>
                             </button>
                             <button 
                                 onClick={() => setView('itineraries')} 
-                                className={`flex flex-col items-center justify-center w-full h-full pt-1 ${activeTab === 'itineraries' ? 'text-[#1C1C1E]' : 'text-[#999999]'}`}
+                                className={`flex flex-col items-center justify-center w-full h-full rounded-full transition-colors active:bg-black/5 ${activeTab === 'itineraries' ? 'text-[#1D1D1F]' : 'text-[#8E8E93] hover:text-[#1D1D1F]'}`}
                             >
-                                <i className="fa-solid fa-calendar-day text-[20px] mb-0.5"></i>
-                                <span className="text-[10px] font-medium tracking-wide">Itineraries</span>
+                                <i className="fa-solid fa-calendar-day text-[18px] mb-1"></i>
+                                <span className="text-[10px] font-bold tracking-wider uppercase">Journeys</span>
                             </button>
                         </div>
                     </div>
                     
                     {/* CUSTOM iOS CONFIRM MODAL */}
                     {confirmDialog && (
-                        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in" style={{ zIndex: 130 }}>
-                            <div className="bg-[rgba(242,242,247,0.9)] backdrop-blur-3xl rounded-[14px] w-[270px] flex flex-col overflow-hidden animate-slide-in shadow-xl" style={{animationDuration: '0.2s'}}>
-                                <div className="p-4 text-center">
-                                    <h3 className="text-[17px] font-semibold text-[#1C1C1E] mb-1">Confirm</h3>
-                                    <p className="text-[13px] text-[#1C1C1E]">{confirmDialog.message}</p>
+                        <div className="fixed inset-0 z-50 bg-black/20 flex items-center justify-center p-4 backdrop-blur-md animate-fade-in" style={{ zIndex: 130 }}>
+                            <div className="bg-white/95 backdrop-blur-3xl rounded-[20px] w-[280px] flex flex-col overflow-hidden animate-pop-in shadow-2xl border border-white" style={{animationDuration: '0.3s'}}>
+                                <div className="p-5 text-center">
+                                    <h3 className="text-[17px] font-bold text-[#1D1D1F] mb-1.5">Confirm</h3>
+                                    <p className="text-[13px] font-medium text-[#8E8E93] leading-relaxed">{confirmDialog.message}</p>
                                 </div>
-                                <div className="flex border-t border-[#3C3C43]/20">
-                                    <button onClick={() => setConfirmDialog(null)} className="flex-1 py-2.5 text-[17px] text-[#007AFF] font-normal border-r border-[#3C3C43]/20 active:bg-black/5 transition-colors">Cancel</button>
-                                    <button onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }} className="flex-1 py-2.5 text-[17px] text-[#FF3B30] font-semibold active:bg-black/5 transition-colors">Delete</button>
+                                <div className="flex border-t border-black/5">
+                                    <button onClick={() => setConfirmDialog(null)} className="flex-1 py-3 text-[16px] text-[#1D1D1F] font-bold border-r border-black/5 active:bg-black/5 transition-colors">Cancel</button>
+                                    <button onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }} className="flex-1 py-3 text-[16px] text-[var(--ios-red)] font-bold active:bg-[var(--ios-red)]/10 transition-colors">Delete</button>
                                 </div>
                             </div>
                         </div>
