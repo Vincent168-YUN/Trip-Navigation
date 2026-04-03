@@ -547,15 +547,22 @@
                 const queryMatch = input.match(/[?&](?:q|ll)=([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
                 const placeMatch = input.match(/place\/.*@(-?\d+\.\d+),(-?\d+\.\d+)/) || input.match(/place\/[^\/]+\/([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
                 
-                // NEW: Catch raw pasted coordinates (e.g., "11.5564, 104.9282" or "11.5564° N, 104.9282° E")
-                const rawMatch = input.match(/([-+]?\d{1,2}\.\d+)[^\d-]+([-+]?\d{1,3}\.\d+)/);
-
-                const match = exactPinMatch || atMatch || queryMatch || placeMatch || rawMatch;
+                const match = exactPinMatch || atMatch || queryMatch || placeMatch;
+                let parsedLat = null, parsedLng = null;
                 
                 if (match && match.length >= 3) { 
-                    const parsedLat = parseFloat(match);
-                    const parsedLng = parseFloat(match);
-                    
+                    parsedLat = parseFloat(match);
+                    parsedLng = parseFloat(match);
+                } else {
+                    // Fallback to globally extract any two decimal numbers (handles parentheses, spaces, etc.)
+                    const rawMatches = [...input.matchAll(/[-+]?\d+\.\d+/g)];
+                    if (rawMatches.length >= 2) {
+                        parsedLat = parseFloat(rawMatches);
+                        parsedLng = parseFloat(rawMatches);
+                    }
+                }
+                
+                if (parsedLat !== null && parsedLng !== null) {
                     // Verify they are valid map coordinates before applying
                     if (parsedLat >= -90 && parsedLat <= 90 && parsedLng >= -180 && parsedLng <= 180) {
                         setLat(parsedLat.toFixed(6)); 
@@ -1489,9 +1496,37 @@
                                         <label className="w-20 shrink-0 text-[14px] font-bold text-[#1D1D1F]">Lng</label>
                                         <input type="number" step="any" value={lng} onChange={e => setLng(e.target.value)} className="flex-1 min-w-0 bg-transparent focus:outline-none text-[16px] font-mono font-medium placeholder-[#8E8E93]/30 text-[#1D1D1F]" placeholder="Optional" />
                                     </div>
+                                    
                                     <div className="h-px bg-black/5 mx-3"></div>
                                     <div className="p-3">
-                                        <input type="text" value={mapLink} onChange={handleMapLinkChange} className="w-full glass-input px-3 py-2.5 text-[14px] font-medium placeholder-[#8E8E93]/50 bg-white/50" placeholder="Paste Maps Link OR Raw GPS Coords" />
+                                        <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Paste Coordinates</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. 11.5419, 104.9118 or (11.54, 104.91)"
+                                            className="w-full glass-input px-3 py-2.5 text-[14px] font-medium placeholder-[#8E8E93]/50 bg-white/50"
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                // Extract the first two decimal numbers globally, ignoring all other characters
+                                                const matches = [...value.matchAll(/[-+]?\d+\.\d+/g)];
+                                                if (matches.length >= 2) {
+                                                    const parsedLat = parseFloat(matches);
+                                                    const parsedLng = parseFloat(matches);
+
+                                                    if (
+                                                        parsedLat >= -90 && parsedLat <= 90 &&
+                                                        parsedLng >= -180 && parsedLng <= 180
+                                                    ) {
+                                                        setLat(parsedLat.toFixed(6));
+                                                        setLng(parsedLng.toFixed(6));
+                                                    }
+                                                }
+                                            }}
+                                        />
+                                    </div>
+
+                                    <div className="h-px bg-black/5 mx-3"></div>
+                                    <div className="p-3">
+                                        <input type="text" value={mapLink} onChange={handleMapLinkChange} className="w-full glass-input px-3 py-2.5 text-[14px] font-medium placeholder-[#8E8E93]/50 bg-white/50" placeholder="Paste Maps Link" />
                                     </div>
                                 </div>
 
@@ -1919,32 +1954,5 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
-
-<!-- Paste Coordinates Input -->
-<div class="mt-3">
-  <label class="text-sm font-medium text-gray-600">Paste Coordinates</label>
-  <input
-    type="text"
-    placeholder="e.g. 11.5419849, 104.9118862"
-    class="glass-input w-full px-4 py-2 mt-1"
-    onChange={(e) => {
-      const value = e.target.value.trim();
-      const match = value.match(/^([-+]?\d{1,2}\.\d+)\s*,\s*([-+]?\d{1,3}\.\d+)$/);
-      if (match) {
-        const parsedLat = parseFloat(match[1]);
-        const parsedLng = parseFloat(match[2]);
-
-        if (
-          parsedLat >= -90 && parsedLat <= 90 &&
-          parsedLng >= -180 && parsedLng <= 180
-        ) {
-          setLat(parsedLat.toFixed(6));
-          setLng(parsedLng.toFixed(6));
-        }
-      }
-    }}
-  />
-</div>
-
 </body>
 </html>
