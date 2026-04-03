@@ -181,6 +181,20 @@
             return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
         }
 
+        const getDistanceColor = (distInKm) => {
+            if (distInKm == null || isNaN(distInKm)) return "text-[#8E8E93]";
+            if (distInKm <= 1.0) return "text-[var(--ios-green)]";
+            if (distInKm <= 10.0) return "text-[#FF9500]"; // iOS Orange
+            return "text-[var(--ios-red)]";
+        };
+
+        const getDistanceBgColor = (distInKm) => {
+            if (distInKm == null || isNaN(distInKm)) return "bg-[#8E8E93]/10 border-[#8E8E93]/20 text-[#8E8E93]";
+            if (distInKm <= 1.0) return "bg-[var(--ios-green)]/10 border-[var(--ios-green)]/20 text-[var(--ios-green)]";
+            if (distInKm <= 10.0) return "bg-[#FF9500]/10 border-[#FF9500]/20 text-[#FF9500]";
+            return "bg-[var(--ios-red)]/10 border-[var(--ios-red)]/20 text-[var(--ios-red)]";
+        };
+
         function App() {
             // --- STATE ---
             const [user, setUser] = useState(null);
@@ -1069,8 +1083,8 @@
                                                         {!notif.read && <div className="w-2 h-2 rounded-full bg-[var(--ios-accent)] shadow-sm shrink-0"></div>}
                                                         <h4 className="text-[16px] font-bold text-[#1D1D1F] truncate leading-tight">{notif.name}</h4>
                                                     </div>
-                                                    <p className="text-[13px] text-[#8E8E93] font-medium truncate flex items-center mt-1">
-                                                        <i className={`fa-solid ${notif.isRealRoute ? 'fa-car' : 'fa-location-arrow'} text-[10px] mr-1.5 opacity-70 text-[var(--ios-accent)]`}></i>
+                                                    <p className={`text-[13px] font-medium truncate flex items-center mt-1 ${getDistanceColor(notif.distance)}`}>
+                                                        <i className={`fa-solid ${notif.isRealRoute ? 'fa-car' : 'fa-location-arrow'} text-[10px] mr-1.5 opacity-70`}></i>
                                                         Nearby &bull; {formatDistance(notif.distance)} {notif.duration !== null && `• ${notif.isRealRoute ? '' : '~'}${formatDuration(notif.duration)}`}
                                                     </p>
                                                 </div>
@@ -1221,7 +1235,7 @@
                                         <div className="px-3 pb-2 flex items-start justify-between min-w-0">
                                             <div className="pr-4 min-w-0 flex-1">
                                                 <h4 className="text-[18px] font-bold text-[#1D1D1F] leading-tight mb-1 truncate">{loc.name}</h4>
-                                                <p className="text-[13px] font-bold tracking-wide text-[var(--ios-accent)] flex items-center truncate">
+                                                <p className={`text-[13px] font-bold tracking-wide flex items-center truncate ${getDistanceColor(loc.currentDistance)}`}>
                                                     <i className={`fa-solid ${loc.isRealRoute ? 'fa-car' : 'fa-location-arrow'} text-[10px] mr-1.5 shrink-0`}></i>
                                                     <span className="truncate">{formatDistance(loc.currentDistance)} {loc.currentDuration !== null && `• ${loc.isRealRoute ? '' : '~'}${formatDuration(loc.currentDuration)}`}</span>
                                                 </p>
@@ -1274,7 +1288,7 @@
                                                         const routeInfo = getRouteInfo(locDetail);
                                                         if (routeInfo.dist === null) return null;
                                                         return (
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--ios-accent)]/10 text-[11px] font-bold tracking-wide text-[var(--ios-accent)] uppercase border border-[var(--ios-accent)]/20 truncate max-w-full">
+                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold tracking-wide uppercase border truncate max-w-full ${getDistanceBgColor(routeInfo.dist)}`}>
                                                                 <i className={`fa-solid ${routeInfo.isReal ? 'fa-car' : 'fa-location-arrow'} text-[9px] mr-1 shrink-0`}></i>
                                                                 <span className="truncate">{formatDistance(routeInfo.dist)} {routeInfo.dur !== null && `• ${routeInfo.isReal ? '' : '~'}${formatDuration(routeInfo.dur)}`}</span>
                                                             </span>
@@ -1738,7 +1752,7 @@
                                                                     <p className="text-[12px] font-medium text-[#8E8E93] truncate mt-0.5">{loc.city || 'City'}</p>
                                                                 </div>
                                                             </div>
-                                                            <span className="text-[11px] font-bold text-[#1D1D1F] shrink-0 bg-black/5 px-2 py-1 rounded-md border border-black/5 flex items-center">
+                                                            <span className={`text-[11px] font-bold shrink-0 px-2 py-1 rounded-md border flex items-center ${getDistanceBgColor(loc.currentDistance)}`}>
                                                                 {loc.isRealRoute && <i className="fa-solid fa-car text-[9px] mr-1 opacity-70"></i>}
                                                                 {formatDistance(loc.currentDistance)} {loc.currentDuration !== null && `• ${loc.isRealRoute ? '' : '~'}${formatDuration(loc.currentDuration)}`}
                                                             </span>
