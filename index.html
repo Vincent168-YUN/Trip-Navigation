@@ -678,6 +678,7 @@
                 const files = Array.from(e.target.files).filter(f => f.type.startsWith('image'));
                 if (!files.length) return;
                 try {
+                    // FIX: Pass the exact file object instead of the array
                     const base64 = await processImage(files);
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_settings', 'main'), { coverPhoto: base64 }, { merge: true });
                 } catch (err) { 
@@ -1115,34 +1116,33 @@
                         {/* VIEW: CITIES */}
                         {view === 'cities' && (
                             <div className="pb-6">
-                                <div className="pt-6 pb-10 px-3 flex justify-between items-center">
-                                    <div className="flex flex-col">
-                                        <h1 className="text-[44px] font-extrabold leading- text-[#1D1D1F] tracking-tighter uppercase">
-                                            Harry
-                                        </h1>
-                                        <h2 className="text-[14px] text-[var(--ios-accent)] mt-1.5 font-bold tracking-widest uppercase flex items-center space-x-2">
-                                            <i className="fa-solid fa-location-arrow"></i>
-                                            <span>Navigation</span>
-                                        </h2>
-                                    </div>
-                                    
-                                    <div className="shrink-0 ml-4">
+                                <div className="pt-6 pb-10 px-3 flex items-center space-x-4">
+                                    <div className="shrink-0 relative">
                                         <input id="cover-photo-upload" type="file" accept="image/*" className="hidden" onChange={handleCoverPhotoUpload} />
-                                        <label htmlFor="cover-photo-upload" className="cursor-pointer block active:scale-95 transition-transform shadow-lg rounded-full">
+                                        <label htmlFor="cover-photo-upload" className="cursor-pointer block active:scale-95 transition-transform rounded-full relative">
                                             {coverPhoto ? (
-                                                <div className="relative w-[84px] h-[84px] rounded-full overflow-hidden border-[4px] border-white bg-white">
+                                                <div className="w-[64px] h-[64px] rounded-full overflow-hidden border-[3px] border-white shadow-[0_4px_16px_rgba(0,0,0,0.1)] bg-white">
                                                     <img src={coverPhoto} className="w-full h-full object-cover" alt="Harry" />
-                                                    <div className="absolute bottom-0 left-0 right-0 bg-black/40 py-1 flex justify-center backdrop-blur-sm">
-                                                        <i className="fa-solid fa-camera text-white text-[10px]"></i>
-                                                    </div>
                                                 </div>
                                             ) : (
-                                                <div className="w-[84px] h-[84px] rounded-full bg-white border-[3px] border-dashed border-[var(--ios-accent)]/40 flex flex-col items-center justify-center text-[var(--ios-accent)] hover:bg-[var(--ios-accent)]/5 transition-colors">
-                                                    <i className="fa-solid fa-camera text-[24px] mb-1"></i>
-                                                    <span className="text-[9px] font-bold uppercase tracking-wider">Upload</span>
+                                                <div className="w-[64px] h-[64px] rounded-full bg-white border-[2px] border-dashed border-[var(--ios-accent)]/40 flex flex-col items-center justify-center text-[var(--ios-accent)] hover:bg-[var(--ios-accent)]/5 transition-colors shadow-sm">
+                                                    <i className="fa-solid fa-camera text-[20px] mb-0.5"></i>
                                                 </div>
                                             )}
+                                            <div className="absolute -bottom-1 -right-1 bg-[var(--ios-accent)] w-6 h-6 rounded-full flex items-center justify-center border-2 border-[var(--ios-bg)] shadow-sm text-white">
+                                                <i className="fa-solid fa-plus text-[10px]"></i>
+                                            </div>
                                         </label>
+                                    </div>
+
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                        <h1 className="text-[44px] font-extrabold leading- text-[#1D1D1F] tracking-tighter uppercase truncate">
+                                            Harry
+                                        </h1>
+                                        <h2 className="text-[14px] text-[var(--ios-accent)] mt-1.5 font-bold tracking-widest uppercase flex items-center space-x-1.5">
+                                            <i className="fa-solid fa-location-arrow"></i>
+                                            <span className="truncate">Navigation</span>
+                                        </h2>
                                     </div>
                                 </div>
                                 
