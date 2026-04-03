@@ -193,8 +193,11 @@
             const [itinItemLabel, setItinItemLabel] = useState('Tourist Attraction');
             const [itinItemLocId, setItinItemLocId] = useState('');
             const [itinItemNotes, setItinItemNotes] = useState('');
-            const [itinItemBillTotal, setItinItemBillTotal] = useState('');
-            const [itinItemBillSplit, setItinItemBillSplit] = useState('1');
+            
+            // Split Bill Calculator State
+            const [splitBillItem, setSplitBillItem] = useState(null);
+            const [tempBillTotal, setTempBillTotal] = useState('');
+            const [tempBillSplit, setTempBillSplit] = useState(1);
             
             // Search State
             const [searchQuery, setSearchQuery] = useState('');
@@ -636,12 +639,10 @@
                 if (item) {
                     setEditItinItemId(item.id); setItinItemTime(item.time || ''); setItinItemLabel(item.label || 'Tourist Attraction');
                     setItinItemLocId(item.locationId || ''); setItinItemNotes(item.notes || ''); 
-                    setItinItemBillTotal(item.billTotal || ''); setItinItemBillSplit(item.billSplit || '1');
                     setView('itinerary_item_form');
                 } else {
                     setEditItinItemId(null); setItinItemTime(''); setItinItemLabel('Tourist Attraction'); setItinItemLocId('');
-                    setItinItemNotes(''); setItinItemBillTotal(''); setItinItemBillSplit('1');
-                    setSearchQuery(''); setView('itinerary_select_location');
+                    setItinItemNotes(''); setSearchQuery(''); setView('itinerary_select_location');
                 }
             };
             const handleSelectLocationForItinerary = (locId) => { setItinItemLocId(locId); setPreviousView('itinerary_select_location'); setView('itinerary_item_form'); };
@@ -649,10 +650,15 @@
                 e.preventDefault(); setIsSaving(true); setSaveError('');
                 const itin = itineraries.find(i => i.id === activeItinId); if (!itin) return;
                 let updatedItems = [...(itin.items || [])];
+                
+                // Preserve existing bill logic if we are just editing the item info
+                const existingItem = editItinItemId ? updatedItems.find(i => i.id === editItinItemId) : null;
+                
                 const newItem = { 
                     id: editItinItemId || Date.now().toString(), 
                     time: itinItemTime, label: itinItemLabel, locationId: itinItemLocId, notes: itinItemNotes,
-                    billTotal: itinItemBillTotal, billSplit: itinItemBillSplit
+                    billTotal: existingItem ? existingItem.billTotal : '',
+                    billSplit: existingItem ? existingItem.billSplit : 1
                 };
                 if (editItinItemId) { updatedItems = updatedItems.map(item => item.id === editItinItemId ? newItem : item); } 
                 else { updatedItems.push(newItem); }
@@ -661,6 +667,33 @@
                 catch (err) { setSaveError("Save failed: " + err.message); }
                 setIsSaving(false);
             };
+
+            // Minimalist Calculator Handlers
+            const handleOpenSplitBill = (item) => {
+                setSplitBillItem(item);
+                setTempBillTotal(item.billTotal || '');
+                setTempBillSplit(item.billSplit || 1);
+            };
+
+            const handleSaveSplitBill = async () => {
+                if (!splitBillItem || !activeItinId) return;
+                const itin = itineraries.find(i => i.id === activeItinId);
+                if (!itin) return;
+                
+                const updatedItems = itin.items.map(item => 
+                    item.id === splitBillItem.id 
+                        ? { ...item, billTotal: tempBillTotal, billSplit: tempBillSplit } 
+                        : item
+                );
+                
+                try {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', activeItinId), { items: updatedItems });
+                    setSplitBillItem(null);
+                } catch (err) {
+                    console.error("Save split failed: ", err);
+                }
+            };
+
             const deleteItineraryItem = async (itemId) => {
                 confirmAction("Remove this event?", async () => {
                     const itin = itineraries.find(i => i.id === activeItinId);
@@ -1435,21 +1468,23 @@
                                                                             <p className="text-[13px] font-medium text-[#1D1D1F] leading-relaxed">{item.notes}</p>
                                                                         </div>
                                                                     )}
-
-                                                                    {item.billTotal && parseFloat(item.billTotal) > 0 && (
-                                                                        <div className="mt-3 pt-3 border-t border-black/5 flex justify-between items-center">
-                                                                            <div className="flex items-center text-[#8E8E93]">
-                                                                                <i className="fa-solid fa-money-bill-wave mr-1.5 text-[12px]"></i>
-                                                                                <span className="text-[11px] font-bold tracking-wide uppercase">Split Bill ({item.billSplit} {item.billSplit > 1 ? 'ppl' : 'person'})</span>
+                                                                    
+                                                                    {/* Left-Aligned Touch-Friendly Calculator Button */}
+                                                                    <div className="mt-4 pt-3 border-t border-black/5 flex justify-start">
+                                                                        <button onClick={() => handleOpenSplitBill(item)} className="flex items-center bg-white/60 hover:bg-white/90 border border-white/80 shadow-sm rounded-full pr-4 p-1 active:scale-95 transition-all">
+                                                                            <div className="w-8 h-8 rounded-full bg-[var(--ios-accent)] flex items-center justify-center text-white shadow-md mr-2.5 shrink-0">
+                                                                                <i className="fa-solid fa-calculator text-[13px]"></i>
                                                                             </div>
-                                                                            <div className="text-right">
-                                                                                <span className="text-[14px] font-bold text-[#1D1D1F]">
-                                                                                    ${(parseFloat(item.billTotal) / (parseInt(item.billSplit) || 1)).toFixed(2)}
-                                                                                </span>
-                                                                                <span className="text-[11px] font-medium text-[#8E8E93] ml-1">each</span>
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
+                                                                            {item.billTotal > 0 ? (
+                                                                                <div className="flex flex-col text-left justify-center">
+                                                                                    <span className="text-[14px] font-bold text-[#1D1D1F] leading-tight">${(parseFloat(item.billTotal) / (parseInt(item.billSplit)||1)).toFixed(2)}</span>
+                                                                                    <span className="text-[9px] font-bold text-[#8E8E93] uppercase tracking-wider leading-tight mt-0.5">{item.billSplit} {item.billSplit > 1 ? 'people' : 'person'}</span>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <span className="text-[13px] font-bold text-[#1D1D1F] pr-1">Split Bill</span>
+                                                                            )}
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         );
@@ -1588,36 +1623,6 @@
                                         <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Notes</label>
                                         <textarea value={itinItemNotes} onChange={e => setItinItemNotes(e.target.value)} rows="3" className="w-full glass-input p-4 text-[15px] font-medium placeholder-[#8E8E93]/50 resize-none" placeholder="Optional notes for this event" />
                                     </div>
-
-                                    <div className="pt-4 border-t border-black/5 mt-2">
-                                        <h3 className="text-[13px] font-bold text-[#1D1D1F] mb-3 flex items-center">
-                                            <i className="fa-solid fa-money-bill-wave text-[var(--ios-accent)] mr-2"></i>
-                                            Split Bill Calculator
-                                        </h3>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Total Bill</label>
-                                                <div className="relative">
-                                                    <span className="absolute left-4 top-[13px] text-[#8E8E93] font-bold">$</span>
-                                                    <input type="number" step="any" min="0" value={itinItemBillTotal} onChange={e => setItinItemBillTotal(e.target.value)} className="w-full pl-8 pr-4 py-3.5 glass-input text-[16px] font-medium" placeholder="0.00" />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Split Among</label>
-                                                <div className="relative">
-                                                    <i className="fa-solid fa-users absolute left-4 top-[16px] text-[#8E8E93] text-[13px]"></i>
-                                                    <input type="number" min="1" value={itinItemBillSplit} onChange={e => setItinItemBillSplit(e.target.value)} className="w-full pl-10 pr-4 py-3.5 glass-input text-[16px] font-medium" placeholder="1" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    {itinItemBillTotal && parseFloat(itinItemBillTotal) > 0 && (
-                                        <div className="bg-[var(--ios-accent)]/10 text-[var(--ios-accent)] px-4 py-3.5 rounded-[16px] flex justify-between items-center border border-[var(--ios-accent)]/20 shadow-sm mt-2">
-                                            <span className="text-[13px] font-bold uppercase tracking-wide">Each Person Pays</span>
-                                            <span className="text-[18px] font-bold">${(parseFloat(itinItemBillTotal) / (parseInt(itinItemBillSplit) || 1)).toFixed(2)}</span>
-                                        </div>
-                                    )}
                                 </div>
 
                                 <button type="submit" disabled={isSaving} className="w-full py-4 bg-[#1D1D1F] disabled:bg-[#1D1D1F]/50 text-white font-bold tracking-wide text-[16px] rounded-[18px] active:scale-[0.98] transition-all mt-4 shadow-lg shadow-black/10">
@@ -1672,6 +1677,55 @@
                                 <div className="flex border-t border-black/5">
                                     <button onClick={() => setConfirmDialog(null)} className="flex-1 py-3 text-[16px] text-[#1D1D1F] font-bold border-r border-black/5 active:bg-black/5 transition-colors">Cancel</button>
                                     <button onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }} className="flex-1 py-3 text-[16px] text-[var(--ios-red)] font-bold active:bg-[var(--ios-red)]/10 transition-colors">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MINIMALIST CALCULATOR MODAL */}
+                    {splitBillItem && (
+                        <div className="fixed inset-0 z- bg-black/40 backdrop-blur-md flex items-end sm:items-center justify-center sm:p-4 animate-fade-in">
+                            <div className="bg-[#F2F4F7] w-full sm:w-[340px] rounded-t-[32px] sm:rounded-[32px] p-6 shadow-2xl border border-white/50 animate-slide-in pb-[calc(env(safe-area-inset-bottom,20px)+24px)] sm:pb-6 relative overflow-hidden">
+                                {/* Background glow inside modal */}
+                                <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[var(--ios-accent)]/10 to-transparent pointer-events-none"></div>
+                                
+                                <div className="flex justify-between items-center mb-6 relative z-10">
+                                    <h3 className="text-[20px] font-art font-bold text-[#1D1D1F]">Calculator</h3>
+                                    <button onClick={() => setSplitBillItem(null)} className="w-8 h-8 rounded-full bg-black/5 text-[#8E8E93] flex items-center justify-center active:bg-black/10 transition-colors">
+                                        <i className="fa-solid fa-xmark text-[14px]"></i>
+                                    </button>
+                                </div>
+
+                                <div className="space-y-6 relative z-10">
+                                    <div className="text-center bg-white/60 p-5 rounded-[24px] shadow-sm border border-white/80">
+                                        <label className="block text-[11px] font-bold text-[#8E8E93] uppercase tracking-widest mb-1">Total Bill</label>
+                                        <div className="flex items-center justify-center text-[#1D1D1F]">
+                                            <span className="text-[32px] font-medium text-[#8E8E93] mr-1">$</span>
+                                            <input type="number" step="any" min="0" value={tempBillTotal} onChange={e => setTempBillTotal(e.target.value)} className="w-[160px] text-center bg-transparent focus:outline-none text-[44px] font-bold transition-colors" placeholder="0" autoFocus />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between bg-white/60 rounded-[24px] p-2 border border-white/80 shadow-sm">
+                                        <button onClick={() => setTempBillSplit(Math.max(1, parseInt(tempBillSplit) - 1))} className="w-14 h-14 rounded-[18px] bg-white shadow-sm border border-black/5 flex items-center justify-center text-[#1D1D1F] active:scale-95 transition-transform"><i className="fa-solid fa-minus"></i></button>
+                                        <div className="text-center">
+                                            <span className="block text-[22px] font-bold text-[#1D1D1F] leading-none">{tempBillSplit}</span>
+                                            <span className="block text-[10px] font-bold text-[#8E8E93] uppercase tracking-wider mt-1">People</span>
+                                        </div>
+                                        <button onClick={() => setTempBillSplit(parseInt(tempBillSplit) + 1)} className="w-14 h-14 rounded-[18px] bg-white shadow-sm border border-black/5 flex items-center justify-center text-[#1D1D1F] active:scale-95 transition-transform"><i className="fa-solid fa-plus"></i></button>
+                                    </div>
+
+                                    {tempBillTotal > 0 && (
+                                        <div className="text-center pt-2">
+                                            <span className="text-[12px] font-bold text-[#8E8E93] uppercase tracking-wider">Per Person</span>
+                                            <div className="text-[36px] font-bold text-[var(--ios-accent)] leading-none mt-1">
+                                                ${(parseFloat(tempBillTotal) / (parseInt(tempBillSplit) || 1)).toFixed(2)}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <button onClick={handleSaveSplitBill} className="w-full py-4 bg-[#1D1D1F] text-white font-bold tracking-wide text-[17px] rounded-[20px] active:scale-[0.98] transition-transform shadow-lg shadow-black/10 mt-4">
+                                        Done
+                                    </button>
                                 </div>
                             </div>
                         </div>
