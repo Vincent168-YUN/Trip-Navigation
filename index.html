@@ -1119,19 +1119,20 @@
                                 <div className="pt-6 pb-10 px-3 flex items-center space-x-4">
                                     <div className="shrink-0 relative">
                                         <input id="cover-photo-upload" type="file" accept="image/*" className="hidden" onChange={handleCoverPhotoUpload} />
-                                        <label htmlFor="cover-photo-upload" className="cursor-pointer block active:scale-95 transition-transform rounded-full relative">
+                                        <label htmlFor="cover-photo-upload" className="cursor-pointer block active:scale-95 transition-transform">
                                             {coverPhoto ? (
-                                                <div className="w-[64px] h-[64px] rounded-full overflow-hidden border-[3px] border-white shadow-[0_4px_16px_rgba(0,0,0,0.1)] bg-white">
+                                                <div className="w-[72px] h-[72px] rounded-[16px] overflow-hidden border border-white/60 shadow-sm relative group bg-white">
                                                     <img src={coverPhoto} className="w-full h-full object-cover" alt="Harry" />
+                                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity">
+                                                        <i className="fa-solid fa-pen text-white text-[16px]"></i>
+                                                    </div>
                                                 </div>
                                             ) : (
-                                                <div className="w-[64px] h-[64px] rounded-full bg-white border-[2px] border-dashed border-[var(--ios-accent)]/40 flex flex-col items-center justify-center text-[var(--ios-accent)] hover:bg-[var(--ios-accent)]/5 transition-colors shadow-sm">
-                                                    <i className="fa-solid fa-camera text-[20px] mb-0.5"></i>
+                                                <div className="w-[72px] h-[72px] rounded-[16px] bg-black/5 border border-black/5 flex flex-col items-center justify-center text-[#8E8E93] shadow-inner hover:bg-black/10 transition-colors">
+                                                    <i className="fa-solid fa-image text-2xl opacity-40 mb-1"></i>
+                                                    <span className="text-[9px] font-bold uppercase tracking-wider opacity-60">Icon</span>
                                                 </div>
                                             )}
-                                            <div className="absolute -bottom-1 -right-1 bg-[var(--ios-accent)] w-6 h-6 rounded-full flex items-center justify-center border-2 border-[var(--ios-bg)] shadow-sm text-white">
-                                                <i className="fa-solid fa-plus text-[10px]"></i>
-                                            </div>
                                         </label>
                                     </div>
 
