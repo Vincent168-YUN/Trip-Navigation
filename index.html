@@ -203,6 +203,7 @@
             const [gpsAccuracy, setGpsAccuracy] = useState(null);
             const [geoError, setGeoError] = useState('');
             const [locations, setLocations] = useState([]);
+            const [coverPhoto, setCoverPhoto] = useState(null);
             
             // NEW: Stores actual road distances and driving durations
             const [realRoutes, setRealRoutes] = useState({}); 
@@ -324,7 +325,14 @@
                     setItineraries(fetchedItins);
                 }, (error) => { console.error("Error fetching itineraries: ", error); });
 
-                return () => { unsubLocs(); unsubItins(); };
+                const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_settings', 'main');
+                const unsubSettings = onSnapshot(settingsRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        setCoverPhoto(docSnap.data().coverPhoto || null);
+                    }
+                }, (error) => { console.error("Error fetching settings: ", error); });
+
+                return () => { unsubLocs(); unsubItins(); unsubSettings(); };
             }, [user]);
 
             // 3. Track GPS
@@ -672,6 +680,15 @@
                 finally { setIsSaving(false); e.target.value = null; }
             };
             const removeCityPhoto = (index) => { setCityPhotos(prev => prev.filter((_, i) => i !== index)); };
+
+            const handleCoverPhotoUpload = async (e) => {
+                const file = e.target.files;
+                if (!file || !file.type.startsWith('image/')) return;
+                try {
+                    const base64 = await processImage(file);
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_settings', 'main'), { coverPhoto: base64 }, { merge: true });
+                } catch (err) { console.error("Error saving cover photo.", err); }
+            };
 
             const useCurrentLocation = () => {
                 if (liveLocation && liveLocation.lat != null && liveLocation.lng != null) {
@@ -1101,10 +1118,24 @@
                         {/* VIEW: CITIES */}
                         {view === 'cities' && (
                             <div className="pb-6">
-                                <div className="pt-4 pb-8 px-2">
+                                <div className="pt-4 pb-8 px-2 flex justify-between items-start">
                                     <h1 className="text-[44px] font-bold font-art leading-[1.05] text-[#1D1D1F] tracking-tight">
                                         Vincent's<br/><span className="text-[#8E8E93] italic font-normal opacity-80">Travelling</span><br/>System
                                     </h1>
+                                    <label className="cursor-pointer shrink-0 mt-2 active:scale-95 transition-transform relative group">
+                                        <input type="file" accept="image/*" className="hidden" onChange={handleCoverPhotoUpload} />
+                                        {coverPhoto ? (
+                                            <img src={coverPhoto} className="w-[72px] h-[72px] rounded-full object-cover shadow-[0_4px_16px_rgba(0,0,0,0.1)] border-[3px] border-white" alt="Vincent" />
+                                        ) : (
+                                            <div className="w-[72px] h-[72px] rounded-full bg-[var(--ios-accent)]/10 border-2 border-[var(--ios-accent)]/20 flex flex-col items-center justify-center text-[var(--ios-accent)] shadow-sm">
+                                                <i className="fa-solid fa-camera mb-1 opacity-80 text-[14px]"></i>
+                                                <span className="text-[8px] font-bold uppercase tracking-wider opacity-80">Vincent</span>
+                                            </div>
+                                        )}
+                                        <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity">
+                                            <i className="fa-solid fa-pen text-white text-[14px]"></i>
+                                        </div>
+                                    </label>
                                 </div>
                                 
                                 <div className="space-y-4">
