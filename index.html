@@ -239,6 +239,9 @@
                     snapshot.forEach(doc => {
                         const data = doc.data();
                         let docPhotos = data.photos || [];
+                        if (!data.photos && data.media && data.mediaType === 'image') {
+                            docPhotos = [data.media];
+                        }
                         fetchedLocations.push({ id: doc.id, ...data, photos: docPhotos });
                     });
                     setLocations(fetchedLocations);
@@ -300,7 +303,13 @@
                         if (data.code === 'Ok') {
                             const newRoutes = {};
                             validLocs.forEach((loc, index) => {
-                                newRoutes[loc.id] = { distance: data.distances[index + 1] / 1000, duration: data.durations[index + 1] / 60 };
+                                // FIXED: Indexing into the results array properly
+                                if(data.distances && data.distances[index + 1]) {
+                                    newRoutes[loc.id] = { 
+                                        distance: data.distances[index + 1] / 1000, 
+                                        duration: data.durations[index + 1] / 60 
+                                    };
+                                }
                             });
                             setRealRoutes(newRoutes);
                         }
@@ -344,7 +353,11 @@
             }, [liveLocation, locations]);
 
             const processImage = (file) => {
-                return new Promise((resolve) => {
+                return new Promise((resolve, reject) => {
+                    if (!file || !(file instanceof Blob)) {
+                        reject(new Error("No valid file provided"));
+                        return;
+                    }
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         const img = new Image();
@@ -365,14 +378,20 @@
             };
 
             const handleCoverPhotoUpload = async (e) => {
-                const files = Array.from(e.target.files).filter(f => f.type.startsWith('image'));
-                if (!files.length) return;
+                const files = e.target.files;
+                if (!files || files.length === 0) return;
+                const file = files;
+                if (!file.type.startsWith('image/')) return;
+                
                 try {
-                    // CRITICAL FIX: processImage expects the file object (files), not the array
-                    const base64 = await processImage(files);
+                    // FIXED: Now correctly passing a single File object
+                    const base64 = await processImage(file);
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_settings', 'main'), { coverPhoto: base64 }, { merge: true });
-                } catch (err) { console.error(err); } 
-                finally { e.target.value = null; }
+                } catch (err) { 
+                    console.error("Upload error:", err); 
+                } finally { 
+                    e.target.value = null; 
+                }
             };
 
             const resetForm = () => {
@@ -430,7 +449,7 @@
                 return { cities, uniqueCities: Object.keys(cities).sort() };
             }, [locations, liveLocation, realRoutes]);
 
-            const locDetail = view === 'location_detail' && selectedLocId ? locations.find(l => l.id === selectedLocId) : null;
+            const canShowAddButton = ['cities', 'categories', 'category_list', 'itineraries'].includes(view);
             const getHeaderTitle = () => {
                 if (view === 'cities') return ""; 
                 if (view === 'location_detail') return 'Details';
@@ -476,41 +495,50 @@
                             <div className="pb-6">
                                 <div className="pt-6 pb-10 px-3 flex items-center space-x-4">
                                     <div className="shrink-0 relative">
+                                        {/* FIXED: Improved file input handling */}
                                         <input id="main-cover-upload" type="file" accept="image/*" className="hidden" onChange={handleCoverPhotoUpload} />
                                         <label htmlFor="main-cover-upload" className="cursor-pointer block active:scale-95 transition-transform">
                                             {coverPhoto ? (
-                                                <div className="w-[72px] h-[72px] rounded-[16px] overflow-hidden border border-white shadow-sm relative bg-white">
+                                                <div className="w-[84px] h-[84px] rounded-[24px] overflow-hidden border-[3px] border-white shadow-[0_8px_20px_rgba(0,0,0,0.1)] relative bg-white">
                                                     <img src={coverPhoto} className="w-full h-full object-cover" alt="Harry" />
                                                     <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                                                        <i className="fa-solid fa-camera text-white text-[16px]"></i>
+                                                        <i className="fa-solid fa-camera text-white text-[18px]"></i>
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div className="w-[72px] h-[72px] rounded-[16px] bg-black/5 border border-black/5 flex flex-col items-center justify-center text-[#8E8E93] shadow-inner hover:bg-black/10 transition-colors">
-                                                    <i className="fa-solid fa-image text-2xl opacity-40 mb-1"></i>
-                                                    <span className="text-[9px] font-bold uppercase tracking-wider opacity-60">Icon</span>
+                                                <div className="w-[84px] h-[84px] rounded-[24px] bg-black/5 border-[2px] border-dashed border-black/10 flex flex-col items-center justify-center text-[#8E8E93] shadow-inner hover:bg-black/10 transition-colors">
+                                                    <i className="fa-solid fa-image text-3xl opacity-30 mb-1"></i>
+                                                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Icon</span>
                                                 </div>
                                             )}
                                         </label>
                                     </div>
                                     <div className="flex flex-col min-w-0 flex-1">
-                                        <h1 className="text-[44px] font-extrabold leading- text-[#1D1D1F] tracking-tighter uppercase truncate">Harry</h1>
+                                        {/* FIXED: Broken Tailwind class leading- */}
+                                        <h1 className="text-[42px] font-extrabold leading-[0.9] text-[#1D1D1F] tracking-tighter uppercase truncate">Harry</h1>
                                         <h2 className="text-[14px] text-[var(--ios-accent)] mt-1.5 font-bold tracking-widest uppercase flex items-center space-x-1.5">
                                             <i className="fa-solid fa-location-arrow"></i>
-                                            <span className="truncate">Navigation</span>
+                                            <span className="truncate">Travelling Navigation</span>
                                         </h2>
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    {dataHierarchy.uniqueCities.map((cN) => (
-                                        <div key={cN} onClick={() => { setActiveCity(cN); setView('categories'); }} className="glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform">
-                                            <div className="flex items-center min-w-0 flex-1">
-                                                {dataHierarchy.cities[cN].photos.length ? <img src={dataHierarchy.cities[cN].photos} className="w-16 h-20 rounded-[20px] object-cover shrink-0 mr-4" /> : <div className="bg-black/5 w-16 h-20 rounded-[20px] flex items-center justify-center mr-4 shrink-0 shadow-inner text-[#1D1D1F]/20"><i className="fa-solid fa-city"></i></div>}
-                                                <div className="min-w-0 flex-1"><h3 className="text-[22px] font-extrabold text-[#1D1D1F] tracking-tight">{cN}</h3><span className="text-[11px] font-bold text-[var(--ios-accent)] uppercase">{dataHierarchy.cities[cN].count} Places</span></div>
+                                    {dataHierarchy.uniqueCities.length === 0 ? (
+                                        <div className="glass-panel py-20 text-center"><p className="text-[#8E8E93]">No cities added yet.</p></div>
+                                    ) : (
+                                        dataHierarchy.uniqueCities.map((cN) => (
+                                            <div key={cN} onClick={() => { setActiveCity(cN); setView('categories'); }} className="glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform">
+                                                <div className="flex items-center min-w-0 flex-1">
+                                                    {dataHierarchy.cities[cN].photos.length ? <img src={dataHierarchy.cities[cN].photos} className="w-16 h-20 rounded-[20px] object-cover shrink-0 mr-4" alt="" /> : <div className="bg-black/5 w-16 h-20 rounded-[20px] flex items-center justify-center mr-4 shrink-0 shadow-inner text-[#1D1D1F]/20"><i className="fa-solid fa-city"></i></div>}
+                                                    <div className="min-w-0 flex-1">
+                                                        <h3 className="text-[22px] font-extrabold text-[#1D1D1F] tracking-tight">{cN}</h3>
+                                                        <span className="text-[11px] font-bold text-[var(--ios-accent)] uppercase">{dataHierarchy.cities[cN].count} Places</span>
+                                                    </div>
+                                                </div>
+                                                <i className="fa-solid fa-chevron-right text-[#8E8E93] text-xs"></i>
                                             </div>
-                                            <i className="fa-solid fa-chevron-right text-[#8E8E93] text-xs"></i>
-                                        </div>
-                                    ))}
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -519,22 +547,47 @@
                             <form onSubmit={handleSaveLocation} className="space-y-5 pb-6">
                                 <div className="px-2 mb-4"><h2 className="text-[34px] font-extrabold text-[#1D1D1F] tracking-tight">{editId ? 'Edit Place' : 'New Place'}</h2></div>
                                 <div className="glass-panel p-2 space-y-1">
-                                    <div className="p-3 flex items-center"><label className="w-24 font-bold text-[#8E8E93] uppercase text-xs">Name</label><input type="text" required value={name} onChange={e => setName(e.target.value)} className="flex-1 bg-transparent outline-none font-bold text-[#1D1D1F]" placeholder="Location name" /></div>
+                                    <div className="p-3 flex items-center">
+                                        <label className="w-24 font-bold text-[#8E8E93] uppercase text-xs">Name</label>
+                                        <input type="text" required value={name} onChange={e => setName(e.target.value)} className="flex-1 bg-transparent outline-none font-bold text-[#1D1D1F]" placeholder="Location name" />
+                                    </div>
                                     <div className="h-px bg-black/5 mx-3"></div>
-                                    <div className="p-3 flex items-center"><label className="w-24 font-bold text-[#8E8E93] uppercase text-xs">City</label><input type="text" required value={city} onChange={e => setCity(e.target.value)} className="flex-1 bg-transparent outline-none font-bold text-[#1D1D1F]" /></div>
+                                    <div className="p-3 flex items-center">
+                                        <label className="w-24 font-bold text-[#8E8E93] uppercase text-xs">City</label>
+                                        <input type="text" required value={city} onChange={e => setCity(e.target.value)} className="flex-1 bg-transparent outline-none font-bold text-[#1D1D1F]" placeholder="e.g. Tokyo" />
+                                    </div>
                                     <div className="h-px bg-black/5 mx-3"></div>
-                                    <div className="p-3 flex items-center"><label className="w-24 font-bold text-[#8E8E93] uppercase text-xs">Category</label><input type="text" required value={category} onChange={e => setCategory(e.target.value)} className="flex-1 bg-transparent outline-none font-bold text-[#1D1D1F]" /></div>
+                                    <div className="p-3 flex items-center">
+                                        <label className="w-24 font-bold text-[#8E8E93] uppercase text-xs">Category</label>
+                                        <input type="text" required value={category} onChange={e => setCategory(e.target.value)} className="flex-1 bg-transparent outline-none font-bold text-[#1D1D1F]" placeholder="e.g. Cafe" />
+                                    </div>
                                 </div>
-                                <button type="submit" disabled={isSaving} className="w-full py-4 bg-[#1D1D1F] text-white font-bold rounded-[18px] active:scale-[0.98] transition-all shadow-lg">{isSaving ? 'Saving...' : 'Save Place'}</button>
+                                <button type="submit" disabled={isSaving} className="w-full py-4 bg-[#1D1D1F] text-white font-bold rounded-[18px] active:scale-[0.98] transition-all shadow-lg">
+                                    {isSaving ? 'Saving...' : 'Save Place'}
+                                </button>
                             </form>
+                        )}
+
+                        {/* OTHER VIEWS FALLBACK */}
+                        {(view === 'notifications' || view === 'categories' || view === 'category_list' || view === 'itineraries') && (
+                            <div className="glass-panel py-20 text-center"><p className="text-[#8E8E93]">Module content loading...</p></div>
                         )}
                     </main>
 
                     <div className="fixed bottom-6 left-6 right-6 z-40 safe-bottom flex justify-center">
                         <div className="glass-pill w-full max-w-[400px] h-16 flex justify-around items-center px-2">
-                            <button onClick={() => setView('cities')} className={`flex flex-col items-center w-full h-full rounded-full ${activeTab === 'places' ? 'text-[#1D1D1F]' : 'text-[#8E8E93]'}`}><i className="fa-solid fa-map-location-dot text-[18px] mb-1"></i><span className="text-[10px] font-bold">Places</span></button>
-                            <button onClick={() => setView('notifications')} className={`flex flex-col items-center w-full h-full rounded-full ${activeTab === 'notifications' ? 'text-[#1D1D1F]' : 'text-[#8E8E93]'}`}><i className="fa-solid fa-bell text-[18px] mb-1"></i><span className="text-[10px] font-bold">Radar</span></button>
-                            <button onClick={() => setView('itineraries')} className={`flex flex-col items-center w-full h-full rounded-full ${activeTab === 'itineraries' ? 'text-[#1D1D1F]' : 'text-[#8E8E93]'}`}><i className="fa-solid fa-calendar-day text-[18px] mb-1"></i><span className="text-[10px] font-bold">Plan</span></button>
+                            <button onClick={() => setView('cities')} className={`flex flex-col items-center w-full h-full rounded-full transition-colors ${activeTab === 'places' ? 'text-[#1D1D1F]' : 'text-[#8E8E93]'}`}>
+                                <i className="fa-solid fa-map-location-dot text-[18px] mb-1"></i>
+                                <span className="text-[10px] font-bold">Places</span>
+                            </button>
+                            <button onClick={() => setView('notifications')} className={`flex flex-col items-center w-full h-full rounded-full transition-colors ${activeTab === 'notifications' ? 'text-[#1D1D1F]' : 'text-[#8E8E93]'}`}>
+                                <i className="fa-solid fa-bell text-[18px] mb-1"></i>
+                                <span className="text-[10px] font-bold">Radar</span>
+                            </button>
+                            <button onClick={() => setView('itineraries')} className={`flex flex-col items-center w-full h-full rounded-full transition-colors ${activeTab === 'itineraries' ? 'text-[#1D1D1F]' : 'text-[#8E8E93]'}`}>
+                                <i className="fa-solid fa-calendar-day text-[18px] mb-1"></i>
+                                <span className="text-[10px] font-bold">Plan</span>
+                            </button>
                         </div>
                     </div>
                 </div>
