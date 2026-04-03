@@ -548,25 +548,27 @@
                 const placeMatch = input.match(/place\/.*@(-?\d+\.\d+),(-?\d+\.\d+)/) || input.match(/place\/[^\/]+\/([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
                 
                 const match = exactPinMatch || atMatch || queryMatch || placeMatch;
-                let parsedLat = null, parsedLng = null;
+                let latStr = null, lngStr = null;
                 
                 if (match && match.length >= 3) { 
-                    parsedLat = parseFloat(match);
-                    parsedLng = parseFloat(match);
+                    latStr = match;
+                    lngStr = match;
                 } else {
                     // Fallback to globally extract any two decimal numbers (handles parentheses, spaces, etc.)
                     const rawMatches = [...input.matchAll(/[-+]?\d+\.\d+/g)];
                     if (rawMatches.length >= 2) {
-                        parsedLat = parseFloat(rawMatches);
-                        parsedLng = parseFloat(rawMatches);
+                        latStr = rawMatches;
+                        lngStr = rawMatches;
                     }
                 }
                 
-                if (parsedLat !== null && parsedLng !== null) {
+                if (latStr !== null && lngStr !== null) {
+                    const parsedLat = parseFloat(latStr);
+                    const parsedLng = parseFloat(lngStr);
                     // Verify they are valid map coordinates before applying
                     if (parsedLat >= -90 && parsedLat <= 90 && parsedLng >= -180 && parsedLng <= 180) {
-                        setLat(parsedLat.toFixed(6)); 
-                        setLng(parsedLng.toFixed(6));
+                        setLat(latStr); 
+                        setLng(lngStr);
                         return true;
                     }
                 }
@@ -1509,15 +1511,17 @@
                                                 // Extract the first two decimal numbers globally, ignoring all other characters
                                                 const matches = [...value.matchAll(/[-+]?\d+\.\d+/g)];
                                                 if (matches.length >= 2) {
-                                                    const parsedLat = parseFloat(matches);
-                                                    const parsedLng = parseFloat(matches);
+                                                    const latStr = matches;
+                                                    const lngStr = matches;
+                                                    const parsedLat = parseFloat(latStr);
+                                                    const parsedLng = parseFloat(lngStr);
 
                                                     if (
                                                         parsedLat >= -90 && parsedLat <= 90 &&
                                                         parsedLng >= -180 && parsedLng <= 180
                                                     ) {
-                                                        setLat(parsedLat.toFixed(6));
-                                                        setLng(parsedLng.toFixed(6));
+                                                        setLat(latStr);
+                                                        setLng(lngStr);
                                                     }
                                                 }
                                             }}
