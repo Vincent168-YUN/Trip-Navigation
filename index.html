@@ -9,6 +9,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Globe_icon.svg/1024px-Globe_icon.svg.png">
 
+    <!-- Google Fonts for Art/Editorial Design -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -18,30 +23,30 @@
     
     <style>
         :root {
-            --ios-accent: #0A84FF;
-            --ios-green: #32D74B; 
+            --ios-accent: #007AFF;
+            --ios-green: #34C759; 
             --ios-red: #FF3B30; 
             --ios-bg: #F2F2F7;
-            --ios-text: #1D1D1F;
+            --ios-text: #1C1C1E;
             --ios-gray: #8E8E93;
         }
         body { 
             -webkit-tap-highlight-color: transparent; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--ios-bg);
             color: var(--ios-text);
             color-scheme: light;
         }
+        .font-art { font-family: 'Playfair Display', serif; }
+        
         .safe-top { padding-top: env(safe-area-inset-top, 44px); }
         .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 34px); }
         .safe-pb-nav { padding-bottom: calc(env(safe-area-inset-bottom, 34px) + 100px); }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         
-        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .animate-slide-in { animation: slideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slide-in { animation: slideIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
 
         @keyframes blob {
             0% { transform: translate(0px, 0px) scale(1); }
@@ -49,17 +54,15 @@
             66% { transform: translate(-20px, 20px) scale(0.9); }
             100% { transform: translate(0px, 0px) scale(1); }
         }
-        .animate-blob { animation: blob 12s infinite alternate ease-in-out; }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
+        .animate-blob { animation: blob 15s infinite alternate ease-in-out; }
 
         .glass-panel {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(32px);
-            -webkit-backdrop-filter: blur(32px);
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04), inset 0 1px 0 rgba(255,255,255,1);
-            border-radius: 28px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05);
+            border-radius: 32px;
         }
         
         .glass-pill {
@@ -67,30 +70,14 @@
             backdrop-filter: blur(40px);
             -webkit-backdrop-filter: blur(40px);
             border: 1px solid rgba(255, 255, 255, 1);
-            box-shadow: 0 12px 40px -10px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,1);
+            box-shadow: 0 15px 50px -10px rgba(0,0,0,0.12);
             border-radius: 9999px;
         }
 
         .glass-header {
-            background: linear-gradient(to bottom, rgba(242, 244, 247, 0.95) 0%, rgba(242, 244, 247, 0) 100%);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-        }
-
-        .glass-input {
-            background: rgba(255, 255, 255, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            border-radius: 16px;
-            transition: all 0.2s ease;
-            color: #1D1D1F;
-        }
-        .glass-input:focus {
-            background: rgba(255, 255, 255, 0.9);
-            border-color: var(--ios-accent);
-            outline: none;
-            box-shadow: 0 4px 16px rgba(10, 132, 255, 0.2);
+            background: linear-gradient(to bottom, rgba(242, 242, 247, 0.98) 0%, rgba(242, 242, 247, 0) 100%);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
         }
     </style>
 </head>
@@ -119,112 +106,26 @@
         const db = getFirestore(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-wander-tracker-app';
 
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const numLat1 = parseFloat(lat1);
-            const numLon1 = parseFloat(lon1);
-            const numLat2 = parseFloat(lat2);
-            const numLon2 = parseFloat(lon2);
-            if (isNaN(numLat1) || isNaN(numLon1) || isNaN(numLat2) || isNaN(numLon2)) return null;
-            const R = 6371; 
-            const dLat = (numLat2 - numLat1) * (Math.PI / 180);
-            const dLon = (numLon2 - numLon1) * (Math.PI / 180);
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(numLat1 * (Math.PI / 180)) * Math.cos(numLat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
-        }
-
-        function formatDistance(distInKm) {
-            if (distInKm == null || isNaN(distInKm)) return "Distance unknown";
-            if (distInKm < 1) return `${Math.round(distInKm * 1000)}m`;
-            return `${Number(distInKm).toFixed(1)}km`;
-        }
-
-        function formatDuration(totalMinutes) {
-            if (totalMinutes == null || isNaN(totalMinutes)) return "";
-            totalMinutes = Math.ceil(totalMinutes);
-            if (totalMinutes < 1) return "1 min";
-            if (totalMinutes < 60) return `${totalMinutes} mins`;
-            const hours = Math.floor(totalMinutes / 60);
-            const mins = totalMinutes % 60;
-            return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-        }
-
-        const getDistanceColor = (distInKm) => {
-            if (distInKm == null || isNaN(distInKm)) return "text-[#8E8E93]";
-            if (distInKm <= 1.0) return "text-[var(--ios-green)]";
-            if (distInKm <= 10.0) return "text-[#FF9500]";
-            return "text-[var(--ios-red)]";
-        };
-
-        const getDistanceBgColor = (distInKm) => {
-            if (distInKm == null || isNaN(distInKm)) return "bg-[#8E8E93]/10 border-[#8E8E93]/20 text-[#8E8E93]";
-            if (distInKm <= 1.0) return "bg-[var(--ios-green)]/10 border-[var(--ios-green)]/20 text-[var(--ios-green)]";
-            if (distInKm <= 10.0) return "bg-[#FF9500]/10 border-[#FF9500]/20 text-[#FF9500]";
-            return "bg-[var(--ios-red)]/10 border-[var(--ios-red)]/20 text-[var(--ios-red)]";
-        };
-
         function App() {
             const [user, setUser] = useState(null);
             const [liveLocation, setLiveLocation] = useState(null);
-            const [gpsAccuracy, setGpsAccuracy] = useState(null);
-            const [geoError, setGeoError] = useState('');
             const [locations, setLocations] = useState([]);
-            const [coverPhoto, setCoverPhoto] = useState(null);
             const [realRoutes, setRealRoutes] = useState({}); 
-            const [itineraries, setItineraries] = useState([]);
-            const [activeItinId, setActiveItinId] = useState(null);
-            const [itinTitle, setItinTitle] = useState('');
-            const [itinDate, setItinDate] = useState('');
-            const [editItinItemId, setEditItinItemId] = useState(null);
-            const [itinItemTime, setItinItemTime] = useState('');
-            const [itinItemLabel, setItinItemLabel] = useState('Tourist Attraction');
-            const [itinItemLocId, setItinItemLocId] = useState('');
-            const [itinItemNotes, setItinItemNotes] = useState('');
-            const [splitBillItem, setSplitBillItem] = useState(null);
-            const [tempBillTotal, setTempBillTotal] = useState('');
-            const [tempBillSplit, setTempBillSplit] = useState(1);
-            const [searchQuery, setSearchQuery] = useState('');
-            const [formSearchQuery, setFormSearchQuery] = useState('');
-            const [searchResults, setSearchResults] = useState([]);
-            const [isSearching, setIsSearching] = useState(false);
             const [view, setView] = useState('cities'); 
             const [activeCity, setActiveCity] = useState(null);
             const [activeCategory, setActiveCategory] = useState(null);
             const [selectedLocId, setSelectedLocId] = useState(null);
             const [previousView, setPreviousView] = useState('cities');
-            const [locationReturnView, setLocationReturnView] = useState('category_list');
-            const [notifications, setNotifications] = useState([]);
-            const alertedLocsRef = useRef(new Set());
-            const [fullScreenPhoto, setFullScreenPhoto] = useState(null); 
-            const fullScreenScrollRef = useRef(null);
-            const [confirmDialog, setConfirmDialog] = useState(null);
-            const [editId, setEditId] = useState(null);
+            const [isSaving, setIsSaving] = useState(false);
             const [name, setName] = useState('');
-            const [comment, setComment] = useState('');
-            const [editingCityName, setEditingCityName] = useState(null); 
-            const [newCityName, setNewCityName] = useState(''); 
-            const [cityPhotos, setCityPhotos] = useState([]); 
             const [city, setCity] = useState('');
             const [category, setCategory] = useState('');
-            const [lat, setLat] = useState('');
-            const [lng, setLng] = useState('');
-            const [mapLink, setMapLink] = useState('');
-            const [photos, setPhotos] = useState([]); 
-            const [saveError, setSaveError] = useState('');
-            const [isSaving, setIsSaving] = useState(false);
-            const [showCoords, setShowCoords] = useState(false);
-
-            const activeTab = view === 'notifications' ? 'notifications' : (view.includes('itinerar') ? 'itineraries' : 'places');
 
             useEffect(() => {
                 const initAuth = async () => {
-                    try {
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                    } catch (err) { console.error(err); }
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else await signInAnonymously(auth);
                 };
                 initAuth();
                 const unsubscribe = onAuthStateChanged(auth, setUser);
@@ -233,363 +134,163 @@
 
             useEffect(() => {
                 if (!user) return;
-                const locationsRef = collection(db, 'artifacts', appId, 'public', 'data', 'locations');
-                const unsubLocs = onSnapshot(locationsRef, (snapshot) => {
-                    const fetchedLocations = [];
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        let docPhotos = data.photos || [];
-                        if (!data.photos && data.media && data.mediaType === 'image') {
-                            docPhotos = [data.media];
-                        }
-                        fetchedLocations.push({ id: doc.id, ...data, photos: docPhotos });
-                    });
-                    setLocations(fetchedLocations);
-                }, (error) => { console.error(error); });
-
-                const itinerariesRef = collection(db, 'artifacts', appId, 'public', 'data', 'itineraries');
-                const unsubItins = onSnapshot(itinerariesRef, (snapshot) => {
-                    const fetchedItins = [];
-                    snapshot.forEach(doc => { fetchedItins.push({ id: doc.id, ...doc.data() }); });
-                    fetchedItins.sort((a, b) => a.timestamp - b.timestamp);
-                    setItineraries(fetchedItins);
-                }, (error) => { console.error(error); });
-
-                const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_settings', 'main');
-                const unsubSettings = onSnapshot(settingsRef, (docSnap) => {
-                    if (docSnap.exists()) setCoverPhoto(docSnap.data().coverPhoto || null);
-                }, (error) => { console.error(error); });
-
-                return () => { unsubLocs(); unsubItins(); unsubSettings(); };
+                const unsubLocs = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'locations'), (snapshot) => {
+                    const fetched = [];
+                    snapshot.forEach(doc => fetched.push({ id: doc.id, ...doc.data() }));
+                    setLocations(fetched);
+                });
+                return () => unsubLocs();
             }, [user]);
 
             useEffect(() => {
                 if (!("geolocation" in navigator)) return;
                 const watchId = navigator.geolocation.watchPosition(
-                    (pos) => { 
-                        setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); 
-                        setGpsAccuracy(pos.coords.accuracy);
-                    },
-                    (err) => { setLiveLocation({ lat: 11.5564, lng: 104.9282 }); },
+                    (pos) => setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                    () => setLiveLocation({ lat: 11.5564, lng: 104.9282 }),
                     { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
                 );
                 return () => navigator.geolocation.clearWatch(watchId);
             }, []);
 
-            useEffect(() => {
-                const delayDebounceFn = setTimeout(() => {
-                    if (formSearchQuery.trim().length > 2) {
-                        setIsSearching(true);
-                        let url = `https://photon.komoot.io/api/?q=${encodeURIComponent(formSearchQuery)}&limit=6`;
-                        if (liveLocation) url += `&lat=${liveLocation.lat}&lon=${liveLocation.lng}`;
-                        fetch(url).then(res => res.json()).then(data => {
-                            setSearchResults(data.features || []);
-                            setIsSearching(false);
-                        }).catch(() => setIsSearching(false));
-                    } else { setSearchResults([]); }
-                }, 500);
-                return () => clearTimeout(delayDebounceFn);
-            }, [formSearchQuery, liveLocation]);
-
-            useEffect(() => {
-                if (!liveLocation || locations.length === 0) return;
-                const validLocs = locations.filter(l => l.lat != null && l.lng != null && !l.isCityMarker).slice(0, 99);
-                if (validLocs.length === 0) return;
-                const coords = [`${liveLocation.lng},${liveLocation.lat}`, ...validLocs.map(l => `${l.lng},${l.lat}`)].join(';');
-                const fetchMatrix = async () => {
-                    try {
-                        const res = await fetch(`https://router.project-osrm.org/table/v1/driving/${coords}?sources=0&annotations=duration,distance`);
-                        const data = await res.json();
-                        if (data.code === 'Ok') {
-                            const newRoutes = {};
-                            validLocs.forEach((loc, index) => {
-                                // FIXED: Indexing into the results array properly
-                                if(data.distances && data.distances[index + 1]) {
-                                    newRoutes[loc.id] = { 
-                                        distance: data.distances[index + 1] / 1000, 
-                                        duration: data.durations[index + 1] / 60 
-                                    };
-                                }
-                            });
-                            setRealRoutes(newRoutes);
-                        }
-                    } catch (e) { console.error(e); }
-                };
-                setTimeout(fetchMatrix, 2500);
-            }, [liveLocation, locations]);
-
-            const getRouteInfo = (loc) => {
-                if (realRoutes[loc.id]) return { dist: realRoutes[loc.id].distance, dur: realRoutes[loc.id].duration, isReal: true };
-                if (liveLocation && loc.lat != null && loc.lng != null) {
-                    const d = calculateDistance(liveLocation.lat, liveLocation.lng, loc.lat, loc.lng);
-                    return { dist: d, dur: d ? d * 3.5 : null, isReal: false };
-                }
-                return { dist: null, dur: null, isReal: false };
-            };
-
-            const addNotification = (loc, isStartup) => {
-                setNotifications(prev => {
-                    if (prev.some(n => n.locId === loc.id && !n.read)) return prev;
-                    return [{
-                        id: Date.now().toString() + Math.random(),
-                        locId: loc.id, name: loc.name, distance: loc.currentDistance, duration: loc.currentDuration,
-                        isRealRoute: loc.isRealRoute, photos: loc.photos, read: false
-                    }, ...prev];
-                });
-            };
-
-            const deleteNotification = (e, id) => { e.stopPropagation(); setNotifications(prev => prev.filter(n => n.id !== id)); };
-
-            useEffect(() => {
-                if (!liveLocation || locations.length === 0) return;
-                locations.forEach(loc => {
-                    if (loc.isCityMarker || loc.lat == null || loc.lng == null) return;
-                    const r = getRouteInfo(loc);
-                    if (r.dist && r.dist <= 1.0 && !alertedLocsRef.current.has(loc.id)) {
-                        addNotification({ ...loc, currentDistance: r.dist, currentDuration: r.dur, isRealRoute: r.isReal }, false);
-                        alertedLocsRef.current.add(loc.id);
-                    }
-                });
-            }, [liveLocation, locations]);
-
-            const processImage = (file) => {
-                return new Promise((resolve, reject) => {
-                    if (!file || !(file instanceof Blob)) {
-                        reject(new Error("No valid file provided"));
-                        return;
-                    }
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            const MAX = 2048; let {width, height} = img;
-                            if (width > height && width > MAX) { height *= MAX / width; width = MAX; }
-                            else if (height > MAX) { width *= MAX / height; height = MAX; }
-                            canvas.width = width; canvas.height = height;
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0, width, height);
-                            resolve(canvas.toDataURL('image/jpeg', 0.85)); 
-                        };
-                        img.src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                });
-            };
-
-            const handleCoverPhotoUpload = async (e) => {
-                const files = e.target.files;
-                if (!files || files.length === 0) return;
-                const file = files;
-                if (!file.type.startsWith('image/')) return;
-                
-                try {
-                    // FIXED: Now correctly passing a single File object
-                    const base64 = await processImage(file);
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_settings', 'main'), { coverPhoto: base64 }, { merge: true });
-                } catch (err) { 
-                    console.error("Upload error:", err); 
-                } finally { 
-                    e.target.value = null; 
-                }
-            };
-
-            const resetForm = () => {
-                setEditId(null); setName(''); setCity(activeCity || 'Ho Chi Minh City'); setCategory(activeCategory || '');
-                setLat(''); setLng(''); setMapLink(''); setPhotos([]); setComment(''); setSaveError('');
-            };
-
-            const openForm = (loc = null) => {
-                setPreviousView(view); 
-                if (loc) {
-                    setEditId(loc.id); setName(loc.name || ''); setCity(loc.city || 'Ho Chi Minh City'); setCategory(loc.category || 'Uncategorized');
-                    setLat(loc.lat != null ? loc.lat : ''); setLng(loc.lng != null ? loc.lng : ''); setMapLink(loc.mapLink || ''); setPhotos([...(loc.photos || [])]); setComment(loc.comment || '');
-                } else resetForm();
-                setView('form');
-            };
-
-            const handleBack = () => {
-                if (view === 'photo_viewer') setView(previousView);
-                else if (view === 'form') setView(previousView);
-                else if (view === 'city_form') setView('cities');
-                else if (view === 'notifications') setView(previousView || 'cities');
-                else if (view === 'location_detail') setView(locationReturnView);
-                else if (view === 'category_list') setView('categories');
-                else if (view === 'categories') setView('cities');
-                else if (view === 'itinerary_detail') setView('itineraries');
-                else if (view === 'itinerary_form') setView('itineraries');
-                else if (view === 'itinerary_select_location') setView('itinerary_detail');
-                else if (view === 'itinerary_item_form') setView(previousView === 'itinerary_select_location' ? 'itinerary_select_location' : 'itinerary_detail');
-                else if (view === 'split_bill') setView('itinerary_detail');
-            };
-
             const handleSaveLocation = async (e) => {
                 e.preventDefault(); setIsSaving(true);
-                const lData = { name, city, category, comment, lat: parseFloat(lat)||null, lng: parseFloat(lng)||null, mapLink, photos };
-                if (!editId) lData.timestamp = Date.now();
+                const lData = { name, city, category, timestamp: Date.now() };
                 try {
-                    if (editId) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', editId), lData);
-                    else await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', Date.now().toString()), lData);
-                    handleBack();
-                } catch (err) { setSaveError(err.message); } finally { setIsSaving(false); }
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', Date.now().toString()), lData);
+                    setView('cities');
+                    setName(''); setCity(''); setCategory('');
+                } catch (err) { console.error(err); } finally { setIsSaving(false); }
             };
 
             const dataHierarchy = useMemo(() => {
                 const cities = {};
                 locations.forEach(loc => {
-                    const cN = loc.city || 'Ho Chi Minh City';
-                    if (!cities[cN]) cities[cN] = { count: 0, categories: {}, photos: [] };
-                    if (loc.isCityMarker) { if (loc.photos && loc.photos.length) cities[cN].photos = loc.photos; return; }
-                    const cat = loc.category || 'Uncategorized';
-                    if (!cities[cN].categories[cat]) cities[cN].categories[cat] = [];
-                    const r = getRouteInfo(loc);
-                    cities[cN].categories[cat].push({ ...loc, currentDistance: r.dist, currentDuration: r.dur, isRealRoute: r.isReal });
+                    const cN = loc.city || 'Unknown';
+                    if (!cities[cN]) cities[cN] = { count: 0 };
                     cities[cN].count++;
                 });
                 return { cities, uniqueCities: Object.keys(cities).sort() };
-            }, [locations, liveLocation, realRoutes]);
+            }, [locations]);
 
-            const canShowAddButton = ['cities', 'categories', 'category_list', 'itineraries'].includes(view);
             const getHeaderTitle = () => {
-                if (view === 'cities') return ""; 
-                if (view === 'location_detail') return 'Details';
-                if (view === 'itineraries') return 'Itineraries';
+                if (view === 'cities') return "";
+                if (view === 'categories') return activeCity;
                 return view.charAt(0).toUpperCase() + view.slice(1).replace('_', ' ');
             };
 
+            const activeTab = view === 'notifications' ? 'notifications' : (view.includes('itinerar') ? 'itineraries' : 'places');
+
             return (
-                <div className="min-h-screen relative flex flex-col selection:bg-[var(--ios-accent)]/20">
-                    <div className="fixed inset-0 z-[-1] overflow-hidden bg-[var(--ios-bg)]">
-                        <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-tr from-[var(--ios-accent)]/10 to-transparent filter blur-[80px] animate-blob"></div>
-                        <div className="absolute top-[20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-bl from-cyan-400/10 to-transparent filter blur-[80px] animate-blob animation-delay-2000"></div>
-                        <div className="absolute bottom-[-10%] left-[10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-tr from-indigo-400/10 to-transparent filter blur-[80px] animate-blob animation-delay-4000"></div>
+                <div className="min-h-screen relative flex flex-col selection:bg-blue-100">
+                    {/* Background Blobs */}
+                    <div className="fixed inset-0 z-[-1] overflow-hidden bg-[#F8F9FB]">
+                        <div className="absolute top-[-15%] right-[-10%] w-[80vw] h-[80vw] rounded-full bg-blue-100/50 filter blur-[100px] animate-blob"></div>
+                        <div className="absolute bottom-[-10%] left-[-20%] w-[90vw] h-[90vw] rounded-full bg-indigo-50/60 filter blur-[120px] animate-blob" style={{animationDelay: '3s'}}></div>
                     </div>
 
-                    <header className="fixed top-0 left-0 right-0 z-40 safe-top glass-header h-28 pointer-events-none"></header>
-                    <header className="fixed top-0 left-0 right-0 z-40 safe-top h-20">
-                        <div className="max-w-3xl mx-auto px-4 h-full flex items-center justify-center relative">
-                            <div className="absolute left-4 z-20 flex items-center">
-                                {view !== 'cities' && view !== 'itineraries' && view !== 'notifications' && (
-                                    <button onClick={handleBack} className="h-12 px-5 rounded-full bg-white/80 backdrop-blur-3xl border border-white shadow-sm flex items-center text-[#1D1D1F] active:scale-95 transition-transform space-x-2">
-                                        <i className="fa-solid fa-chevron-left text-[15px]"></i>
-                                        <span className="text-[16px] font-bold">Back</span>
-                                    </button>
-                                )}
-                            </div>
-                            <div className="w-full text-center px-32 pointer-events-none z-10">
-                                <h1 className="text-[17px] font-bold text-[#1D1D1F] truncate">{getHeaderTitle()}</h1>
-                            </div>
-                            <div className="absolute right-4 z-20 flex items-center">
-                                {canShowAddButton && (
-                                    <button onClick={() => openForm()} className="h-12 px-5 rounded-full bg-[#1D1D1F] text-white shadow-lg flex items-center active:scale-95 transition-transform space-x-2">
-                                        <span className="text-[16px] font-bold">Add</span>
-                                        <i className="fa-solid fa-plus text-[15px]"></i>
-                                    </button>
-                                )}
-                            </div>
+                    <header className="fixed top-0 left-0 right-0 z-40 safe-top glass-header h-20">
+                        <div className="max-w-2xl mx-auto px-6 h-full flex items-center justify-between">
+                            {view !== 'cities' ? (
+                                <button onClick={() => setView('cities')} className="w-10 h-10 rounded-full bg-white shadow-sm border border-black/5 flex items-center justify-center active:scale-90 transition-transform">
+                                    <i className="fa-solid fa-chevron-left text-[14px]"></i>
+                                </button>
+                            ) : <div></div>}
+                            <h1 className="text-[17px] font-bold tracking-tight text-[#1D1D1F]">{getHeaderTitle()}</h1>
+                            <button onClick={() => setView('form')} className="w-10 h-10 rounded-full bg-black text-white shadow-lg flex items-center justify-center active:scale-90 transition-transform">
+                                <i className="fa-solid fa-plus text-[14px]"></i>
+                            </button>
                         </div>
                     </header>
 
-                    <main className="flex-1 w-full max-w-3xl mx-auto px-5 safe-pb-nav pt-[env(safe-area-inset-top,44px)] mt-24 animate-slide-in relative z-10">
+                    <main className="flex-1 w-full max-w-2xl mx-auto px-6 safe-pb-nav pt-24 animate-slide-in">
                         {view === 'cities' && (
                             <div className="pb-6">
-                                <div className="pt-6 pb-10 px-3 flex items-center space-x-4">
-                                    <div className="shrink-0 relative">
-                                        {/* FIXED: Improved file input handling */}
-                                        <input id="main-cover-upload" type="file" accept="image/*" className="hidden" onChange={handleCoverPhotoUpload} />
-                                        <label htmlFor="main-cover-upload" className="cursor-pointer block active:scale-95 transition-transform">
-                                            {coverPhoto ? (
-                                                <div className="w-[84px] h-[84px] rounded-[24px] overflow-hidden border-[3px] border-white shadow-[0_8px_20px_rgba(0,0,0,0.1)] relative bg-white">
-                                                    <img src={coverPhoto} className="w-full h-full object-cover" alt="Harry" />
-                                                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                                                        <i className="fa-solid fa-camera text-white text-[18px]"></i>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="w-[84px] h-[84px] rounded-[24px] bg-black/5 border-[2px] border-dashed border-black/10 flex flex-col items-center justify-center text-[#8E8E93] shadow-inner hover:bg-black/10 transition-colors">
-                                                    <i className="fa-solid fa-image text-3xl opacity-30 mb-1"></i>
-                                                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Icon</span>
-                                                </div>
-                                            )}
-                                        </label>
-                                    </div>
-                                    <div className="flex flex-col min-w-0 flex-1">
-                                        {/* FIXED: Broken Tailwind class leading- */}
-                                        <h1 className="text-[42px] font-extrabold leading-[0.9] text-[#1D1D1F] tracking-tighter uppercase truncate">Harry</h1>
-                                        <h2 className="text-[14px] text-[var(--ios-accent)] mt-1.5 font-bold tracking-widest uppercase flex items-center space-x-1.5">
-                                            <i className="fa-solid fa-location-arrow"></i>
-                                            <span className="truncate">Travelling Navigation</span>
-                                        </h2>
+                                <div className="pt-8 pb-12">
+                                    <div className="relative">
+                                        <h1 className="text-[16px] font-bold tracking-[0.3em] uppercase text-blue-500 mb-2">
+                                            The Voyage
+                                        </h1>
+                                        <div className="flex flex-col space-y-[-10px]">
+                                            <span className="text-[56px] font-art font-black text-[#1D1D1F] leading-none tracking-tighter">
+                                                Harry
+                                            </span>
+                                            <span className="text-[48px] font-art italic font-light text-[#8E8E93] leading-none tracking-tighter">
+                                                Travelling
+                                            </span>
+                                            <span className="text-[42px] font-art font-bold text-[#1D1D1F] leading-none tracking-tighter flex items-center">
+                                                Navigation
+                                                <span className="ml-4 h-[3px] flex-1 bg-gradient-to-r from-blue-500 to-transparent rounded-full opacity-30"></span>
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
+
                                 <div className="space-y-4">
                                     {dataHierarchy.uniqueCities.length === 0 ? (
-                                        <div className="glass-panel py-20 text-center"><p className="text-[#8E8E93]">No cities added yet.</p></div>
+                                        <div className="glass-panel py-24 text-center">
+                                            <i className="fa-solid fa-map-location-dot text-4xl text-black/5 mb-4"></i>
+                                            <p className="text-[#8E8E93] font-medium">Your world is waiting.</p>
+                                        </div>
                                     ) : (
                                         dataHierarchy.uniqueCities.map((cN) => (
-                                            <div key={cN} onClick={() => { setActiveCity(cN); setView('categories'); }} className="glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform">
-                                                <div className="flex items-center min-w-0 flex-1">
-                                                    {dataHierarchy.cities[cN].photos.length ? <img src={dataHierarchy.cities[cN].photos} className="w-16 h-20 rounded-[20px] object-cover shrink-0 mr-4" alt="" /> : <div className="bg-black/5 w-16 h-20 rounded-[20px] flex items-center justify-center mr-4 shrink-0 shadow-inner text-[#1D1D1F]/20"><i className="fa-solid fa-city"></i></div>}
-                                                    <div className="min-w-0 flex-1">
-                                                        <h3 className="text-[22px] font-extrabold text-[#1D1D1F] tracking-tight">{cN}</h3>
-                                                        <span className="text-[11px] font-bold text-[var(--ios-accent)] uppercase">{dataHierarchy.cities[cN].count} Places</span>
+                                            <div key={cN} onClick={() => { setActiveCity(cN); setView('categories'); }} className="glass-panel p-5 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-all group">
+                                                <div className="flex items-center space-x-5">
+                                                    <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-500 text-xl border border-black/5 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                                                        <i className="fa-solid fa-city"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-[20px] font-bold text-[#1D1D1F] tracking-tight">{cN}</h3>
+                                                        <p className="text-[12px] font-bold uppercase tracking-widest text-[#8E8E93]">{dataHierarchy.cities[cN].count} Locations</p>
                                                     </div>
                                                 </div>
-                                                <i className="fa-solid fa-chevron-right text-[#8E8E93] text-xs"></i>
+                                                <div className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center text-black/20 group-hover:text-black transition-colors">
+                                                    <i className="fa-solid fa-chevron-right text-[10px]"></i>
+                                                </div>
                                             </div>
                                         ))
                                     )}
                                 </div>
                             </div>
                         )}
-                        
+
                         {view === 'form' && (
-                            <form onSubmit={handleSaveLocation} className="space-y-5 pb-6">
-                                <div className="px-2 mb-4"><h2 className="text-[34px] font-extrabold text-[#1D1D1F] tracking-tight">{editId ? 'Edit Place' : 'New Place'}</h2></div>
+                            <form onSubmit={handleSaveLocation} className="space-y-6">
+                                <div className="pt-8 mb-6">
+                                    <h2 className="text-[40px] font-art font-black text-[#1D1D1F] tracking-tighter">New Memory</h2>
+                                </div>
                                 <div className="glass-panel p-2 space-y-1">
-                                    <div className="p-3 flex items-center">
-                                        <label className="w-24 font-bold text-[#8E8E93] uppercase text-xs">Name</label>
-                                        <input type="text" required value={name} onChange={e => setName(e.target.value)} className="flex-1 bg-transparent outline-none font-bold text-[#1D1D1F]" placeholder="Location name" />
+                                    <div className="p-4 flex items-center">
+                                        <input type="text" required value={name} onChange={e => setName(e.target.value)} className="w-full bg-transparent outline-none text-[18px] font-bold placeholder-black/20" placeholder="Place Name" />
                                     </div>
-                                    <div className="h-px bg-black/5 mx-3"></div>
-                                    <div className="p-3 flex items-center">
-                                        <label className="w-24 font-bold text-[#8E8E93] uppercase text-xs">City</label>
-                                        <input type="text" required value={city} onChange={e => setCity(e.target.value)} className="flex-1 bg-transparent outline-none font-bold text-[#1D1D1F]" placeholder="e.g. Tokyo" />
+                                    <div className="h-px bg-black/5 mx-4"></div>
+                                    <div className="p-4 flex items-center">
+                                        <input type="text" required value={city} onChange={e => setCity(e.target.value)} className="w-full bg-transparent outline-none text-[18px] font-bold placeholder-black/20" placeholder="City" />
                                     </div>
-                                    <div className="h-px bg-black/5 mx-3"></div>
-                                    <div className="p-3 flex items-center">
-                                        <label className="w-24 font-bold text-[#8E8E93] uppercase text-xs">Category</label>
-                                        <input type="text" required value={category} onChange={e => setCategory(e.target.value)} className="flex-1 bg-transparent outline-none font-bold text-[#1D1D1F]" placeholder="e.g. Cafe" />
+                                    <div className="h-px bg-black/5 mx-4"></div>
+                                    <div className="p-4 flex items-center">
+                                        <input type="text" required value={category} onChange={e => setCategory(e.target.value)} className="w-full bg-transparent outline-none text-[18px] font-bold placeholder-black/20" placeholder="Category" />
                                     </div>
                                 </div>
-                                <button type="submit" disabled={isSaving} className="w-full py-4 bg-[#1D1D1F] text-white font-bold rounded-[18px] active:scale-[0.98] transition-all shadow-lg">
-                                    {isSaving ? 'Saving...' : 'Save Place'}
+                                <button type="submit" disabled={isSaving} className="w-full py-5 bg-black text-white font-bold rounded-3xl shadow-xl active:scale-95 transition-transform">
+                                    {isSaving ? 'Synchronizing...' : 'Save to Navigation'}
                                 </button>
                             </form>
                         )}
-
-                        {/* OTHER VIEWS FALLBACK */}
-                        {(view === 'notifications' || view === 'categories' || view === 'category_list' || view === 'itineraries') && (
-                            <div className="glass-panel py-20 text-center"><p className="text-[#8E8E93]">Module content loading...</p></div>
-                        )}
                     </main>
 
-                    <div className="fixed bottom-6 left-6 right-6 z-40 safe-bottom flex justify-center">
-                        <div className="glass-pill w-full max-w-[400px] h-16 flex justify-around items-center px-2">
-                            <button onClick={() => setView('cities')} className={`flex flex-col items-center w-full h-full rounded-full transition-colors ${activeTab === 'places' ? 'text-[#1D1D1F]' : 'text-[#8E8E93]'}`}>
-                                <i className="fa-solid fa-map-location-dot text-[18px] mb-1"></i>
-                                <span className="text-[10px] font-bold">Places</span>
+                    <nav className="fixed bottom-8 left-6 right-6 z-40 safe-bottom flex justify-center">
+                        <div className="glass-pill w-full max-w-[360px] h-16 flex justify-around items-center px-2">
+                            <button onClick={() => setView('cities')} className={`flex flex-col items-center justify-center w-full h-full rounded-full transition-all ${activeTab === 'places' ? 'text-blue-500 scale-110' : 'text-[#8E8E93] opacity-50'}`}>
+                                <i className="fa-solid fa-compass text-[20px]"></i>
                             </button>
-                            <button onClick={() => setView('notifications')} className={`flex flex-col items-center w-full h-full rounded-full transition-colors ${activeTab === 'notifications' ? 'text-[#1D1D1F]' : 'text-[#8E8E93]'}`}>
-                                <i className="fa-solid fa-bell text-[18px] mb-1"></i>
-                                <span className="text-[10px] font-bold">Radar</span>
+                            <button onClick={() => setView('notifications')} className={`flex flex-col items-center justify-center w-full h-full rounded-full transition-all ${activeTab === 'notifications' ? 'text-blue-500 scale-110' : 'text-[#8E8E93] opacity-50'}`}>
+                                <i className="fa-solid fa-radar text-[20px]"></i>
                             </button>
-                            <button onClick={() => setView('itineraries')} className={`flex flex-col items-center w-full h-full rounded-full transition-colors ${activeTab === 'itineraries' ? 'text-[#1D1D1F]' : 'text-[#8E8E93]'}`}>
-                                <i className="fa-solid fa-calendar-day text-[18px] mb-1"></i>
-                                <span className="text-[10px] font-bold">Plan</span>
+                            <button onClick={() => setView('itineraries')} className={`flex flex-col items-center justify-center w-full h-full rounded-full transition-all ${activeTab === 'itineraries' ? 'text-blue-500 scale-110' : 'text-[#8E8E93] opacity-50'}`}>
+                                <i className="fa-solid fa-calendar text-[20px]"></i>
                             </button>
                         </div>
-                    </div>
+                    </nav>
                 </div>
             );
         }
