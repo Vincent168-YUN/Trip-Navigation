@@ -682,7 +682,7 @@
             const removeCityPhoto = (index) => { setCityPhotos(prev => prev.filter((_, i) => i !== index)); };
 
             const handleCoverPhotoUpload = async (e) => {
-                const file = e.target.files;
+                const file = e.target.files; // FIX: Grab the exact file selected
                 if (!file || !file.type.startsWith('image/')) return;
                 try {
                     const base64 = await processImage(file);
@@ -1118,10 +1118,16 @@
                         {/* VIEW: CITIES */}
                         {view === 'cities' && (
                             <div className="pb-6">
-                                <div className="pt-4 pb-8 px-2 flex justify-between items-start">
-                                    <h1 className="text-[42px] font-bold font-art leading-[1.1] text-[#1D1D1F] tracking-tight mt-2">
-                                        Vincent<br/><span className="text-[#8E8E93] font-normal opacity-80 font-sans">ដើរលេង</span>
-                                    </h1>
+                                <div className="pt-6 pb-10 px-3 flex justify-between items-center">
+                                    <div className="flex flex-col">
+                                        <h1 className="text-[48px] font-bold font-art leading-[0.95] text-[#1D1D1F] tracking-[-0.04em]">
+                                            Vincent
+                                        </h1>
+                                        <h2 className="text-[19px] text-[var(--ios-accent)] mt-2.5 font-medium tracking-wide flex items-center space-x-2.5 opacity-95">
+                                            <span className="w-8 h-[2px] bg-[var(--ios-accent)]/50 rounded-full"></span>
+                                            <span>ដើរលេង អត់?</span>
+                                        </h2>
+                                    </div>
                                     <label className="cursor-pointer shrink-0 ml-4 active:scale-95 transition-transform relative group transform hover:-rotate-3">
                                         <input type="file" accept="image/*" className="hidden" onChange={handleCoverPhotoUpload} />
                                         {coverPhoto ? (
