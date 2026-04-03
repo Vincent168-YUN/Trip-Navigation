@@ -4,17 +4,12 @@
     <meta charset="UTF-8">
     <!-- This meta tag ensures the app looks native on iOS and Android without awkward zooming -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Vincent ដើរលេង</title>
+    <title>Harry Travelling Navigation</title>
     
     <!-- Apple/iOS Web App settings for adding to Home Screen -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Globe_icon.svg/1024px-Globe_icon.svg.png">
-
-    <!-- Google Fonts for Art/Editorial Typography -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -31,10 +26,10 @@
     
     <style>
         :root {
-            --ios-accent: #C68E58; /* Brushed Copper / Premium Amber */
+            --ios-accent: #0A84FF; /* Sleek Modern Tech Blue */
             --ios-green: #32D74B; 
             --ios-red: #FF3B30; 
-            --ios-bg: #F2F4F7; /* Bright, clean off-white */
+            --ios-bg: #F2F2F7; /* Cool light gray */
             --ios-text: #1D1D1F; /* Deep Charcoal/Titanium Black */
             --ios-gray: #8E8E93; /* Classic Apple Slate Gray */
         }
@@ -59,9 +54,6 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .animate-slide-in { animation: slideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-
-        /* Art Design Font */
-        .font-art { font-family: 'Playfair Display', serif; }
 
         /* --- PREMIUM LIGHT GLASS UI UTILITIES --- */
         
@@ -117,7 +109,7 @@
             background: rgba(255, 255, 255, 0.9);
             border-color: var(--ios-accent);
             outline: none;
-            box-shadow: 0 4px 16px rgba(198, 142, 88, 0.2);
+            box-shadow: 0 4px 16px rgba(10, 132, 255, 0.2); /* Tech blue glow */
         }
     </style>
 </head>
@@ -561,8 +553,8 @@
                 const match = exactPinMatch || atMatch || queryMatch || placeMatch || rawMatch;
                 
                 if (match && match.length >= 3) { 
-                    const parsedLat = parseFloat(match);
-                    const parsedLng = parseFloat(match);
+                    const parsedLat = parseFloat(match || match.split(','));
+                    const parsedLng = parseFloat(match || match.split(','));
                     
                     // Verify they are valid map coordinates before applying
                     if (parsedLat >= -90 && parsedLat <= 90 && parsedLng >= -180 && parsedLng <= 180) {
@@ -681,13 +673,18 @@
             };
             const removeCityPhoto = (index) => { setCityPhotos(prev => prev.filter((_, i) => i !== index)); };
 
+            // GUARANTEED ROBUST COVER UPLOAD LOGIC
             const handleCoverPhotoUpload = async (e) => {
-                const file = e.target.files; // FIX: Grab the exact file selected
-                if (!file || !file.type.startsWith('image/')) return;
+                const files = Array.from(e.target.files).filter(f => f.type.startsWith('image'));
+                if (!files.length) return;
                 try {
-                    const base64 = await processImage(file);
+                    const base64 = await processImage(files);
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_settings', 'main'), { coverPhoto: base64 }, { merge: true });
-                } catch (err) { console.error("Error saving cover photo.", err); }
+                } catch (err) { 
+                    console.error("Error saving cover photo.", err); 
+                } finally {
+                    e.target.value = null;
+                }
             };
 
             const useCurrentLocation = () => {
@@ -968,11 +965,11 @@
             return (
                 <div className="min-h-screen relative flex flex-col selection:bg-[var(--ios-accent)]/20">
                     
-                    {/* LIQUID GRADIENT BACKGROUND - BRIGHT PREMIUM */}
+                    {/* LIQUID GRADIENT BACKGROUND - SLEEK TECH BLUE/COOL GREY */}
                     <div className="fixed inset-0 z-[-1] overflow-hidden bg-[var(--ios-bg)]">
-                        <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-tr from-[#C68E58]/30 to-transparent filter blur-[80px] animate-blob"></div>
-                        <div className="absolute top-[20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-bl from-slate-400/30 to-transparent filter blur-[80px] animate-blob animation-delay-2000"></div>
-                        <div className="absolute bottom-[-10%] left-[10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-tr from-stone-400/30 to-transparent filter blur-[80px] animate-blob animation-delay-4000"></div>
+                        <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-tr from-[var(--ios-accent)]/10 to-transparent filter blur-[80px] animate-blob"></div>
+                        <div className="absolute top-[20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-bl from-cyan-400/10 to-transparent filter blur-[80px] animate-blob animation-delay-2000"></div>
+                        <div className="absolute bottom-[-10%] left-[10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-tr from-indigo-400/10 to-transparent filter blur-[80px] animate-blob animation-delay-4000"></div>
                     </div>
 
                     {/* FULL SCREEN PHOTO VIEWER PAGE (Always dark for media viewing) */}
@@ -1079,7 +1076,7 @@
                                     notifications.map((notif) => (
                                         <div 
                                             key={notif.id} 
-                                            className={`glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform ${!notif.read ? 'border-[var(--ios-accent)] shadow-[0_4px_20px_rgba(198,142,88,0.2)]' : ''}`}
+                                            className={`glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform ${!notif.read ? 'border-[var(--ios-accent)] shadow-[0_4px_20px_rgba(10,132,255,0.2)]' : ''}`}
                                             onClick={() => {
                                                 setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
                                                 setLocationReturnView('notifications');
@@ -1120,32 +1117,33 @@
                             <div className="pb-6">
                                 <div className="pt-6 pb-10 px-3 flex justify-between items-center">
                                     <div className="flex flex-col">
-                                        <h1 className="text-[48px] font-bold font-art leading-[0.95] text-[#1D1D1F] tracking-[-0.04em]">
-                                            Vincent
+                                        <h1 className="text-[44px] font-extrabold leading- text-[#1D1D1F] tracking-tighter uppercase">
+                                            Harry
                                         </h1>
-                                        <h2 className="text-[19px] text-[var(--ios-accent)] mt-2.5 font-medium tracking-wide flex items-center space-x-2.5 opacity-95">
-                                            <span className="w-8 h-[2px] bg-[var(--ios-accent)]/50 rounded-full"></span>
-                                            <span>ដើរលេង អត់?</span>
+                                        <h2 className="text-[14px] text-[var(--ios-accent)] mt-1.5 font-bold tracking-widest uppercase flex items-center space-x-2">
+                                            <i className="fa-solid fa-location-arrow"></i>
+                                            <span>Navigation</span>
                                         </h2>
                                     </div>
-                                    <label className="cursor-pointer shrink-0 ml-4 active:scale-95 transition-transform relative group transform hover:-rotate-3">
-                                        <input type="file" accept="image/*" className="hidden" onChange={handleCoverPhotoUpload} />
-                                        {coverPhoto ? (
-                                            <div className="relative">
-                                                <img src={coverPhoto} className="w-[84px] h-[84px] rounded-full object-cover shadow-[0_8px_24px_rgba(0,0,0,0.15)] border-[4px] border-white" alt="Vincent" />
-                                                <div className="absolute -bottom-1 -right-1 bg-[var(--ios-accent)] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm border-2 border-white transform rotate-6">
-                                                    VIP
+                                    
+                                    <div className="shrink-0 ml-4">
+                                        <input id="cover-photo-upload" type="file" accept="image/*" className="hidden" onChange={handleCoverPhotoUpload} />
+                                        <label htmlFor="cover-photo-upload" className="cursor-pointer block active:scale-95 transition-transform shadow-lg rounded-full">
+                                            {coverPhoto ? (
+                                                <div className="relative w-[84px] h-[84px] rounded-full overflow-hidden border-[4px] border-white bg-white">
+                                                    <img src={coverPhoto} className="w-full h-full object-cover" alt="Harry" />
+                                                    <div className="absolute bottom-0 left-0 right-0 bg-black/40 py-1 flex justify-center backdrop-blur-sm">
+                                                        <i className="fa-solid fa-camera text-white text-[10px]"></i>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ) : (
-                                            <div className="w-[84px] h-[84px] rounded-full bg-[var(--ios-accent)]/10 border-[3px] border-dashed border-[var(--ios-accent)]/30 flex items-center justify-center text-[var(--ios-accent)] shadow-sm">
-                                                <i className="fa-solid fa-face-smile-wink text-[32px]"></i>
-                                            </div>
-                                        )}
-                                        <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity">
-                                            <i className="fa-solid fa-pen text-white text-[16px]"></i>
-                                        </div>
-                                    </label>
+                                            ) : (
+                                                <div className="w-[84px] h-[84px] rounded-full bg-white border-[3px] border-dashed border-[var(--ios-accent)]/40 flex flex-col items-center justify-center text-[var(--ios-accent)] hover:bg-[var(--ios-accent)]/5 transition-colors">
+                                                    <i className="fa-solid fa-camera text-[24px] mb-1"></i>
+                                                    <span className="text-[9px] font-bold uppercase tracking-wider">Upload</span>
+                                                </div>
+                                            )}
+                                        </label>
+                                    </div>
                                 </div>
                                 
                                 <div className="space-y-4">
@@ -1164,12 +1162,12 @@
                                                     {dataHierarchy.cities[cityName].photos && dataHierarchy.cities[cityName].photos.length > 0 ? (
                                                         <img src={dataHierarchy.cities[cityName].photos} className="w-16 h-20 rounded-[20px] object-cover shrink-0 mr-4 shadow-sm border border-white/60" alt={cityName} />
                                                     ) : (
-                                                        <div className="bg-black/5 w-16 h-20 rounded-[20px] flex items-center justify-center mr-4 shrink-0 shadow-inner border border-white/60">
-                                                            <i className="fa-solid fa-city text-[#1D1D1F]/20 text-xl"></i>
+                                                        <div className="bg-black/5 w-16 h-20 rounded-[20px] flex items-center justify-center mr-4 shrink-0 shadow-inner border border-white/60 text-[#1D1D1F]/20">
+                                                            <i className="fa-solid fa-city text-xl"></i>
                                                         </div>
                                                     )}
                                                     <div className="min-w-0 flex-1 pr-2">
-                                                        <h3 className="text-[22px] font-art font-bold text-[#1D1D1F] mb-0.5 truncate">{cityName}</h3>
+                                                        <h3 className="text-[22px] font-extrabold text-[#1D1D1F] mb-0.5 truncate tracking-tight">{cityName}</h3>
                                                         <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-black/5 text-[11px] font-bold tracking-wide text-[var(--ios-accent)] uppercase">
                                                             {dataHierarchy.cities[cityName].count} Places
                                                         </span>
@@ -1194,7 +1192,7 @@
                         {view === 'categories' && activeCity && dataHierarchy.cities[activeCity] && (
                             <div className="pb-6 space-y-4">
                                 <div className="px-2 mb-6">
-                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight break-words">{activeCity}</h2>
+                                    <h2 className="text-[34px] font-extrabold text-[#1D1D1F] leading-tight tracking-tight break-words">{activeCity}</h2>
                                     <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1">Curated Collections</p>
                                 </div>
 
@@ -1226,7 +1224,7 @@
                                                         </div>
                                                     )}
                                                     <div className="min-w-0 flex-1 pr-4">
-                                                        <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-0.5 truncate">{catName}</h3>
+                                                        <h3 className="text-[18px] font-extrabold text-[#1D1D1F] mb-0.5 truncate tracking-tight">{catName}</h3>
                                                         <p className="text-[13px] font-medium text-[#8E8E93] truncate">{categoryPlaces.length} Destinations</p>
                                                     </div>
                                                 </div>
@@ -1244,7 +1242,7 @@
                         {view === 'category_list' && activeCity && activeCategory && dataHierarchy.cities[activeCity]?.categories[activeCategory] && (
                             <div className="space-y-5 pb-6">
                                 <div className="px-2 mb-6">
-                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight break-words">{activeCategory}</h2>
+                                    <h2 className="text-[34px] font-extrabold text-[#1D1D1F] leading-tight tracking-tight break-words">{activeCategory}</h2>
                                     <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1 break-words">{activeCity}</p>
                                 </div>
 
@@ -1275,7 +1273,7 @@
 
                                         <div className="px-3 pb-2 flex items-start justify-between min-w-0">
                                             <div className="pr-4 min-w-0 flex-1">
-                                                <h4 className="text-[18px] font-bold text-[#1D1D1F] leading-tight mb-1 truncate">{loc.name}</h4>
+                                                <h4 className="text-[18px] font-extrabold text-[#1D1D1F] tracking-tight leading-tight mb-1 truncate">{loc.name}</h4>
                                                 <p className={`text-[13px] font-bold tracking-wide flex items-center truncate ${getDistanceColor(loc.currentDistance)}`}>
                                                     <i className={`fa-solid ${loc.isRealRoute ? 'fa-car' : 'fa-location-arrow'} text-[10px] mr-1.5 shrink-0`}></i>
                                                     <span className="truncate">{formatDistance(loc.currentDistance)} {loc.currentDuration !== null && `• ${loc.isRealRoute ? '' : '~'}${formatDuration(loc.currentDuration)}`}</span>
@@ -1320,7 +1318,7 @@
                                     <div className="px-3 pb-2">
                                         <div className="flex justify-between items-start mb-4">
                                             <div className="min-w-0 flex-1">
-                                                <h2 className="text-[28px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight mb-2 break-words">{locDetail.name}</h2>
+                                                <h2 className="text-[28px] font-extrabold text-[#1D1D1F] leading-tight tracking-tight mb-2 break-words">{locDetail.name}</h2>
                                                 <div className="flex items-center space-x-2 flex-wrap gap-y-2">
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-black/5 text-[11px] font-bold tracking-wide text-[#1D1D1F] uppercase truncate max-w-full">
                                                         {locDetail.category || 'Uncategorized'}
@@ -1389,7 +1387,7 @@
                         {view === 'city_form' && (
                             <form onSubmit={handleSaveCity} className="space-y-5 pb-6">
                                 <div className="px-2 mb-4">
-                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{editingCityName ? 'Edit City' : 'New City'}</h2>
+                                    <h2 className="text-[34px] font-extrabold text-[#1D1D1F] leading-tight tracking-tight">{editingCityName ? 'Edit City' : 'New City'}</h2>
                                 </div>
 
                                 {saveError && (
@@ -1439,7 +1437,7 @@
                         {view === 'form' && (
                             <form onSubmit={handleSaveLocation} className="space-y-5 pb-6">
                                 <div className="px-2 mb-4">
-                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{editId ? 'Edit Place' : 'New Place'}</h2>
+                                    <h2 className="text-[34px] font-extrabold text-[#1D1D1F] leading-tight tracking-tight">{editId ? 'Edit Place' : 'New Place'}</h2>
                                 </div>
 
                                 {saveError && (
@@ -1574,7 +1572,7 @@
                         {view === 'itineraries' && (
                             <div className="pb-6 space-y-4">
                                 <div className="px-2 mb-6">
-                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">Itineraries</h2>
+                                    <h2 className="text-[34px] font-extrabold text-[#1D1D1F] leading-tight tracking-tight">Itineraries</h2>
                                     <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1">Planned Days</p>
                                 </div>
 
@@ -1597,7 +1595,7 @@
                                                 <div className="flex items-center flex-1 min-w-0">
                                                     <div className="w-14 h-14 rounded-[16px] bg-[var(--ios-accent)]/10 flex flex-col items-center justify-center shrink-0 mr-4 border border-[var(--ios-accent)]/20 shadow-inner text-[var(--ios-accent)]">
                                                         <span className="text-[9px] font-bold uppercase tracking-widest mb-[-2px] opacity-80">Day</span>
-                                                        <span className="text-[22px] font-art font-bold leading-none">{index + 1}</span>
+                                                        <span className="text-[22px] font-extrabold leading-none">{index + 1}</span>
                                                     </div>
                                                     <div className="pr-2 min-w-0 flex-1">
                                                         <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-0.5 leading-tight truncate">{itin.title}</h3>
@@ -1629,7 +1627,7 @@
                                         <>
                                             <div className="px-2 mb-8 flex justify-between items-end">
                                                 <div className="min-w-0 pr-4">
-                                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight break-words">{itin.title}</h2>
+                                                    <h2 className="text-[34px] font-extrabold text-[#1D1D1F] leading-tight tracking-tight break-words">{itin.title}</h2>
                                                     <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1 truncate">{itin.date || 'Unscheduled'}</p>
                                                     {totalDayCost > 0 && (
                                                         <div className="mt-3 inline-flex items-center px-3 py-1 bg-[var(--ios-accent)]/10 rounded-full border border-[var(--ios-accent)]/20 shadow-sm max-w-full">
@@ -1723,7 +1721,7 @@
                         {view === 'itinerary_form' && (
                             <form onSubmit={handleSaveItinerary} className="space-y-5 pb-6">
                                 <div className="px-2 mb-4">
-                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{editId ? 'Edit Day' : 'Plan Day'}</h2>
+                                    <h2 className="text-[34px] font-extrabold text-[#1D1D1F] leading-tight tracking-tight">{editId ? 'Edit Day' : 'Plan Day'}</h2>
                                 </div>
 
                                 {saveError && (
@@ -1752,7 +1750,7 @@
                         {view === 'itinerary_select_location' && (
                             <div className="space-y-5 pb-6">
                                 <div className="px-2 mb-2 flex justify-between items-center">
-                                    <h2 className="text-[28px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">Pick Place</h2>
+                                    <h2 className="text-[28px] font-extrabold text-[#1D1D1F] leading-tight tracking-tight">Pick Place</h2>
                                     <button onClick={() => handleSelectLocationForItinerary('')} className="text-[#8E8E93] font-bold text-[14px] active:opacity-50 px-2 py-1">
                                         Skip
                                     </button>
@@ -1811,7 +1809,7 @@
                         {view === 'itinerary_item_form' && (
                             <form onSubmit={handleSaveItineraryItem} className="space-y-5 pb-6">
                                 <div className="px-2 mb-4">
-                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{editItinItemId ? 'Edit Event' : 'Add Event'}</h2>
+                                    <h2 className="text-[34px] font-extrabold text-[#1D1D1F] leading-tight tracking-tight">{editItinItemId ? 'Edit Event' : 'Add Event'}</h2>
                                 </div>
 
                                 {saveError && <div className="p-3 bg-[var(--ios-red)]/10 text-[var(--ios-red)] text-[13px] font-medium rounded-[16px] border border-[var(--ios-red)]/20 flex items-center"><i className="fa-solid fa-circle-exclamation mr-2"></i>{saveError}</div>}
@@ -1863,7 +1861,7 @@
                         {view === 'split_bill' && splitBillItem && (
                             <div className="space-y-6 pb-6">
                                 <div className="px-2 mb-4">
-                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">Split Bill</h2>
+                                    <h2 className="text-[34px] font-extrabold text-[#1D1D1F] leading-tight tracking-tight">Split Bill</h2>
                                     <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1">{splitBillItem.label}</p>
                                 </div>
 
@@ -1889,7 +1887,7 @@
                                 </div>
 
                                 {tempBillTotal > 0 && (
-                                    <div className="glass-panel p-6 text-center border-[var(--ios-accent)]/30 shadow-[0_8px_30px_rgba(198,142,88,0.15)] bg-gradient-to-b from-white/80 to-[var(--ios-accent)]/10">
+                                    <div className="glass-panel p-6 text-center border-[var(--ios-accent)]/30 shadow-[0_8px_30px_rgba(10,132,255,0.15)] bg-gradient-to-b from-white/80 to-[var(--ios-accent)]/10">
                                         <span className="text-[12px] font-bold text-[#8E8E93] uppercase tracking-wider">Per Person</span>
                                         <div className="text-[44px] font-bold text-[var(--ios-accent)] leading-none mt-2">
                                             ${(parseFloat(tempBillTotal) / (parseInt(tempBillSplit) || 1)).toFixed(2)}
