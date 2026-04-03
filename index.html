@@ -378,8 +378,9 @@
                         const res = await fetch(`https://router.project-osrm.org/table/v1/driving/${coords}?sources=0&annotations=duration,distance`);
                         const data = await res.json();
                         
-                        if (data.code === 'Ok') {
+                        if (data.code === 'Ok' && data.durations && data.distances) {
                             const newRoutes = {};
+                            // FIX: OSRM returns a 2D matrix. We must specify the first row
                             const durations = data.durations;
                             const distances = data.distances;
                             
