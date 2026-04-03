@@ -900,7 +900,7 @@
                                                 setView('location_detail');
                                             }}
                                         >
-                                            <div className="flex items-center flex-1 overflow-hidden">
+                                            <div className="flex items-center flex-1 min-w-0">
                                                 {Array.isArray(notif.photos) && notif.photos.length > 0 ? (
                                                     <img src={notif.photos} className="w-14 h-14 rounded-[16px] object-cover shrink-0 mr-4 shadow-sm border border-white/60" alt="" />
                                                 ) : (
@@ -908,9 +908,9 @@
                                                         <i className="fa-solid fa-location-dot text-lg"></i>
                                                     </div>
                                                 )}
-                                                <div className="truncate pr-2">
+                                                <div className="truncate pr-2 min-w-0 flex-1">
                                                     <div className="flex items-center space-x-2 mb-0.5">
-                                                        {!notif.read && <div className="w-2 h-2 rounded-full bg-[var(--ios-accent)] shadow-sm"></div>}
+                                                        {!notif.read && <div className="w-2 h-2 rounded-full bg-[var(--ios-accent)] shadow-sm shrink-0"></div>}
                                                         <h4 className="text-[16px] font-bold text-[#1D1D1F] truncate leading-tight">{notif.name}</h4>
                                                     </div>
                                                     <p className="text-[13px] text-[#8E8E93] font-medium truncate flex items-center mt-1">
@@ -949,7 +949,7 @@
                                     ) : (
                                         dataHierarchy.uniqueCities.map((cityName) => (
                                             <div key={cityName} className="glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform">
-                                                <div className="flex items-center flex-1" onClick={() => { setActiveCity(cityName); setView('categories'); }}>
+                                                <div className="flex items-center flex-1 min-w-0" onClick={() => { setActiveCity(cityName); setView('categories'); }}>
                                                     {dataHierarchy.cities[cityName].photos && dataHierarchy.cities[cityName].photos.length > 0 ? (
                                                         <img src={dataHierarchy.cities[cityName].photos} className="w-16 h-20 rounded-[20px] object-cover shrink-0 mr-4 shadow-sm border border-white/60" alt={cityName} />
                                                     ) : (
@@ -957,8 +957,8 @@
                                                             <i className="fa-solid fa-city text-[#1D1D1F]/20 text-xl"></i>
                                                         </div>
                                                     )}
-                                                    <div>
-                                                        <h3 className="text-[22px] font-art font-bold text-[#1D1D1F] mb-0.5">{cityName}</h3>
+                                                    <div className="min-w-0 flex-1 pr-2">
+                                                        <h3 className="text-[22px] font-art font-bold text-[#1D1D1F] mb-0.5 truncate">{cityName}</h3>
                                                         <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-black/5 text-[11px] font-bold tracking-wide text-[var(--ios-accent)] uppercase">
                                                             {dataHierarchy.cities[cityName].count} Places
                                                         </span>
@@ -983,7 +983,7 @@
                         {view === 'categories' && activeCity && dataHierarchy.cities[activeCity] && (
                             <div className="pb-6 space-y-4">
                                 <div className="px-2 mb-6">
-                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{activeCity}</h2>
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight break-words">{activeCity}</h2>
                                     <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1">Curated Collections</p>
                                 </div>
 
@@ -1006,7 +1006,7 @@
                                                 onClick={() => { setActiveCategory(catName); setView('category_list'); }}
                                                 className="glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform"
                                             >
-                                                <div className="flex items-center">
+                                                <div className="flex items-center min-w-0 flex-1">
                                                     {coverPhoto ? (
                                                         <img src={coverPhoto} alt={catName} className="w-14 h-14 rounded-[16px] object-cover shrink-0 mr-4 shadow-sm border border-white/60" />
                                                     ) : (
@@ -1014,12 +1014,12 @@
                                                             <i className="fa-solid fa-layer-group text-[var(--ios-accent)] text-lg opacity-80"></i>
                                                         </div>
                                                     )}
-                                                    <div>
-                                                        <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-0.5">{catName}</h3>
-                                                        <p className="text-[13px] font-medium text-[#8E8E93]">{categoryPlaces.length} Destinations</p>
+                                                    <div className="min-w-0 flex-1 pr-4">
+                                                        <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-0.5 truncate">{catName}</h3>
+                                                        <p className="text-[13px] font-medium text-[#8E8E93] truncate">{categoryPlaces.length} Destinations</p>
                                                     </div>
                                                 </div>
-                                                <div className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center text-[#8E8E93]">
+                                                <div className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center text-[#8E8E93] shrink-0">
                                                     <i className="fa-solid fa-chevron-right text-[10px]"></i>
                                                 </div>
                                             </div>
@@ -1033,8 +1033,8 @@
                         {view === 'category_list' && activeCity && activeCategory && dataHierarchy.cities[activeCity]?.categories[activeCategory] && (
                             <div className="space-y-5 pb-6">
                                 <div className="px-2 mb-6">
-                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{activeCategory}</h2>
-                                    <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1">{activeCity}</p>
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight break-words">{activeCategory}</h2>
+                                    <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1 break-words">{activeCity}</p>
                                 </div>
 
                                 {dataHierarchy.cities[activeCity].categories[activeCategory].map(loc => (
@@ -1062,15 +1062,15 @@
                                             </div>
                                         )}
 
-                                        <div className="px-3 pb-2 flex items-start justify-between">
-                                            <div className="pr-4">
-                                                <h4 className="text-[18px] font-bold text-[#1D1D1F] leading-tight mb-1">{loc.name}</h4>
-                                                <p className="text-[13px] font-bold tracking-wide text-[var(--ios-accent)] flex items-center">
-                                                    <i className="fa-solid fa-location-arrow text-[10px] mr-1.5"></i>
-                                                    {formatDistance(loc.currentDistance)}
+                                        <div className="px-3 pb-2 flex items-start justify-between min-w-0">
+                                            <div className="pr-4 min-w-0 flex-1">
+                                                <h4 className="text-[18px] font-bold text-[#1D1D1F] leading-tight mb-1 truncate">{loc.name}</h4>
+                                                <p className="text-[13px] font-bold tracking-wide text-[var(--ios-accent)] flex items-center truncate">
+                                                    <i className="fa-solid fa-location-arrow text-[10px] mr-1.5 shrink-0"></i>
+                                                    <span className="truncate">{formatDistance(loc.currentDistance)}</span>
                                                 </p>
                                             </div>
-                                            <button onClick={(e) => { e.stopPropagation(); openForm(loc); }} className="w-9 h-9 shrink-0 rounded-full bg-black/5 text-[#1D1D1F] flex items-center justify-center active:bg-black/10 transition-colors">
+                                            <button onClick={(e) => { e.stopPropagation(); openForm(loc); }} className="w-9 h-9 shrink-0 rounded-full bg-black/5 text-[#1D1D1F] flex items-center justify-center active:bg-black/10 transition-colors ml-2">
                                                 <i className="fa-solid fa-pen text-[11px]"></i>
                                             </button>
                                         </div>
@@ -1108,19 +1108,19 @@
                                     
                                     <div className="px-3 pb-2">
                                         <div className="flex justify-between items-start mb-4">
-                                            <div>
-                                                <h2 className="text-[28px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight mb-1.5">{locDetail.name}</h2>
-                                                <div className="flex items-center space-x-2">
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-black/5 text-[11px] font-bold tracking-wide text-[#1D1D1F] uppercase">
+                                            <div className="min-w-0 flex-1">
+                                                <h2 className="text-[28px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight mb-2 break-words">{locDetail.name}</h2>
+                                                <div className="flex items-center space-x-2 flex-wrap gap-y-2">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-black/5 text-[11px] font-bold tracking-wide text-[#1D1D1F] uppercase truncate max-w-full">
                                                         {locDetail.category || 'Uncategorized'}
                                                     </span>
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--ios-accent)]/10 text-[11px] font-bold tracking-wide text-[var(--ios-accent)] uppercase border border-[var(--ios-accent)]/20">
-                                                        <i className="fa-solid fa-location-arrow text-[9px] mr-1"></i>
-                                                        {formatDistance(liveLocation && locDetail.lat != null && locDetail.lng != null ? calculateDistance(liveLocation.lat, liveLocation.lng, locDetail.lat, locDetail.lng) : null)}
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[var(--ios-accent)]/10 text-[11px] font-bold tracking-wide text-[var(--ios-accent)] uppercase border border-[var(--ios-accent)]/20 truncate max-w-full">
+                                                        <i className="fa-solid fa-location-arrow text-[9px] mr-1 shrink-0"></i>
+                                                        <span className="truncate">{formatDistance(liveLocation && locDetail.lat != null && locDetail.lng != null ? calculateDistance(liveLocation.lat, liveLocation.lng, locDetail.lat, locDetail.lng) : null)}</span>
                                                     </span>
                                                 </div>
                                             </div>
-                                            <button onClick={() => openForm(locDetail)} className="w-10 h-10 shrink-0 rounded-full bg-black/5 text-[#1D1D1F] flex items-center justify-center active:bg-black/10 transition-colors ml-4">
+                                            <button onClick={() => openForm(locDetail)} className="w-10 h-10 shrink-0 rounded-full bg-black/5 text-[#1D1D1F] flex items-center justify-center active:bg-black/10 transition-colors ml-4 mt-1">
                                                 <i className="fa-solid fa-pen text-[12px]"></i>
                                             </button>
                                         </div>
@@ -1149,11 +1149,11 @@
                                             
                                             {showCoords && (
                                                 <div className="mt-4 p-4 rounded-[16px] bg-black/5 border border-black/5 shadow-inner flex justify-between items-center text-[13px] font-mono text-[#8E8E93] text-left">
-                                                    <div>
-                                                        <div className="mb-1"><span className="text-[#1D1D1F] font-bold mr-2">LAT</span> {locDetail.lat != null ? Number(locDetail.lat).toFixed(6) : '—'}</div>
-                                                        <div><span className="text-[#1D1D1F] font-bold mr-2">LNG</span> {locDetail.lng != null ? Number(locDetail.lng).toFixed(6) : '—'}</div>
+                                                    <div className="min-w-0">
+                                                        <div className="mb-1 truncate"><span className="text-[#1D1D1F] font-bold mr-2">LAT</span> {locDetail.lat != null ? Number(locDetail.lat).toFixed(6) : '—'}</div>
+                                                        <div className="truncate"><span className="text-[#1D1D1F] font-bold mr-2">LNG</span> {locDetail.lng != null ? Number(locDetail.lng).toFixed(6) : '—'}</div>
                                                     </div>
-                                                    <i className="fa-solid fa-satellite-dish text-[#1D1D1F] text-xl opacity-20"></i>
+                                                    <i className="fa-solid fa-satellite-dish text-[#1D1D1F] text-xl opacity-20 shrink-0 ml-3"></i>
                                                 </div>
                                             )}
                                         </div>
@@ -1184,7 +1184,7 @@
                                 <div className="glass-panel p-5 space-y-5">
                                     <div>
                                         <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">City Name</label>
-                                        <input type="text" required value={newCityName} onChange={e => setNewCityName(e.target.value)} className="w-full px-4 py-3.5 glass-input text-[16px] font-medium placeholder-[#8E8E93]/50" placeholder="Tokyo, Japan" autoFocus />
+                                        <input type="text" required value={newCityName} onChange={e => setNewCityName(e.target.value)} className="w-full px-4 py-3.5 glass-input text-[16px] font-medium placeholder-[#8E8E93]/50 bg-white/50" placeholder="Tokyo, Japan" autoFocus />
                                     </div>
                                 </div>
 
@@ -1235,16 +1235,16 @@
                                 {!editId && (
                                     <div className="relative z-50">
                                         <div className="glass-panel p-1.5">
-                                            <div className="relative flex items-center glass-input px-3 py-3">
-                                                <i className="fa-solid fa-magnifying-glass text-[#8E8E93] mr-2.5"></i>
+                                            <div className="relative flex items-center glass-input px-3 py-3 bg-white/50">
+                                                <i className="fa-solid fa-magnifying-glass text-[#8E8E93] mr-2.5 shrink-0"></i>
                                                 <input 
                                                     type="text" 
                                                     placeholder="Search to auto-fill..." 
                                                     value={formSearchQuery} 
                                                     onChange={(e) => setFormSearchQuery(e.target.value)}
-                                                    className="flex-1 bg-transparent focus:outline-none text-[16px] font-medium placeholder-[#8E8E93]/60"
+                                                    className="flex-1 bg-transparent focus:outline-none text-[16px] font-medium placeholder-[#8E8E93]/60 min-w-0"
                                                 />
-                                                {isSearching && <i className="fa-solid fa-spinner fa-spin text-[var(--ios-accent)] ml-2"></i>}
+                                                {isSearching && <i className="fa-solid fa-spinner fa-spin text-[var(--ios-accent)] ml-2 shrink-0"></i>}
                                             </div>
                                         </div>
                                         
@@ -1259,7 +1259,7 @@
                                                         <div className="bg-[#1D1D1F] w-9 h-9 rounded-[10px] flex items-center justify-center text-white shrink-0 mr-3 shadow-md">
                                                             <i className="fa-solid fa-location-dot text-[13px]"></i>
                                                         </div>
-                                                        <div className="truncate">
+                                                        <div className="truncate min-w-0 flex-1">
                                                             <h4 className="text-[15px] font-bold text-[#1D1D1F] truncate">{result.properties.name || result.properties.street || 'Unknown'}</h4>
                                                             <p className="text-[12px] font-medium text-[#8E8E93] truncate mt-0.5">
                                                                 {[result.properties.street, result.properties.city, result.properties.state, result.properties.country].filter(Boolean).join(', ')}
@@ -1274,48 +1274,48 @@
                                 
                                 <div className="glass-panel p-2 flex flex-col space-y-1">
                                     <div className="p-3 flex items-center">
-                                        <label className="w-24 text-[14px] font-bold text-[#8E8E93] uppercase">Name</label>
-                                        <input type="text" required value={name} onChange={e => setName(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[16px] placeholder-[#8E8E93]/40 font-bold text-[#1D1D1F]" placeholder="Location name" />
+                                        <label className="w-24 shrink-0 text-[14px] font-bold text-[#8E8E93] uppercase">Name</label>
+                                        <input type="text" required value={name} onChange={e => setName(e.target.value)} className="flex-1 min-w-0 bg-transparent focus:outline-none text-[16px] placeholder-[#8E8E93]/40 font-bold text-[#1D1D1F]" placeholder="Location name" />
                                     </div>
                                     <div className="h-px bg-black/5 mx-3"></div>
                                     <div className="p-3 flex items-center">
-                                        <label className="w-24 text-[14px] font-bold text-[#8E8E93] uppercase">City</label>
-                                        <input type="text" required list="cities-list" value={city} onChange={e => setCity(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[16px] placeholder-[#8E8E93]/40 font-bold text-[#1D1D1F]" placeholder="Select or type" />
+                                        <label className="w-24 shrink-0 text-[14px] font-bold text-[#8E8E93] uppercase">City</label>
+                                        <input type="text" required list="cities-list" value={city} onChange={e => setCity(e.target.value)} className="flex-1 min-w-0 bg-transparent focus:outline-none text-[16px] placeholder-[#8E8E93]/40 font-bold text-[#1D1D1F]" placeholder="Select or type" />
                                         <datalist id="cities-list">{dataHierarchy.uniqueCities.map(c => <option key={c} value={c} />)}</datalist>
                                     </div>
                                     <div className="h-px bg-black/5 mx-3"></div>
                                     <div className="p-3 flex items-center">
-                                        <label className="w-24 text-[14px] font-bold text-[#8E8E93] uppercase">Category</label>
-                                        <input type="text" required list="categories-list" value={category} onChange={e => setCategory(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[16px] placeholder-[#8E8E93]/40 font-bold text-[#1D1D1F]" placeholder="Select or type" />
+                                        <label className="w-24 shrink-0 text-[14px] font-bold text-[#8E8E93] uppercase">Category</label>
+                                        <input type="text" required list="categories-list" value={category} onChange={e => setCategory(e.target.value)} className="flex-1 min-w-0 bg-transparent focus:outline-none text-[16px] placeholder-[#8E8E93]/40 font-bold text-[#1D1D1F]" placeholder="Select or type" />
                                         <datalist id="categories-list">{dataHierarchy.allCategories.map(c => <option key={c} value={c} />)}</datalist>
                                     </div>
                                 </div>
                                 
                                 <div className="glass-panel p-4">
                                     <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Notes</label>
-                                    <textarea value={comment} onChange={e => setComment(e.target.value)} rows="3" className="w-full glass-input p-3.5 text-[15px] font-medium placeholder-[#8E8E93]/50 resize-none" placeholder="Tips, what to order, vibes..."></textarea>
+                                    <textarea value={comment} onChange={e => setComment(e.target.value)} rows="3" className="w-full glass-input p-3.5 text-[15px] font-medium placeholder-[#8E8E93]/50 resize-none bg-white/50" placeholder="Tips, what to order, vibes..."></textarea>
                                 </div>
 
                                 <div className="glass-panel p-2 flex flex-col space-y-1">
                                     <div className="p-3 flex justify-between items-center">
                                         <span className="text-[14px] font-bold text-[#8E8E93] uppercase tracking-wide">Coordinates</span>
-                                        <button type="button" onClick={useCurrentLocation} className="text-[12px] font-bold tracking-wide uppercase bg-[#1D1D1F] text-white px-3 py-1.5 rounded-full active:scale-95 transition-transform shadow-md">
+                                        <button type="button" onClick={useCurrentLocation} className="text-[12px] font-bold tracking-wide uppercase bg-[#1D1D1F] text-white px-3 py-1.5 rounded-full active:scale-95 transition-transform shadow-md shrink-0 ml-2">
                                             Get GPS
                                         </button>
                                     </div>
                                     <div className="h-px bg-black/5 mx-3"></div>
                                     <div className="p-3 flex items-center">
-                                        <label className="w-20 text-[14px] font-bold text-[#1D1D1F]">Lat</label>
-                                        <input type="number" step="any" value={lat} onChange={e => setLat(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[16px] font-mono font-medium placeholder-[#8E8E93]/30 text-[#1D1D1F]" placeholder="Optional" />
+                                        <label className="w-20 shrink-0 text-[14px] font-bold text-[#1D1D1F]">Lat</label>
+                                        <input type="number" step="any" value={lat} onChange={e => setLat(e.target.value)} className="flex-1 min-w-0 bg-transparent focus:outline-none text-[16px] font-mono font-medium placeholder-[#8E8E93]/30 text-[#1D1D1F]" placeholder="Optional" />
                                     </div>
                                     <div className="h-px bg-black/5 mx-3"></div>
                                     <div className="p-3 flex items-center">
-                                        <label className="w-20 text-[14px] font-bold text-[#1D1D1F]">Lng</label>
-                                        <input type="number" step="any" value={lng} onChange={e => setLng(e.target.value)} className="flex-1 bg-transparent focus:outline-none text-[16px] font-mono font-medium placeholder-[#8E8E93]/30 text-[#1D1D1F]" placeholder="Optional" />
+                                        <label className="w-20 shrink-0 text-[14px] font-bold text-[#1D1D1F]">Lng</label>
+                                        <input type="number" step="any" value={lng} onChange={e => setLng(e.target.value)} className="flex-1 min-w-0 bg-transparent focus:outline-none text-[16px] font-mono font-medium placeholder-[#8E8E93]/30 text-[#1D1D1F]" placeholder="Optional" />
                                     </div>
                                     <div className="h-px bg-black/5 mx-3"></div>
                                     <div className="p-3">
-                                        <input type="url" value={mapLink} onChange={handleMapLinkChange} className="w-full glass-input px-3 py-2.5 text-[14px] font-medium placeholder-[#8E8E93]/50" placeholder="Paste Maps Link (Auto-fills GPS)" />
+                                        <input type="url" value={mapLink} onChange={handleMapLinkChange} className="w-full glass-input px-3 py-2.5 text-[14px] font-medium placeholder-[#8E8E93]/50 bg-white/50" placeholder="Paste Maps Link (Auto-fills GPS)" />
                                     </div>
                                 </div>
 
@@ -1377,14 +1377,14 @@
                                                 className="glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform" 
                                                 onClick={() => { setActiveItinId(itin.id); setView('itinerary_detail'); }}
                                             >
-                                                <div className="flex items-center flex-1">
+                                                <div className="flex items-center flex-1 min-w-0">
                                                     <div className="w-14 h-14 rounded-[16px] bg-[var(--ios-accent)]/10 flex flex-col items-center justify-center shrink-0 mr-4 border border-[var(--ios-accent)]/20 shadow-inner text-[var(--ios-accent)]">
                                                         <span className="text-[9px] font-bold uppercase tracking-widest mb-[-2px] opacity-80">Day</span>
                                                         <span className="text-[22px] font-art font-bold leading-none">{index + 1}</span>
                                                     </div>
-                                                    <div className="pr-2">
-                                                        <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-0.5 leading-tight">{itin.title}</h3>
-                                                        <p className="text-[13px] text-[#8E8E93] font-medium">
+                                                    <div className="pr-2 min-w-0 flex-1">
+                                                        <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-0.5 leading-tight truncate">{itin.title}</h3>
+                                                        <p className="text-[13px] text-[#8E8E93] font-medium truncate">
                                                             {itin.date || 'Unscheduled'} <span className="opacity-50 mx-1">&bull;</span> {(itin.items || []).length} events
                                                         </p>
                                                     </div>
@@ -1411,18 +1411,18 @@
                                     return (
                                         <>
                                             <div className="px-2 mb-8 flex justify-between items-end">
-                                                <div>
-                                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{itin.title}</h2>
-                                                    <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1">{itin.date || 'Unscheduled'}</p>
+                                                <div className="min-w-0 pr-4">
+                                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight break-words">{itin.title}</h2>
+                                                    <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1 truncate">{itin.date || 'Unscheduled'}</p>
                                                     {totalDayCost > 0 && (
-                                                        <div className="mt-2 inline-flex items-center px-3 py-1 bg-[var(--ios-accent)]/10 rounded-full border border-[var(--ios-accent)]/20 shadow-sm">
-                                                            <i className="fa-solid fa-wallet text-[var(--ios-accent)] text-[12px] mr-1.5"></i>
-                                                            <span className="text-[13px] font-bold text-[var(--ios-accent)]">Day Total: ${totalDayCost.toFixed(2)}</span>
+                                                        <div className="mt-3 inline-flex items-center px-3 py-1 bg-[var(--ios-accent)]/10 rounded-full border border-[var(--ios-accent)]/20 shadow-sm max-w-full">
+                                                            <i className="fa-solid fa-wallet text-[var(--ios-accent)] text-[12px] mr-1.5 shrink-0"></i>
+                                                            <span className="text-[13px] font-bold text-[var(--ios-accent)] truncate">Day Total: ${totalDayCost.toFixed(2)}</span>
                                                         </div>
                                                     )}
                                                 </div>
-                                                <button onClick={() => openItineraryForm(itin)} className="w-9 h-9 rounded-full glass-panel flex items-center justify-center text-[#1D1D1F] active:bg-black/10 transition-colors shadow-sm mb-1">
-                                                    <i className="fa-solid fa-pen text-[11px]"></i>
+                                                <button onClick={() => openItineraryForm(itin)} className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-[#1D1D1F] active:bg-black/10 transition-colors shadow-sm mb-1 shrink-0">
+                                                    <i className="fa-solid fa-pen text-[12px]"></i>
                                                 </button>
                                             </div>
                                             
@@ -1437,32 +1437,32 @@
                                                         return (
                                                             <div key={item.id} className="relative z-10 flex items-start pl-4">
                                                                 <div className="w-16 shrink-0 pt-2 text-right pr-4">
-                                                                    <div className="text-[13px] font-bold text-[#8E8E93]">{item.time}</div>
+                                                                    <div className="text-[13px] font-bold text-[#8E8E93] truncate">{item.time}</div>
                                                                 </div>
                                                                 
                                                                 <div className="w-3.5 h-3.5 rounded-full border-2 border-white bg-[#1D1D1F] shadow-sm shrink-0 mt-1.5 relative z-20"></div>
                                                                 
-                                                                <div className="ml-5 flex-1 glass-panel p-4 active:scale-[0.98] transition-transform">
+                                                                <div className="ml-5 flex-1 min-w-0 glass-panel p-4 active:scale-[0.98] transition-transform border border-[var(--ios-accent)]/20">
                                                                     <div className="flex justify-between items-start mb-2">
-                                                                        <span className="text-[10px] font-bold text-white bg-[#1D1D1F] uppercase tracking-wider px-2 py-0.5 rounded-md shadow-sm">{item.label}</span>
-                                                                        <div className="flex space-x-1.5 bg-black/5 rounded-full px-1.5 py-1">
-                                                                            <button onClick={() => openItineraryItemForm(item)} className="w-6 h-6 rounded-full text-[#8E8E93] flex items-center justify-center hover:text-[#1D1D1F] active:bg-black/10 transition-colors"><i className="fa-solid fa-pen text-[9px]"></i></button>
-                                                                            <button onClick={() => deleteItineraryItem(item.id)} className="w-6 h-6 rounded-full text-[var(--ios-red)] flex items-center justify-center hover:text-[var(--ios-red)]/80 active:bg-[var(--ios-red)]/10 transition-colors"><i className="fa-solid fa-xmark text-[11px]"></i></button>
+                                                                        <span className="text-[10px] font-bold text-white bg-[#1D1D1F] uppercase tracking-wider px-2 py-0.5 rounded-md shadow-sm truncate max-w-[120px]">{item.label}</span>
+                                                                        <div className="flex space-x-1.5 bg-black/5 rounded-full px-1.5 py-1 shrink-0 ml-2">
+                                                                            <button onClick={() => openItineraryItemForm(item)} className="w-7 h-7 rounded-full text-[#8E8E93] flex items-center justify-center hover:text-[#1D1D1F] active:bg-black/10 transition-colors"><i className="fa-solid fa-pen text-[10px]"></i></button>
+                                                                            <button onClick={() => deleteItineraryItem(item.id)} className="w-7 h-7 rounded-full text-[var(--ios-red)] flex items-center justify-center hover:text-[var(--ios-red)]/80 active:bg-[var(--ios-red)]/10 transition-colors"><i className="fa-solid fa-xmark text-[12px]"></i></button>
                                                                         </div>
                                                                     </div>
                                                                     
                                                                     {loc ? (
                                                                         <div className="flex items-center space-x-3 mt-1 cursor-pointer group" onClick={() => { setLocationReturnView('itinerary_detail'); setSelectedLocId(loc.id); setView('location_detail'); }}>
                                                                             {Array.isArray(loc.photos) && loc.photos.length > 0 ? (
-                                                                                <img src={loc.photos} className="w-12 h-12 rounded-[12px] object-cover border border-white/60 shadow-sm" alt="Preview" />
+                                                                                <img src={loc.photos} className="w-12 h-12 rounded-[12px] object-cover border border-black/5 shadow-sm shrink-0" alt="Preview" />
                                                                             ) : (
-                                                                                <div className="w-12 h-12 rounded-[12px] bg-black/5 border border-black/5 flex items-center justify-center text-[#8E8E93] shadow-inner"><i className="fa-solid fa-map-pin"></i></div>
+                                                                                <div className="w-12 h-12 rounded-[12px] bg-black/5 border border-black/5 flex items-center justify-center text-[#8E8E93] shadow-inner shrink-0"><i className="fa-solid fa-map-pin"></i></div>
                                                                             )}
-                                                                            <div className="flex-1">
-                                                                                <p className="font-bold text-[#1D1D1F] text-[16px] leading-tight mb-0.5 group-active:text-[var(--ios-accent)] transition-colors">{loc.name}</p>
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <p className="font-bold text-[#1D1D1F] text-[16px] leading-tight mb-0.5 group-active:text-[var(--ios-accent)] transition-colors truncate">{loc.name}</p>
                                                                                 <p className="text-[12px] font-medium text-[#8E8E93] truncate">{loc.category}</p>
                                                                             </div>
-                                                                            <i className="fa-solid fa-chevron-right text-[#1D1D1F]/20 text-[12px] mr-1"></i>
+                                                                            <i className="fa-solid fa-chevron-right text-[#1D1D1F]/20 text-[12px] mr-1 shrink-0"></i>
                                                                         </div>
                                                                     ) : item.locationId ? (
                                                                         <p className="text-[12px] text-[var(--ios-red)] font-bold bg-[var(--ios-red)]/10 inline-block px-2 py-1 rounded-md mt-1 border border-[var(--ios-red)]/20">Location deleted</p>
@@ -1470,23 +1470,23 @@
                                                                     
                                                                     {item.notes && (
                                                                         <div className="mt-3 pt-3 border-t border-black/5">
-                                                                            <p className="text-[13px] font-medium text-[#1D1D1F] leading-relaxed">{item.notes}</p>
+                                                                            <p className="text-[13px] font-medium text-[#1D1D1F] leading-relaxed break-words">{item.notes}</p>
                                                                         </div>
                                                                     )}
                                                                     
                                                                     {/* Left-Aligned Touch-Friendly Calculator Button */}
                                                                     <div className="mt-4 pt-3 border-t border-black/5 flex justify-start">
-                                                                        <button onClick={() => handleOpenSplitBill(item)} className="flex items-center bg-white/60 hover:bg-white/90 border border-white/80 shadow-sm rounded-full pr-4 p-1 active:scale-95 transition-all">
+                                                                        <button onClick={() => handleOpenSplitBill(item)} className="flex items-center bg-white/60 hover:bg-white/90 border border-white/80 shadow-sm rounded-full pr-4 p-1 active:scale-95 transition-all max-w-full">
                                                                             <div className="w-8 h-8 rounded-full bg-[var(--ios-accent)] flex items-center justify-center text-white shadow-md mr-2.5 shrink-0">
                                                                                 <i className="fa-solid fa-calculator text-[13px]"></i>
                                                                             </div>
                                                                             {item.billTotal > 0 ? (
-                                                                                <div className="flex flex-col text-left justify-center">
-                                                                                    <span className="text-[14px] font-bold text-[#1D1D1F] leading-tight">${(parseFloat(item.billTotal) / (parseInt(item.billSplit)||1)).toFixed(2)}</span>
-                                                                                    <span className="text-[9px] font-bold text-[#8E8E93] uppercase tracking-wider leading-tight mt-0.5">{item.billSplit} {item.billSplit > 1 ? 'people' : 'person'}</span>
+                                                                                <div className="flex flex-col text-left justify-center min-w-0 overflow-hidden">
+                                                                                    <span className="text-[14px] font-bold text-[#1D1D1F] leading-tight truncate">${(parseFloat(item.billTotal) / (parseInt(item.billSplit)||1)).toFixed(2)}</span>
+                                                                                    <span className="text-[9px] font-bold text-[#8E8E93] uppercase tracking-wider leading-tight mt-0.5 truncate">{item.billSplit} {item.billSplit > 1 ? 'people' : 'person'}</span>
                                                                                 </div>
                                                                             ) : (
-                                                                                <span className="text-[13px] font-bold text-[#1D1D1F] pr-1">Split Bill</span>
+                                                                                <span className="text-[13px] font-bold text-[#1D1D1F] pr-1 shrink-0">Split Bill</span>
                                                                             )}
                                                                         </button>
                                                                     </div>
@@ -1518,11 +1518,11 @@
                                 <div className="glass-panel p-5 space-y-4">
                                     <div>
                                         <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Title</label>
-                                        <input type="text" required value={itinTitle} onChange={e => setItinTitle(e.target.value)} className="w-full px-4 py-3.5 glass-input text-[16px] font-medium placeholder-[#8E8E93]/50" placeholder="Day 1: City Tour" />
+                                        <input type="text" required value={itinTitle} onChange={e => setItinTitle(e.target.value)} className="w-full px-4 py-3.5 glass-input text-[16px] font-medium placeholder-[#8E8E93]/50 bg-white/50" placeholder="Day 1: City Tour" />
                                     </div>
                                     <div>
                                         <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Date</label>
-                                        <input type="date" value={itinDate} onChange={e => setItinDate(e.target.value)} className="w-full px-4 py-3.5 glass-input text-[16px] font-medium" />
+                                        <input type="date" value={itinDate} onChange={e => setItinDate(e.target.value)} className="w-full px-4 py-3.5 glass-input text-[16px] font-medium bg-white/50" />
                                     </div>
                                 </div>
                                 <button type="submit" disabled={isSaving} className="w-full py-4 bg-[#1D1D1F] disabled:bg-[#1D1D1F]/50 text-white font-bold tracking-wide text-[16px] rounded-[18px] active:scale-[0.98] transition-all mt-4 shadow-lg shadow-black/10">
@@ -1536,17 +1536,17 @@
                             <div className="space-y-5 pb-6">
                                 <div className="px-2 mb-2 flex justify-between items-center">
                                     <h2 className="text-[28px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">Pick Place</h2>
-                                    <button onClick={() => handleSelectLocationForItinerary('')} className="text-[#8E8E93] font-bold text-[14px] active:opacity-50">
+                                    <button onClick={() => handleSelectLocationForItinerary('')} className="text-[#8E8E93] font-bold text-[14px] active:opacity-50 px-2 py-1">
                                         Skip
                                     </button>
                                 </div>
 
                                 <div className="glass-panel p-1.5">
-                                    <div className="relative flex items-center glass-input px-3 py-3">
-                                        <i className="fa-solid fa-magnifying-glass text-[#8E8E93] mr-2.5"></i>
+                                    <div className="relative flex items-center glass-input px-3 py-3 bg-white/50">
+                                        <i className="fa-solid fa-magnifying-glass text-[#8E8E93] mr-2.5 shrink-0"></i>
                                         <input 
                                             type="text" placeholder="Search saved places..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="flex-1 bg-transparent focus:outline-none text-[16px] font-medium placeholder-[#8E8E93]/60"
+                                            className="flex-1 min-w-0 bg-transparent focus:outline-none text-[16px] font-medium placeholder-[#8E8E93]/60"
                                         />
                                     </div>
                                 </div>
@@ -1565,13 +1565,13 @@
                                                             className={`flex items-center justify-between p-3 pl-4 cursor-pointer active:bg-black/5 transition-colors ${index !== arr.length - 1 ? 'border-b border-black/5' : ''}`}
                                                             onClick={() => handleSelectLocationForItinerary(loc.id)}
                                                         >
-                                                            <div className="flex items-center flex-1 overflow-hidden">
+                                                            <div className="flex items-center flex-1 min-w-0 overflow-hidden">
                                                                 {Array.isArray(loc.photos) && loc.photos.length > 0 ? (
                                                                     <img src={loc.photos} className="w-12 h-12 rounded-[12px] object-cover shrink-0 mr-3 border border-white/60 shadow-sm" alt="" />
                                                                 ) : (
                                                                     <div className="w-12 h-12 rounded-[12px] bg-black/5 flex items-center justify-center text-[#8E8E93] shrink-0 mr-3 border border-black/5 shadow-inner"><i className="fa-solid fa-map-pin"></i></div>
                                                                 )}
-                                                                <div className="truncate pr-2">
+                                                                <div className="truncate pr-2 min-w-0 flex-1">
                                                                     <h4 className="text-[16px] font-bold text-[#1D1D1F] truncate">{loc.name}</h4>
                                                                     <p className="text-[12px] font-medium text-[#8E8E93] truncate mt-0.5">{loc.city || 'City'}</p>
                                                                 </div>
@@ -1598,35 +1598,38 @@
                                 
                                 <div className="glass-panel p-5 space-y-5">
                                     <div>
-                                        <div className="flex justify-between items-end mb-2 ml-1">
+                                        <div className="flex justify-between items-center mb-2 ml-1">
                                             <label className="block text-[12px] font-bold text-[#8E8E93] uppercase tracking-wide">Location</label>
-                                            {!editItinItemId && <button type="button" onClick={() => setView('itinerary_select_location')} className="text-white text-[12px] font-bold bg-[#1D1D1F] px-3 py-1 rounded-full shadow-md active:scale-95 transition-transform">Change</button>}
+                                            <button type="button" onClick={() => setView('itinerary_select_location')} className="text-white text-[12px] font-bold bg-[#1D1D1F] px-3 py-1 rounded-full shadow-md active:scale-95 transition-transform shrink-0 ml-2">Change</button>
                                         </div>
-                                        <div className="w-full px-4 py-3.5 glass-input text-[16px] text-[#1D1D1F] truncate font-bold">
+                                        <div className="w-full px-4 py-3.5 glass-input text-[16px] text-[#1D1D1F] truncate font-bold bg-white/50 flex items-center">
                                             {itinItemLocId ? (locations.find(l => l.id === itinItemLocId)?.name || 'Unknown') : 'No location attached'}
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="min-w-0">
                                             <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Time</label>
-                                            <input type="time" required value={itinItemTime} onChange={e => setItinItemTime(e.target.value)} className="w-full px-4 py-3.5 glass-input text-[16px] font-mono font-medium" />
+                                            <input type="time" required value={itinItemTime} onChange={e => setItinItemTime(e.target.value)} className="w-full px-3 py-3.5 glass-input text-[15px] font-mono font-medium bg-white/50" />
                                         </div>
-                                        <div>
+                                        <div className="min-w-0">
                                             <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Type</label>
-                                            <select value={itinItemLabel} onChange={e => setItinItemLabel(e.target.value)} className="w-full px-4 py-3.5 glass-input text-[15px] appearance-none font-bold">
-                                                <option value="Breakfast">Breakfast</option>
-                                                <option value="Lunch">Lunch</option>
-                                                <option value="Dinner">Dinner</option>
-                                                <option value="Tourist Attraction">Attraction</option>
-                                                <option value="Other">Other</option>
-                                            </select>
+                                            <div className="relative">
+                                                <select value={itinItemLabel} onChange={e => setItinItemLabel(e.target.value)} className="w-full pl-3 pr-8 py-3.5 glass-input text-[14px] appearance-none font-bold bg-white/50 truncate">
+                                                    <option value="Breakfast">Breakfast</option>
+                                                    <option value="Lunch">Lunch</option>
+                                                    <option value="Dinner">Dinner</option>
+                                                    <option value="Tourist Attraction">Attraction</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                                <i className="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#8E8E93] pointer-events-none"></i>
+                                            </div>
                                         </div>
                                     </div>
                                     
                                     <div>
                                         <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Notes</label>
-                                        <textarea value={itinItemNotes} onChange={e => setItinItemNotes(e.target.value)} rows="3" className="w-full glass-input p-4 text-[15px] font-medium placeholder-[#8E8E93]/50 resize-none" placeholder="Optional notes for this event" />
+                                        <textarea value={itinItemNotes} onChange={e => setItinItemNotes(e.target.value)} rows="3" className="w-full glass-input p-4 text-[15px] font-medium placeholder-[#8E8E93]/50 resize-none bg-white/50" placeholder="Optional notes for this event" />
                                     </div>
                                 </div>
 
