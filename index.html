@@ -2,53 +2,56 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- This meta tag ensures the app looks native on iOS and Android without awkward zooming -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Vincent's Travelling System</title>
     
-    <!-- Apple/iOS Web App settings -->
+    <!-- Apple/iOS Web App settings for adding to Home Screen -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Globe_icon.svg/1024px-Globe_icon.svg.png">
 
-    <!-- Google Fonts -->
+    <!-- Google Fonts for Art/Editorial Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- FontAwesome -->
+    <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     
-    <!-- Babel -->
+    <!-- Babel for in-browser JSX compiling -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <style>
         :root {
-            --ios-accent: #C68E58;
+            --ios-accent: #C68E58; /* Brushed Copper / Premium Amber */
             --ios-green: #32D74B; 
             --ios-red: #FF3B30; 
-            --ios-bg: #F2F4F7;
-            --ios-text: #1D1D1F;
-            --ios-gray: #8E8E93;
+            --ios-bg: #F2F4F7; /* Bright, clean off-white */
+            --ios-text: #1D1D1F; /* Deep Charcoal/Titanium Black */
+            --ios-gray: #8E8E93; /* Classic Apple Slate Gray */
         }
         body { 
             -webkit-tap-highlight-color: transparent; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--ios-bg);
             color: var(--ios-text);
-            overflow-x: hidden;
+            color-scheme: light;
         }
         
+        /* iOS Safe Area paddings */
         .safe-top { padding-top: env(safe-area-inset-top, 44px); }
         .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 34px); }
         .safe-pb-nav { padding-bottom: calc(env(safe-area-inset-bottom, 34px) + 100px); }
         
+        /* Hide scrollbar for photo carousel but keep functionality */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         
@@ -56,8 +59,13 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .animate-slide-in { animation: slideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+
+        /* Art Design Font */
         .font-art { font-family: 'Playfair Display', serif; }
 
+        /* --- PREMIUM LIGHT GLASS UI UTILITIES --- */
+        
+        /* Liquid Blob Animations */
         @keyframes blob {
             0% { transform: translate(0px, 0px) scale(1); }
             33% { transform: translate(30px, -50px) scale(1.1); }
@@ -65,7 +73,10 @@
             100% { transform: translate(0px, 0px) scale(1); }
         }
         .animate-blob { animation: blob 12s infinite alternate ease-in-out; }
+        .animation-delay-2000 { animation-delay: 2s; }
+        .animation-delay-4000 { animation-delay: 4s; }
 
+        /* Light Frosted Crystal Panels */
         .glass-panel {
             background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(32px);
@@ -75,6 +86,7 @@
             border-radius: 28px;
         }
         
+        /* Floating Light Glass Pill (Nav) */
         .glass-pill {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(40px);
@@ -84,12 +96,16 @@
             border-radius: 9999px;
         }
 
+        /* Light Glass Header */
         .glass-header {
             background: linear-gradient(to bottom, rgba(242, 244, 247, 0.95) 0%, rgba(242, 244, 247, 0) 100%);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
+            mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
         }
 
+        /* Light Glass Inputs */
         .glass-input {
             background: rgba(255, 255, 255, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.8);
@@ -107,7 +123,6 @@
 </head>
 <body>
     <div id="root"></div>
-
     <script type="text/babel" data-type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -119,7 +134,7 @@
         const firebaseConfig = typeof __firebase_config !== 'undefined' 
             ? JSON.parse(__firebase_config) 
             : {
-                apiKey: "",
+                apiKey: "AIzaSyDUdgQdMPAUVHSIHmbfIpSEYwQNWdFM578",
                 authDomain: "trip-navigation-b0f21.firebaseapp.com",
                 projectId: "trip-navigation-b0f21",
                 storageBucket: "trip-navigation-b0f21.firebasestorage.app",
@@ -130,12 +145,17 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vincents-travel-system';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-wander-tracker-app';
 
-        // --- UTILS ---
+        // Haversine formula
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const numLat1 = parseFloat(lat1), numLon1 = parseFloat(lon1), numLat2 = parseFloat(lat2), numLon2 = parseFloat(lon2);
+            const numLat1 = parseFloat(lat1);
+            const numLon1 = parseFloat(lon1);
+            const numLat2 = parseFloat(lat2);
+            const numLon2 = parseFloat(lon2);
+            
             if (isNaN(numLat1) || isNaN(numLon1) || isNaN(numLat2) || isNaN(numLon2)) return null;
+            
             const R = 6371; 
             const dLat = (numLat2 - numLat1) * (Math.PI / 180);
             const dLon = (numLon2 - numLon1) * (Math.PI / 180);
@@ -150,6 +170,7 @@
             return `${Number(distInKm).toFixed(1)}km`;
         }
 
+        // NEW: Formats duration directly from exact minutes
         function formatDuration(totalMinutes) {
             if (totalMinutes == null || isNaN(totalMinutes)) return "";
             totalMinutes = Math.ceil(totalMinutes);
@@ -163,7 +184,7 @@
         const getDistanceColor = (distInKm) => {
             if (distInKm == null || isNaN(distInKm)) return "text-[#8E8E93]";
             if (distInKm <= 1.0) return "text-[var(--ios-green)]";
-            if (distInKm <= 10.0) return "text-[#FF9500]";
+            if (distInKm <= 10.0) return "text-[#FF9500]"; // iOS Orange
             return "text-[var(--ios-red)]";
         };
 
@@ -174,61 +195,91 @@
             return "bg-[var(--ios-red)]/10 border-[var(--ios-red)]/20 text-[var(--ios-red)]";
         };
 
-        // --- MAIN APP ---
         function App() {
+            // --- STATE ---
             const [user, setUser] = useState(null);
+            const [authError, setAuthError] = useState('');
             const [liveLocation, setLiveLocation] = useState(null);
             const [gpsAccuracy, setGpsAccuracy] = useState(null);
             const [geoError, setGeoError] = useState('');
             const [locations, setLocations] = useState([]);
+            
+            // NEW: Stores actual road distances and driving durations
+            const [realRoutes, setRealRoutes] = useState({}); 
+            
+            // Itinerary State
             const [itineraries, setItineraries] = useState([]);
             const [activeItinId, setActiveItinId] = useState(null);
-            const [realRoutes, setRealRoutes] = useState({});
             
-            // UI States
-            const [view, setView] = useState('cities');
-            const [activeCity, setActiveCity] = useState(null);
-            const [activeCategory, setActiveCategory] = useState(null);
-            const [selectedLocId, setSelectedLocId] = useState(null);
-            const [previousView, setPreviousView] = useState('cities');
-            const [locationReturnView, setLocationReturnView] = useState('category_list');
-            const [notifications, setNotifications] = useState([]);
-            const alertedLocsRef = useRef(new Set());
-            const [fullScreenPhoto, setFullScreenPhoto] = useState(null);
-            const [confirmDialog, setConfirmDialog] = useState(null);
-
-            // Form States
-            const [editId, setEditId] = useState(null);
-            const [name, setName] = useState('');
-            const [city, setCity] = useState('');
-            const [category, setCategory] = useState('');
-            const [lat, setLat] = useState('');
-            const [lng, setLng] = useState('');
-            const [mapLink, setMapLink] = useState('');
-            const [comment, setComment] = useState('');
-            const [photos, setPhotos] = useState([]);
-            const [isSaving, setIsSaving] = useState(false);
-            const [saveError, setSaveError] = useState('');
-            const [formSearchQuery, setFormSearchQuery] = useState('');
-            const [searchResults, setSearchResults] = useState([]);
-            const [isSearching, setIsSearching] = useState(false);
-
-            // Itinerary Forms
+            // Itinerary Form State
             const [itinTitle, setItinTitle] = useState('');
             const [itinDate, setItinDate] = useState('');
+            
+            // Itinerary Item Form State
             const [editItinItemId, setEditItinItemId] = useState(null);
             const [itinItemTime, setItinItemTime] = useState('');
             const [itinItemLabel, setItinItemLabel] = useState('Tourist Attraction');
             const [itinItemLocId, setItinItemLocId] = useState('');
             const [itinItemNotes, setItinItemNotes] = useState('');
-            const [searchQuery, setSearchQuery] = useState('');
-
-            // Split Bill
+            
+            // Split Bill Calculator State
             const [splitBillItem, setSplitBillItem] = useState(null);
             const [tempBillTotal, setTempBillTotal] = useState('');
             const [tempBillSplit, setTempBillSplit] = useState(1);
+            
+            // Search State
+            const [searchQuery, setSearchQuery] = useState('');
+            
+            // New Location Form Search State
+            const [formSearchQuery, setFormSearchQuery] = useState('');
+            const [searchResults, setSearchResults] = useState([]);
+            const [isSearching, setIsSearching] = useState(false);
 
-            // Firebase Auth & Initial Fetch
+            // Navigation & UI State
+            const [view, setView] = useState('cities'); 
+            const [activeCity, setActiveCity] = useState(null);
+            const [activeCategory, setActiveCategory] = useState(null);
+            const [selectedLocId, setSelectedLocId] = useState(null);
+            const [previousView, setPreviousView] = useState('cities');
+            const [locationReturnView, setLocationReturnView] = useState('category_list');
+            
+            // Derived active bottom tab
+            const activeTab = view === 'notifications' ? 'notifications' : (view.includes('itinerar') ? 'itineraries' : 'places');
+
+            // In-App Notification State
+            const [notifications, setNotifications] = useState([]);
+            const alertedLocsRef = useRef(new Set());
+            
+            // Photo Viewer State
+            const [fullScreenPhoto, setFullScreenPhoto] = useState(null); 
+            const fullScreenScrollRef = useRef(null);
+            
+            // Confirm Modal State
+            const [confirmDialog, setConfirmDialog] = useState(null);
+            
+            // Form State
+            const [editId, setEditId] = useState(null);
+            const [name, setName] = useState('');
+            const [comment, setComment] = useState('');
+            
+            const [editingCityName, setEditingCityName] = useState(null); 
+            const [newCityName, setNewCityName] = useState(''); 
+            const [cityPhotos, setCityPhotos] = useState([]); 
+            
+            const [city, setCity] = useState('');
+            const [category, setCategory] = useState('');
+            const [lat, setLat] = useState('');
+            const [lng, setLng] = useState('');
+            const [mapLink, setMapLink] = useState('');
+            const [photos, setPhotos] = useState([]); 
+            const [saveError, setSaveError] = useState('');
+            const [isSaving, setIsSaving] = useState(false);
+            
+            // Detail View State
+            const [showCoords, setShowCoords] = useState(false);
+
+            // --- EFFECTS ---
+            // 1. Authenticate
             useEffect(() => {
                 const initAuth = async () => {
                     try {
@@ -237,342 +288,1158 @@
                         } else {
                             await signInAnonymously(auth);
                         }
-                    } catch (err) { console.error(err); }
+                    } catch (err) {
+                        setAuthError(err.message);
+                    }
                 };
                 initAuth();
                 const unsubscribe = onAuthStateChanged(auth, setUser);
                 return () => unsubscribe();
             }, []);
 
+            // 2. Fetch Data
             useEffect(() => {
                 if (!user) return;
-                const pathLocs = collection(db, 'artifacts', appId, 'public', 'data', 'locations');
-                const unsubLocs = onSnapshot(pathLocs, (snap) => {
-                    const list = [];
-                    snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-                    setLocations(list);
-                }, (err) => console.error(err));
+                const locationsRef = collection(db, 'artifacts', appId, 'public', 'data', 'locations');
+                const unsubLocs = onSnapshot(locationsRef, (snapshot) => {
+                    const fetchedLocations = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        let docPhotos = data.photos || [];
+                        if (!data.photos && data.media && data.mediaType === 'image') {
+                            docPhotos = [data.media];
+                        }
+                        fetchedLocations.push({ id: doc.id, ...data, photos: docPhotos });
+                    });
+                    setLocations(fetchedLocations);
+                }, (error) => { console.error("Error fetching locations: ", error); });
 
-                const pathItins = collection(db, 'artifacts', appId, 'public', 'data', 'itineraries');
-                const unsubItins = onSnapshot(pathItins, (snap) => {
-                    const list = [];
-                    snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-                    list.sort((a, b) => a.timestamp - b.timestamp);
-                    setItineraries(list);
-                }, (err) => console.error(err));
+                const itinerariesRef = collection(db, 'artifacts', appId, 'public', 'data', 'itineraries');
+                const unsubItins = onSnapshot(itinerariesRef, (snapshot) => {
+                    const fetchedItins = [];
+                    snapshot.forEach(doc => {
+                        fetchedItins.push({ id: doc.id, ...doc.data() });
+                    });
+                    fetchedItins.sort((a, b) => a.timestamp - b.timestamp);
+                    setItineraries(fetchedItins);
+                }, (error) => { console.error("Error fetching itineraries: ", error); });
 
                 return () => { unsubLocs(); unsubItins(); };
             }, [user]);
 
-            // GPS Tracking
+            // 3. Track GPS
             useEffect(() => {
-                if (!navigator.geolocation) return;
+                if (!("geolocation" in navigator)) {
+                    setGeoError("GPS not supported.");
+                    return;
+                }
                 const watchId = navigator.geolocation.watchPosition(
-                    (pos) => {
-                        setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                    (pos) => { 
+                        setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); 
                         setGpsAccuracy(pos.coords.accuracy);
-                        setGeoError('');
+                        setGeoError(''); 
                     },
-                    (err) => {
-                        setGeoError("Using Static Location");
-                        setLiveLocation({ lat: 11.5564, lng: 104.9282 }); // Phnom Penh
-                    },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+                    (err) => { setGeoError("Using Mock Location"); setLiveLocation({ lat: 11.5564, lng: 104.9282 }); setGpsAccuracy(null); },
+                    { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
                 );
                 return () => navigator.geolocation.clearWatch(watchId);
             }, []);
 
-            // Search Autocomplete
+            // 4. Live Place Autocomplete Search
             useEffect(() => {
-                const searchFn = setTimeout(() => {
-                    if (formSearchQuery.length > 2) {
+                const delayDebounceFn = setTimeout(() => {
+                    if (formSearchQuery.trim().length > 2) {
                         setIsSearching(true);
-                        let url = `https://photon.komoot.io/api/?q=${encodeURIComponent(formSearchQuery)}&limit=5`;
-                        if (liveLocation) url += `&lat=${liveLocation.lat}&lon=${liveLocation.lng}`;
-                        fetch(url).then(r => r.json()).then(d => {
-                            setSearchResults(d.features || []);
-                            setIsSearching(false);
-                        }).catch(() => setIsSearching(false));
-                    } else { setSearchResults([]); }
+                        
+                        let url = `https://photon.komoot.io/api/?q=${encodeURIComponent(formSearchQuery)}&limit=6`;
+                        if (liveLocation && liveLocation.lat && liveLocation.lng) {
+                            url += `&lat=${liveLocation.lat}&lon=${liveLocation.lng}`;
+                        }
+
+                        fetch(url)
+                            .then(res => res.json())
+                            .then(data => {
+                                setSearchResults(data.features || []);
+                                setIsSearching(false);
+                            })
+                            .catch(err => {
+                                console.error("Search error:", err);
+                                setIsSearching(false);
+                            });
+                    } else {
+                        searchResults.length > 0 && setSearchResults([]);
+                    }
                 }, 500);
-                return () => clearTimeout(searchFn);
+                return () => clearTimeout(delayDebounceFn);
             }, [formSearchQuery, liveLocation]);
 
-            // --- FUNCTIONS ---
-            const handleMapLinkPaste = async (input) => {
-                setMapLink(input);
-                if (!input) return;
-                
-                // 1. Check for raw pair "lat, lng"
-                const rawMatch = input.match(/([-+]?\d{1,2}\.\d+)\s*,\s*([-+]?\d{1,3}\.\d+)/);
-                if (rawMatch) {
-                    const pLat = parseFloat(rawMatch);
-                    const pLng = parseFloat(rawMatch);
-                    if (pLat >= -90 && pLat <= 90 && pLng >= -180 && pLng <= 180) {
-                        setLat(pLat.toFixed(6));
-                        setLng(pLng.toFixed(6));
-                        setSaveError('');
-                        return;
-                    }
-                }
+            // 5. Live Bulk Real Routing (OSRM Table API)
+            useEffect(() => {
+                if (!liveLocation || locations.length === 0) return;
 
-                // 2. Check for common Google Maps URL formats
-                const exactPinMatch = input.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
-                const atMatch = input.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-                const queryMatch = input.match(/[?&](?:q|ll)=([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
-                const placeMatch = input.match(/place\/.*@(-?\d+\.\d+),(-?\d+\.\d+)/);
-                
-                const match = exactPinMatch || atMatch || queryMatch || placeMatch;
-                if (match) {
-                    setLat(parseFloat(match).toFixed(6));
-                    setLng(parseFloat(match).toFixed(6));
-                    setSaveError('');
-                    return;
-                }
+                const validLocs = locations.filter(l => l.lat != null && l.lng != null && !l.isCityMarker);
+                if (validLocs.length === 0) return;
 
-                // 3. Handle short links from the App (maps.app.goo.gl, etc.)
-                if (input.includes('maps.app.goo.gl') || input.includes('goo.gl/maps') || input.includes('maps.google.com')) {
-                    setSaveError("Extracting GPS from Maps link...");
+                // Max 100 coordinates allowed by OSRM bulk API (1 source + 99 destinations)
+                const locsToFetch = validLocs.slice(0, 99); 
+                const coords = [
+                    `${liveLocation.lng},${liveLocation.lat}`,
+                    ...locsToFetch.map(l => `${l.lng},${l.lat}`)
+                ].join(';');
+
+                const fetchMatrix = async () => {
                     try {
-                        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(input)}`);
-                        if (res.ok) {
-                            const data = await res.json();
-                            const expandedUrl = data.url;
-                            const expMatch = expandedUrl.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || expandedUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || expandedUrl.match(/[?&](?:q|ll)=([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
+                        const res = await fetch(`https://router.project-osrm.org/table/v1/driving/${coords}?sources=0&annotations=duration,distance`);
+                        const data = await res.json();
+                        
+                        if (data.code === 'Ok' && data.durations && data.distances) {
+                            const newRoutes = {};
+                            // FIX: OSRM returns a 2D matrix. We must specify the first row
+                            const durations = data.durations;
+                            const distances = data.distances;
                             
-                            if (expMatch) {
-                                setLat(parseFloat(expMatch).toFixed(6));
-                                setLng(parseFloat(expMatch).toFixed(6));
-                                setSaveError(''); 
-                                return;
-                            }
-                            
-                            if (data.contents) {
-                                const metaMatch = data.contents.match(/center=(-?\d+\.\d+)%2C(-?\d+\.\d+)/) || data.contents.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-                                if (metaMatch) {
-                                    setLat(parseFloat(metaMatch).toFixed(6));
-                                    setLng(parseFloat(metaMatch).toFixed(6));
-                                    setSaveError('');
-                                    return;
+                            locsToFetch.forEach((loc, index) => {
+                                const durationSec = durations[index + 1];
+                                const distanceMet = distances[index + 1];
+                                if (durationSec != null && distanceMet != null) {
+                                    newRoutes[loc.id] = {
+                                        distance: distanceMet / 1000, // convert to km
+                                        duration: durationSec / 60    // convert to minutes
+                                    };
                                 }
-                            }
+                            });
+                            setRealRoutes(newRoutes);
                         }
-                    } catch(e) {
-                        console.warn("Auto-extract failed", e);
+                    } catch (e) {
+                        console.error("OSRM routing fetch error:", e);
                     }
-                    setSaveError("Link saved, but couldn't auto-extract GPS. Try getting GPS manually.");
+                };
+
+                const timeoutId = setTimeout(fetchMatrix, 2500); // Debounce to avoid spamming while walking
+                return () => clearTimeout(timeoutId);
+            }, [liveLocation, locations]);
+
+            // Helper to get the best available route data
+            const getRouteInfo = (loc) => {
+                if (realRoutes[loc.id]) {
+                    return { dist: realRoutes[loc.id].distance, dur: realRoutes[loc.id].duration, isReal: true };
                 }
+                if (liveLocation && loc.lat != null && loc.lng != null) {
+                    const straightDist = calculateDistance(liveLocation.lat, liveLocation.lng, loc.lat, loc.lng);
+                    return { dist: straightDist, dur: straightDist ? straightDist * 3.5 : null, isReal: false };
+                }
+                return { dist: null, dur: null, isReal: false };
             };
 
+            // Helper to add In-App Notification
+            const addNotification = (loc, isStartup) => {
+                setNotifications(prev => {
+                    if (prev.some(n => n.locId === loc.id && !n.read)) return prev;
+                    return [{
+                        id: Date.now().toString() + Math.random(),
+                        locId: loc.id,
+                        name: loc.name,
+                        distance: loc.currentDistance,
+                        duration: loc.currentDuration,
+                        isRealRoute: loc.isRealRoute,
+                        photos: loc.photos,
+                        isStartup: isStartup,
+                        timestamp: Date.now(),
+                        read: false
+                    }, ...prev];
+                });
+            };
+
+            const deleteNotification = (e, id) => {
+                e.stopPropagation();
+                setNotifications(prev => prev.filter(n => n.id !== id));
+            };
+
+            // Nearby Alert Checker
+            useEffect(() => {
+                if (!liveLocation || locations.length === 0) return;
+
+                locations.forEach(loc => {
+                    if (loc.isCityMarker || loc.lat == null || loc.lng == null) return;
+                    
+                    const routeInfo = getRouteInfo(loc);
+                    if (routeInfo.dist === null) return;
+                    
+                    // Track and alert for ALL locations within 1km radius
+                    if (routeInfo.dist <= 1.0) { 
+                        if (!alertedLocsRef.current.has(loc.id) && !(view === 'location_detail' && selectedLocId === loc.id)) {
+                            addNotification({ ...loc, currentDistance: routeInfo.dist, currentDuration: routeInfo.dur, isRealRoute: routeInfo.isReal }, false);
+                            alertedLocsRef.current.add(loc.id);
+                        }
+                    }
+                });
+            }, [liveLocation, locations, view, selectedLocId, realRoutes]);
+
+            // Photo viewer scrolling
+            useEffect(() => {
+                if (view === 'photo_viewer' && fullScreenPhoto && fullScreenScrollRef.current) {
+                    setTimeout(() => {
+                        if (fullScreenScrollRef.current) {
+                            fullScreenScrollRef.current.scrollLeft = fullScreenPhoto.index * fullScreenScrollRef.current.clientWidth;
+                        }
+                    }, 10);
+                }
+            }, [view, fullScreenPhoto]);
+
+            // Pinch-to-zoom enabling
+            useEffect(() => {
+                const meta = document.querySelector('meta[name="viewport"]');
+                if (view === 'photo_viewer') {
+                    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover');
+                } else {
+                    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+                }
+            }, [view]);
+
+            // --- NAVIGATION HANDLERS ---
             const resetForm = () => {
-                setEditId(null); setName(''); setCity(activeCity || ''); setCategory(activeCategory || '');
-                setLat(''); setLng(''); setMapLink(''); setComment(''); setPhotos([]); setSaveError('');
+                setEditId(null); setName(''); setCity(activeCity || 'Ho Chi Minh City'); setCategory(activeCategory || '');
+                setLat(''); setLng(''); setMapLink(''); setPhotos([]); setComment(''); setSaveError('');
             };
 
             const openForm = (loc = null) => {
-                setPreviousView(view);
+                setPreviousView(view); 
                 if (loc) {
-                    setEditId(loc.id); setName(loc.name || ''); setCity(loc.city || '');
-                    setCategory(loc.category || ''); setLat(loc.lat || ''); setLng(loc.lng || '');
-                    setMapLink(loc.mapLink || ''); setComment(loc.comment || ''); setPhotos(loc.photos || []);
+                    setEditId(loc.id); setName(loc.name || ''); setCity(loc.city || 'Ho Chi Minh City'); setCategory(loc.category || 'Uncategorized');
+                    setLat(loc.lat != null ? loc.lat : ''); setLng(loc.lng != null ? loc.lng : ''); setMapLink(loc.mapLink || ''); setPhotos([...(loc.photos || [])]); setComment(loc.comment || '');
                 } else { resetForm(); }
                 setView('form');
             };
 
+            const openCityForm = (cityName = null) => {
+                setPreviousView(view); setSaveError('');
+                if (cityName) { 
+                    setEditingCityName(cityName); setNewCityName(cityName); 
+                    const cityMarker = locations.find(l => l.isCityMarker && (l.city || 'Ho Chi Minh City') === cityName);
+                    setCityPhotos(cityMarker && cityMarker.photos ? [...cityMarker.photos] : []);
+                } else { 
+                    setEditingCityName(null); setNewCityName(''); setCityPhotos([]); 
+                }
+                setView('city_form');
+            };
+
             const handleBack = () => {
-                if (view === 'form') setView(previousView);
-                else if (view === 'location_detail') setView(locationReturnView);
-                else if (view === 'category_list') setView('categories');
-                else if (view === 'categories') setView('cities');
-                else if (view === 'notifications') setView(previousView);
-                else setView('cities');
+                if (view === 'photo_viewer') { setView(previousView); setFullScreenPhoto(null); } 
+                else if (view === 'form') { setView(previousView); } 
+                else if (view === 'city_form') { setView('cities'); } 
+                else if (view === 'notifications') { setView(previousView || 'cities'); }
+                else if (view === 'location_detail') { setView(locationReturnView); setSelectedLocId(null); } 
+                else if (view === 'category_list') { setView('categories'); setActiveCategory(null); } 
+                else if (view === 'categories') { setView('cities'); setActiveCity(null); } 
+                else if (view === 'itinerary_detail') { setView('itineraries'); setActiveItinId(null); } 
+                else if (view === 'itinerary_form') { setView('itineraries'); } 
+                else if (view === 'itinerary_select_location') { setView('itinerary_detail'); } 
+                else if (view === 'itinerary_item_form') { setView(previousView === 'itinerary_select_location' ? 'itinerary_select_location' : 'itinerary_detail'); }
+                else if (view === 'split_bill') { setView('itinerary_detail'); setSplitBillItem(null); }
+            };
+
+            // --- FORM HANDLERS ---
+            const extractCoordsFromUrl = (input) => {
+                if (!input) return false;
+                
+                const exactPinMatch = input.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+                const atMatch = input.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+                const queryMatch = input.match(/[?&](?:q|ll)=([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
+                const placeMatch = input.match(/place\/.*@(-?\d+\.\d+),(-?\d+\.\d+)/) || input.match(/place\/[^\/]+\/([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
+                
+                // NEW: Catch raw pasted coordinates (e.g., "11.5564, 104.9282" or "11.5564° N, 104.9282° E")
+                const rawMatch = input.match(/([-+]?\d{1,2}\.\d+)[^\d-]+([-+]?\d{1,3}\.\d+)/);
+
+                const match = exactPinMatch || atMatch || queryMatch || placeMatch || rawMatch;
+                
+                if (match && match.length >= 3) { 
+                    const parsedLat = parseFloat(match);
+                    const parsedLng = parseFloat(match);
+                    
+                    // Verify they are valid map coordinates before applying
+                    if (parsedLat >= -90 && parsedLat <= 90 && parsedLng >= -180 && parsedLng <= 180) {
+                        setLat(parsedLat.toFixed(6)); 
+                        setLng(parsedLng.toFixed(6));
+                        return true;
+                    }
+                }
+                return false;
+            };
+
+            const handleMapLinkChange = async (e) => {
+                const link = e.target.value; setMapLink(link);
+                setSaveError('');
+                
+                // 1. Try to extract directly first (for full web URLs)
+                if (extractCoordsFromUrl(link)) return;
+
+                // 2. If it's a short link (like from the iPhone Google Maps app), expand it live with fallbacks
+                if (link.includes('maps.app.goo.gl') || link.includes('goo.gl/maps') || link.includes('maps.google.com')) {
+                    setSaveError("Extracting GPS from iPhone link...");
+                    
+                    // Helper to aggressively scan HTML for hidden coordinates
+                    const tryExtractFromHtml = (html) => {
+                        const metaRefreshMatch = html.match(/URL=['"]?([^'"]+)['"]/i);
+                        if (metaRefreshMatch && extractCoordsFromUrl(metaRefreshMatch.replace(/&amp;/g, '&'))) return true;
+                        
+                        const ogImageMatch = html.match(/center=(-?\d+\.\d+)%2C(-?\d+\.\d+)/) || html.match(/center=(-?\d+\.\d+),(-?\d+\.\d+)/);
+                        if (ogImageMatch && ogImageMatch.length >= 3) {
+                            setLat(parseFloat(ogImageMatch).toFixed(6)); setLng(parseFloat(ogImageMatch).toFixed(6));
+                            return true;
+                        }
+                        
+                        const atMatch = html.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+                        if (atMatch && atMatch.length >= 3) {
+                            setLat(parseFloat(atMatch).toFixed(6)); setLng(parseFloat(atMatch).toFixed(6));
+                            return true;
+                        }
+                        return false;
+                    };
+
+                    try {
+                        // Attempt 1: AllOrigins Proxy
+                        const res1 = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(link)}`);
+                        if (res1.ok) {
+                            const data1 = await res1.json();
+                            if (data1.url && extractCoordsFromUrl(data1.url)) { setSaveError(''); return; }
+                            if (data1.contents && tryExtractFromHtml(data1.contents)) { setSaveError(''); return; }
+                        }
+                    } catch (e1) { console.warn("Extraction 1 failed"); }
+
+                    try {
+                        // Attempt 2: CodeTabs Proxy (Very reliable for following redirects)
+                        const res2 = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(link)}`);
+                        if (res2.ok) {
+                            const text2 = await res2.text();
+                            if (tryExtractFromHtml(text2)) { setSaveError(''); return; }
+                        }
+                    } catch (e2) { console.warn("Extraction 2 failed"); }
+                    
+                    try {
+                        // Attempt 3: CorsProxy.io
+                        const res3 = await fetch(`https://corsproxy.io/?${encodeURIComponent(link)}`);
+                        if (res3.ok) {
+                            const text3 = await res3.text();
+                            if (tryExtractFromHtml(text3)) { setSaveError(''); return; }
+                        }
+                    } catch (e3) { console.warn("Extraction 3 failed"); }
+
+                    setSaveError("Could not auto-extract GPS. Link might be blocked. Use 'Get GPS'.");
+                }
+            };
+
+            const processImage = (file) => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const MAX = 2048; let {width, height} = img;
+                            if (width > height && width > MAX) { height *= MAX / width; width = MAX; }
+                            else if (height > MAX) { width *= MAX / height; height = MAX; }
+                            canvas.width = width; canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            resolve(canvas.toDataURL('image/jpeg', 0.85)); 
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            const handleFiles = async (e) => {
+                const files = Array.from(e.target.files).filter(f => f.type.startsWith('image'));
+                if (!files.length) return;
+                setIsSaving(true);
+                try {
+                    const newPhotos = await Promise.all(files.map(processImage));
+                    setPhotos(prev => [...prev, ...newPhotos]);
+                } catch (err) { setSaveError("Error processing images."); } 
+                finally { setIsSaving(false); e.target.value = null; }
+            };
+            const removePhoto = (index) => { setPhotos(prev => prev.filter((_, i) => i !== index)); };
+
+            const handleCityFiles = async (e) => {
+                const files = Array.from(e.target.files).filter(f => f.type.startsWith('image'));
+                if (!files.length) return;
+                setIsSaving(true);
+                try {
+                    const newPhotos = await Promise.all(files.map(processImage));
+                    setCityPhotos(prev => [...prev, ...newPhotos]);
+                } catch (err) { setSaveError("Error processing images."); } 
+                finally { setIsSaving(false); e.target.value = null; }
+            };
+            const removeCityPhoto = (index) => { setCityPhotos(prev => prev.filter((_, i) => i !== index)); };
+
+            const useCurrentLocation = () => {
+                if (liveLocation && liveLocation.lat != null && liveLocation.lng != null) {
+                    setLat(liveLocation.lat.toFixed(6)); setLng(liveLocation.lng.toFixed(6)); setSaveError('');
+                } else {
+                    setSaveError("Fetching live GPS...");
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGpsAccuracy(pos.coords.accuracy);
+                            setLat(pos.coords.latitude.toFixed(6)); setLng(pos.coords.longitude.toFixed(6)); setSaveError(''); setGeoError('');
+                        },
+                        (err) => { setSaveError("GPS Error: Could not get live location."); setLat((11.5564).toFixed(6)); setLng((104.9282).toFixed(6)); },
+                        { enableHighAccuracy: true, timeout: 5000 }
+                    );
+                }
+            };
+
+            const handleSelectPlace = (place) => {
+                const { properties, geometry } = place;
+                setName(properties.name || properties.street || 'Selected Location');
+                setCity(properties.city || properties.state || properties.country || activeCity || 'Ho Chi Minh City');
+                setLat(geometry.coordinates.toFixed(6)); 
+                setLng(geometry.coordinates.toFixed(6)); 
+                setFormSearchQuery('');
+                setSearchResults([]);
+            };
+
+            const handleSaveCity = async (e) => {
+                e.preventDefault(); const trimmedCity = newCityName.trim(); if (!trimmedCity) return;
+                setIsSaving(true);
+                try {
+                    if (editingCityName) {
+                        const cityMarker = locations.find(l => l.isCityMarker && (l.city || 'Ho Chi Minh City') === editingCityName);
+
+                        if (trimmedCity !== editingCityName) {
+                            const locsToUpdate = locations.filter(l => (l.city || 'Ho Chi Minh City') === editingCityName);
+                            const updatePromises = locsToUpdate.map(l => {
+                                if (l.isCityMarker) return updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', l.id), { city: trimmedCity, photos: cityPhotos });
+                                return updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', l.id), { city: trimmedCity });
+                            });
+                            
+                            if (!cityMarker && cityPhotos.length > 0) {
+                                updatePromises.push(setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', Date.now().toString()), { isCityMarker: true, city: trimmedCity, photos: cityPhotos, timestamp: Date.now() }));
+                            }
+                            await Promise.all(updatePromises);
+                        } else {
+                            if (cityMarker) {
+                                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', cityMarker.id), { photos: cityPhotos });
+                            } else if (cityPhotos.length > 0) {
+                                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', Date.now().toString()), { isCityMarker: true, city: trimmedCity, photos: cityPhotos, timestamp: Date.now() });
+                            }
+                        }
+                    } else {
+                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', Date.now().toString()), { isCityMarker: true, city: trimmedCity, photos: cityPhotos, timestamp: Date.now() });
+                    }
+                    setNewCityName(''); setEditingCityName(null); setCityPhotos([]); setActiveCity(trimmedCity); setPreviousView('cities'); setView('categories'); 
+                } catch (err) { setSaveError("Save failed: " + err.message); } finally { setIsSaving(false); }
             };
 
             const handleSaveLocation = async (e) => {
-                e.preventDefault();
-                if (!name || !city || !category) { setSaveError("Name, City, and Category required."); return; }
+                e.preventDefault(); setSaveError('');
+                const parsedLat = parseFloat(lat); const parsedLng = parseFloat(lng);
+                
+                if (!name || !city || !category) { setSaveError("Please provide Name, City, and Category."); return; }
+                
                 setIsSaving(true);
-                const data = { name, city, category, lat: lat ? parseFloat(lat) : null, lng: lng ? parseFloat(lng) : null, mapLink, comment, photos, timestamp: Date.now() };
+                const locationData = { 
+                    name, city, category, comment,
+                    lat: !isNaN(parsedLat) ? parsedLat : null, 
+                    lng: !isNaN(parsedLng) ? parsedLng : null, 
+                    mapLink, photos 
+                };
+                if (!editId) locationData.timestamp = Date.now();
                 try {
-                    if (editId) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', editId), data);
-                    else await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', Date.now().toString()), data);
+                    if (editId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', editId), locationData); } 
+                    else { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', Date.now().toString()), locationData); }
                     handleBack();
-                } catch (err) { setSaveError(err.message); }
+                } catch (err) {
+                    if (err.code === 'resource-exhausted' || err.message.includes('payload')) { setSaveError("Images too large."); } 
+                    else { setSaveError("Save failed: " + err.message); }
+                } finally { setIsSaving(false); }
+            };
+
+            const confirmAction = (message, onConfirm) => { setConfirmDialog({ message, onConfirm }); };
+            
+            const deleteCity = async (cityToDelete) => {
+                confirmAction(`Delete "${cityToDelete}" and ALL places inside it?`, async () => {
+                    try {
+                        const locsToDelete = locations.filter(l => (l.city || 'Ho Chi Minh City') === cityToDelete);
+                        await Promise.all(locsToDelete.map(l => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', l.id))));
+                        if (activeCity === cityToDelete) { setView('cities'); setActiveCity(null); }
+                    } catch (err) { console.error("Delete failed: ", err.message); }
+                });
+            };
+            
+            const deleteLocation = async (id, isDetailView = false) => {
+                confirmAction("Delete this location completely?", async () => {
+                    try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', id)); if (isDetailView) handleBack(); } 
+                    catch (err) { setSaveError("Delete failed: " + err.message); }
+                });
+            };
+
+            // --- ITINERARY HANDLERS ---
+            const openItineraryForm = (itin = null) => {
+                setPreviousView(view); setSaveError('');
+                if (itin && itin.id) { setEditId(itin.id); setItinTitle(itin.title || ''); setItinDate(itin.date || ''); } 
+                else { setEditId(null); setItinTitle(''); setItinDate(''); }
+                setView('itinerary_form');
+            };
+            const handleSaveItinerary = async (e) => {
+                e.preventDefault(); setIsSaving(true); setSaveError('');
+                const data = { title: itinTitle, date: itinDate };
+                let isNew = false; let currentItinId = editId;
+                if (!editId) { isNew = true; data.timestamp = Date.now(); data.items = []; }
+                try {
+                    if (editId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', editId), data); } 
+                    else { currentItinId = Date.now().toString(); await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', currentItinId), data); }
+                    if (isNew) {
+                        setActiveItinId(currentItinId); setPreviousView('itinerary_detail'); setEditItinItemId(null); setItinItemTime('');
+                        setItinItemLabel('Tourist Attraction'); setItinItemLocId(''); setItinItemNotes(''); setView('itinerary_select_location');
+                    } else { handleBack(); }
+                } catch (err) { setSaveError("Save failed: " + err.message); }
                 setIsSaving(false);
             };
 
-            const deleteLocation = (id) => {
-                setConfirmDialog({ 
-                    message: "Delete this place forever?", 
-                    onConfirm: async () => {
-                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'locations', id));
-                        handleBack();
-                    } 
+            const openItineraryItemForm = (item = null) => {
+                setSaveError(''); setPreviousView(view);
+                if (item) {
+                    setEditItinItemId(item.id); setItinItemTime(item.time || ''); setItinItemLabel(item.label || 'Tourist Attraction');
+                    setItinItemLocId(item.locationId || ''); setItinItemNotes(item.notes || ''); 
+                    setView('itinerary_item_form');
+                } else {
+                    setEditItinItemId(null); setItinItemTime(''); setItinItemLabel('Tourist Attraction'); setItinItemLocId('');
+                    setItinItemNotes(''); setSearchQuery(''); setView('itinerary_select_location');
+                }
+            };
+            const handleSelectLocationForItinerary = (locId) => { setItinItemLocId(locId); setPreviousView('itinerary_select_location'); setView('itinerary_item_form'); };
+            const handleSaveItineraryItem = async (e) => {
+                e.preventDefault(); setIsSaving(true); setSaveError('');
+                const itin = itineraries.find(i => i.id === activeItinId); if (!itin) return;
+                let updatedItems = [...(itin.items || [])];
+                
+                // Preserve existing bill logic if we are just editing the item info
+                const existingItem = editItinItemId ? updatedItems.find(i => i.id === editItinItemId) : null;
+                
+                const newItem = { 
+                    id: editItinItemId || Date.now().toString(), 
+                    time: itinItemTime, label: itinItemLabel, locationId: itinItemLocId, notes: itinItemNotes,
+                    billTotal: existingItem ? existingItem.billTotal : '',
+                    billSplit: existingItem ? existingItem.billSplit : 1
+                };
+                if (editItinItemId) { updatedItems = updatedItems.map(item => item.id === editItinItemId ? newItem : item); } 
+                else { updatedItems.push(newItem); }
+                updatedItems.sort((a, b) => a.time.localeCompare(b.time));
+                try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', activeItinId), { items: updatedItems }); setView('itinerary_detail'); } 
+                catch (err) { setSaveError("Save failed: " + err.message); }
+                setIsSaving(false);
+            };
+
+            // Minimalist Calculator Handlers
+            const handleOpenSplitBill = (item) => {
+                setSplitBillItem(item);
+                setTempBillTotal(item.billTotal || '');
+                setTempBillSplit(item.billSplit || 1);
+                setPreviousView(view);
+                setView('split_bill');
+            };
+
+            const handleSaveSplitBill = async () => {
+                if (!splitBillItem || !activeItinId) return;
+                const itin = itineraries.find(i => i.id === activeItinId);
+                if (!itin) return;
+                
+                const updatedItems = itin.items.map(item => 
+                    item.id === splitBillItem.id 
+                        ? { ...item, billTotal: tempBillTotal, billSplit: tempBillSplit } 
+                        : item
+                );
+                
+                try {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', activeItinId), { items: updatedItems });
+                    setSplitBillItem(null);
+                    setView('itinerary_detail');
+                } catch (err) {
+                    console.error("Save split failed: ", err);
+                }
+            };
+
+            const deleteItineraryItem = async (itemId) => {
+                confirmAction("Remove this event?", async () => {
+                    const itin = itineraries.find(i => i.id === activeItinId);
+                    const updatedItems = (itin.items || []).filter(item => item.id !== itemId);
+                    try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', activeItinId), { items: updatedItems }); } 
+                    catch (err) { console.error("Delete failed: " + err.message); }
+                });
+            };
+            const deleteItinerary = async (id) => {
+                confirmAction("Delete this entire itinerary?", async () => {
+                    try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'itineraries', id)); } 
+                    catch (err) { console.error("Delete failed: " + err.message); }
                 });
             };
 
-            // Hierarchy
+            // --- DATA PROCESSING ---
             const dataHierarchy = useMemo(() => {
-                const cities = {};
-                locations.forEach(l => {
-                    const c = l.city || 'Ho Chi Minh City';
-                    if (!cities[c]) cities[c] = { count: 0, categories: {}, cover: null };
-                    if (l.isCityMarker && l.photos?.length) cities[c].cover = l.photos;
-                    if (!l.isCityMarker) {
-                        const cat = l.category || 'Uncategorized';
-                        if (!cities[c].categories[cat]) cities[c].categories[cat] = [];
-                        cities[c].categories[cat].push(l);
-                        cities[c].count++;
+                const cities = {}; const allCategories = new Set();
+                locations.forEach(loc => {
+                    const cName = loc.city || 'Ho Chi Minh City';
+                    if (!cities[cName]) cities[cName] = { count: 0, categories: {}, photos: [] };
+                    
+                    if (loc.isCityMarker) {
+                        if (loc.photos && loc.photos.length > 0) {
+                            cities[cName].photos = loc.photos;
+                        }
+                        return; 
                     }
+                    
+                    const catName = loc.category || 'Uncategorized'; allCategories.add(catName);
+                    if (!cities[cName].categories[catName]) cities[cName].categories[catName] = [];
+                    
+                    const routeInfo = getRouteInfo(loc);
+                    cities[cName].categories[catName].push({ 
+                        ...loc, 
+                        currentDistance: routeInfo.dist,
+                        currentDuration: routeInfo.dur,
+                        isRealRoute: routeInfo.isReal 
+                    });
+                    cities[cName].count++;
                 });
-                return cities;
-            }, [locations]);
+                Object.values(cities).forEach(cityData => { Object.values(cityData.categories).forEach(catList => { catList.sort((a, b) => (a.currentDistance || 99999) - (b.currentDistance || 99999)); }); });
+                return { cities, uniqueCities: Object.keys(cities).sort(), allCategories: Array.from(allCategories).sort() };
+            }, [locations, liveLocation, realRoutes]);
 
-            const getRouteInfo = (loc) => {
-                if (!liveLocation || !loc.lat || !loc.lng) return { dist: null, dur: null };
-                const dist = calculateDistance(liveLocation.lat, liveLocation.lng, loc.lat, loc.lng);
-                return { dist, dur: dist ? dist * 3.5 : null }; // 3.5m/km approx
+            const sortedLocationsForItinerary = useMemo(() => {
+                return locations.filter(loc => !loc.isCityMarker).map(loc => {
+                    const routeInfo = getRouteInfo(loc);
+                    return { ...loc, currentDistance: routeInfo.dist, currentDuration: routeInfo.dur, isRealRoute: routeInfo.isReal };
+                }).sort((a, b) => (a.currentDistance || 99999) - (b.currentDistance || 99999));
+            }, [locations, liveLocation, realRoutes]);
+            
+            const filteredAndGroupedLocations = useMemo(() => {
+                const term = searchQuery.toLowerCase();
+                const filtered = sortedLocationsForItinerary.filter(loc => (loc.name || '').toLowerCase().includes(term) || (loc.category || '').toLowerCase().includes(term) || (loc.city || '').toLowerCase().includes(term));
+                const grouped = {};
+                filtered.forEach(loc => { const cat = loc.category || 'Uncategorized'; if (!grouped[cat]) grouped[cat] = []; grouped[cat].push(loc); });
+                return { grouped, sortedCategories: Object.keys(grouped).sort() };
+            }, [sortedLocationsForItinerary, searchQuery]);
+            
+            const locDetail = view === 'location_detail' && selectedLocId ? locations.find(l => l.id === selectedLocId) : null;
+                
+            useEffect(() => { if (view === 'location_detail' && selectedLocId && !locDetail && locations.length > 0) handleBack(); }, [locations, locDetail, view, selectedLocId]);
+            
+            // Reset coordinate toggle when opening a new location
+            useEffect(() => { setShowCoords(false); }, [selectedLocId]);
+
+            // HELPER: iOS Native Header Title
+            const getHeaderTitle = () => {
+                if (view === 'cities') return ""; 
+                if (view === 'city_form') return editingCityName ? 'Edit City' : 'Add City';
+                if (view === 'categories') return activeCity;
+                if (view === 'category_list') return activeCategory;
+                if (view === 'location_detail') return 'Details';
+                if (view === 'notifications') return 'Radar';
+                if (view === 'itineraries') return 'Itineraries';
+                if (view === 'itinerary_detail') return 'Timesheet';
+                if (view === 'itinerary_form') return editId ? 'Edit Day' : 'Plan a Day';
+                if (view === 'itinerary_select_location') return 'Select Location';
+                if (view === 'split_bill') return 'Split Bill';
+                if (editId || editItinItemId) return 'Edit Item';
+                return 'Create Item';
             };
 
-            const activeTab = view === 'notifications' ? 'radar' : (view.includes('itinerar') ? 'itinerary' : 'places');
+            const canShowAddButton = ['cities', 'categories', 'category_list', 'itineraries', 'itinerary_detail'].includes(view);
+            const unreadCount = notifications.filter(n => !n.read).length;
 
-            // --- RENDER ---
+            // --- RENDER VIEWS ---
             return (
-                <div className="min-h-screen flex flex-col relative pb-24">
-                    {/* Background */}
-                    <div className="fixed inset-0 z-[-1] bg-[var(--ios-bg)] overflow-hidden">
-                        <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-gradient-to-tr from-[#C68E58]/20 to-transparent filter blur-[80px] animate-blob"></div>
-                        <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-gradient-to-bl from-slate-400/20 to-transparent filter blur-[80px] animate-blob" style={{ animationDelay: '4s' }}></div>
+                <div className="min-h-screen relative flex flex-col selection:bg-[var(--ios-accent)]/20">
+                    
+                    {/* LIQUID GRADIENT BACKGROUND - BRIGHT PREMIUM */}
+                    <div className="fixed inset-0 z-[-1] overflow-hidden bg-[var(--ios-bg)]">
+                        <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-tr from-[#C68E58]/30 to-transparent filter blur-[80px] animate-blob"></div>
+                        <div className="absolute top-[20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-bl from-slate-400/30 to-transparent filter blur-[80px] animate-blob animation-delay-2000"></div>
+                        <div className="absolute bottom-[-10%] left-[10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-tr from-stone-400/30 to-transparent filter blur-[80px] animate-blob animation-delay-4000"></div>
                     </div>
 
-                    {/* Header */}
-                    <header className="fixed top-0 left-0 right-0 z-40 safe-top glass-header h-20 px-5 flex items-center justify-between">
-                        {view !== 'cities' ? (
-                            <button onClick={handleBack} className="h-10 px-4 rounded-full bg-white/80 shadow-sm border border-white flex items-center font-bold">
-                                <i className="fa-solid fa-chevron-left mr-2"></i> Back
-                            </button>
-                        ) : (
-                            <div className="flex items-center space-x-2 bg-white/80 h-10 px-4 rounded-full border border-white shadow-sm">
-                                <span className={`h-2.5 w-2.5 rounded-full ${liveLocation ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                                <span className="text-xs font-bold uppercase tracking-widest">{liveLocation ? 'GPS Online' : 'GPS Offline'}</span>
+                    {/* FULL SCREEN PHOTO VIEWER PAGE (Always dark for media viewing) */}
+                    {view === 'photo_viewer' && fullScreenPhoto && (
+                        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-3xl flex flex-col animate-slide-in" style={{ zIndex: 120 }}>
+                            <div className="flex items-center px-4 py-3 h-14 safe-top flex-shrink-0">
+                                <button onClick={handleBack} className="text-white px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center transition-colors">
+                                    <i className="fa-solid fa-chevron-left text-lg mr-2"></i>
+                                    <span className="text-[16px] font-medium">Close</span>
+                                </button>
                             </div>
-                        )}
-                        <h1 className="text-sm font-bold tracking-widest uppercase opacity-80">
-                            {view === 'cities' ? "The System" : view.replace('_', ' ')}
-                        </h1>
-                        <button onClick={() => openForm()} className="h-10 w-10 rounded-full bg-[#1D1D1F] text-white flex items-center justify-center shadow-lg">
-                            <i className="fa-solid fa-plus"></i>
-                        </button>
+                            <div ref={fullScreenScrollRef} className="flex-1 w-full flex overflow-x-auto snap-x snap-mandatory scrollbar-hide items-center">
+                                {fullScreenPhoto.photos.map((p, idx) => (
+                                    <div key={idx} className="w-full h-full flex-shrink-0 snap-center flex items-center justify-center p-4">
+                                        <img src={p} className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl" alt={`Photo ${idx + 1}`} />
+                                    </div>
+                                ))}
+                            </div>
+                            {fullScreenPhoto.photos.length > 1 && (
+                                <div className="absolute bottom-12 left-0 right-0 flex justify-center pointer-events-none safe-bottom">
+                                    <div className="bg-white/20 backdrop-blur-3xl border border-white/40 rounded-full px-5 py-2 text-white text-[13px] font-medium tracking-wide shadow-lg">
+                                        Swipe for more
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* LIQUID GLASS HEADER - REDESIGNED FOR MAX TOUCHABILITY */}
+                    <header className="fixed top-0 left-0 right-0 z-40 safe-top glass-header h-28 pointer-events-none"></header>
+                    <header className="fixed top-0 left-0 right-0 z-40 safe-top h-20">
+                        <div className="max-w-3xl mx-auto px-4 h-full flex items-center justify-center relative">
+                            {/* Left: Back Button or GPS */}
+                            <div className="absolute left-4 z-20 flex items-center">
+                                {view !== 'cities' && view !== 'itineraries' && view !== 'notifications' ? (
+                                    <button onClick={handleBack} className="h-12 px-5 rounded-full bg-white/80 backdrop-blur-3xl border border-white shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex items-center justify-center text-[#1D1D1F] active:scale-95 transition-transform space-x-2">
+                                        <i className="fa-solid fa-chevron-left text-[15px]"></i>
+                                        <span className="text-[16px] font-bold tracking-wide">Back</span>
+                                    </button>
+                                ) : (
+                                    <div className="h-12 px-5 rounded-full bg-white/80 backdrop-blur-3xl border border-white shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex items-center justify-center space-x-2.5">
+                                        {geoError ? (
+                                            <i className="fa-solid fa-location-crosshairs text-[var(--ios-red)] text-sm" title={geoError}></i>
+                                        ) : liveLocation ? (
+                                            <div className="flex items-center space-x-2" title={gpsAccuracy ? `Accuracy: ±${Math.round(gpsAccuracy)}m` : 'GPS Active'}>
+                                                <span className="relative flex h-2.5 w-2.5">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ios-green)] opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--ios-green)]"></span>
+                                                </span>
+                                                <span className="text-[13px] font-bold text-[#1D1D1F] tracking-wide">
+                                                    {gpsAccuracy ? `±${Math.round(gpsAccuracy)}m` : 'GPS'}
+                                                </span>
+                                            </div>
+                                        ) : <i className="fa-solid fa-spinner fa-spin text-[#8E8E93] text-sm"></i>}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Center: Title */}
+                            <div className="w-full text-center px-32 pointer-events-none z-10">
+                                <h1 className="text-[17px] font-bold text-[#1D1D1F] tracking-wide truncate">
+                                    {getHeaderTitle()}
+                                </h1>
+                            </div>
+
+                            {/* Right: Add Button */}
+                            <div className="absolute right-4 z-20 flex items-center">
+                                {canShowAddButton && (
+                                    <button 
+                                        onClick={() => {
+                                            if (view === 'itineraries') openItineraryForm();
+                                            else if (view === 'itinerary_detail') openItineraryItemForm();
+                                            else if (view === 'cities') openCityForm();
+                                            else openForm();
+                                        }}
+                                        className="h-12 px-5 rounded-full bg-[#1D1D1F] backdrop-blur-3xl border border-[#1D1D1F] shadow-[0_8px_20px_rgba(0,0,0,0.15)] flex items-center justify-center text-white active:scale-95 transition-transform space-x-2"
+                                    >
+                                        <span className="text-[16px] font-bold tracking-wide">Add</span>
+                                        <i className="fa-solid fa-plus text-[15px]"></i>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                     </header>
 
-                    <main className="mt-28 px-5 max-w-3xl mx-auto w-full flex-1">
+                    <main className="flex-1 w-full max-w-3xl mx-auto px-5 safe-pb-nav pt-[env(safe-area-inset-top,44px)] mt-24 animate-slide-in relative z-10">
                         
-                        {/* VIEW: CITIES */}
-                        {view === 'cities' && (
-                            <div className="animate-slide-in">
-                                <div className="mb-10">
-                                    <h2 className="text-[44px] font-art font-bold leading-tight">Vincent's<br/><span className="text-gray-400 italic">Travel</span><br/>Collection</h2>
-                                </div>
-                                <div className="space-y-4">
-                                    {Object.keys(dataHierarchy).sort().map(cityName => (
-                                        <div key={cityName} onClick={() => { setActiveCity(cityName); setView('categories'); }} className="glass-panel p-4 flex items-center active:scale-[0.98] transition-transform cursor-pointer">
-                                            <div className="w-16 h-20 rounded-2xl bg-black/5 overflow-hidden mr-4 shrink-0 shadow-inner">
-                                                {dataHierarchy[cityName].cover ? <img src={dataHierarchy[cityName].cover} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><i className="fa-solid fa-city opacity-20"></i></div>}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <h3 className="text-xl font-art font-bold truncate">{cityName}</h3>
-                                                <p className="text-xs font-bold text-[var(--ios-accent)] uppercase tracking-widest mt-1">{dataHierarchy[cityName].count} Places</p>
-                                            </div>
-                                            <i className="fa-solid fa-chevron-right text-gray-300"></i>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                        {/* ========================================================= */}
+                        {/* MAIN VIEWS - LOCATIONS / PLACES                           */}
+                        {/* ========================================================= */}
 
-                        {/* VIEW: CATEGORIES */}
-                        {view === 'categories' && (
-                            <div className="animate-slide-in">
-                                <div className="mb-8">
-                                    <h2 className="text-3xl font-art font-bold">{activeCity}</h2>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Select a group</p>
-                                </div>
-                                <div className="space-y-4">
-                                    {Object.keys(dataHierarchy[activeCity].categories).sort().map(cat => (
-                                        <div key={cat} onClick={() => { setActiveCategory(cat); setView('category_list'); }} className="glass-panel p-5 flex items-center justify-between active:scale-[0.98] transition-transform cursor-pointer">
-                                            <div>
-                                                <h3 className="text-lg font-bold">{cat}</h3>
-                                                <p className="text-xs text-gray-500 font-medium">{dataHierarchy[activeCity].categories[cat].length} spots</p>
-                                            </div>
-                                            <div className="h-10 w-10 rounded-full bg-black/5 flex items-center justify-center text-gray-400"><i className="fa-solid fa-arrow-right-long"></i></div>
+                        {/* VIEW: NOTIFICATIONS LIST */}
+                        {view === 'notifications' && (
+                            <div className="pb-6 space-y-4">
+                                {notifications.length === 0 ? (
+                                    <div className="glass-panel flex flex-col items-center justify-center py-16 px-6 text-center mt-4">
+                                        <div className="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-4">
+                                            <i className="fa-regular fa-bell text-2xl text-[#8E8E93]"></i>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* VIEW: CATEGORY LIST */}
-                        {view === 'category_list' && (
-                            <div className="animate-slide-in space-y-5">
-                                <div className="mb-6">
-                                    <h2 className="text-2xl font-art font-bold">{activeCategory}</h2>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{activeCity}</p>
-                                </div>
-                                {dataHierarchy[activeCity].categories[activeCategory].map(loc => {
-                                    const r = getRouteInfo(loc);
-                                    return (
-                                        <div key={loc.id} onClick={() => { setLocationReturnView('category_list'); setSelectedLocId(loc.id); setView('location_detail'); }} className="glass-panel p-2 flex flex-col active:scale-[0.98] transition-transform cursor-pointer">
-                                            <div className="h-44 w-full rounded-3xl overflow-hidden bg-black/5 mb-3">
-                                                {loc.photos?.length ? <img src={loc.photos} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><i className="fa-solid fa-image text-4xl opacity-10"></i></div>}
-                                            </div>
-                                            <div className="px-3 pb-2 flex justify-between items-end">
-                                                <div className="min-w-0">
-                                                    <h4 className="font-bold text-lg truncate">{loc.name}</h4>
-                                                    <p className={`text-xs font-bold mt-1 ${getDistanceColor(r.dist)}`}>
-                                                        <i className="fa-solid fa-location-arrow mr-1.5 opacity-50"></i>
-                                                        {formatDistance(r.dist)}
+                                        <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-1">Clear Radar</h3>
+                                        <p className="text-[#8E8E93] text-[14px] font-medium">No saved locations within 1km.</p>
+                                    </div>
+                                ) : (
+                                    notifications.map((notif) => (
+                                        <div 
+                                            key={notif.id} 
+                                            className={`glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform ${!notif.read ? 'border-[var(--ios-accent)] shadow-[0_4px_20px_rgba(198,142,88,0.2)]' : ''}`}
+                                            onClick={() => {
+                                                setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
+                                                setLocationReturnView('notifications');
+                                                setSelectedLocId(notif.locId);
+                                                setView('location_detail');
+                                            }}
+                                        >
+                                            <div className="flex items-center flex-1 min-w-0">
+                                                {Array.isArray(notif.photos) && notif.photos.length > 0 ? (
+                                                    <img src={notif.photos} className="w-14 h-14 rounded-[16px] object-cover shrink-0 mr-4 shadow-sm border border-white/60" alt="" />
+                                                ) : (
+                                                    <div className="w-14 h-14 rounded-[16px] bg-gradient-to-br from-[#1D1D1F] to-[#434343] flex items-center justify-center text-white shrink-0 mr-4 shadow-sm border border-white/60">
+                                                        <i className="fa-solid fa-location-dot text-lg"></i>
+                                                    </div>
+                                                )}
+                                                <div className="truncate pr-2 min-w-0 flex-1">
+                                                    <div className="flex items-center space-x-2 mb-0.5">
+                                                        {!notif.read && <div className="w-2 h-2 rounded-full bg-[var(--ios-accent)] shadow-sm shrink-0"></div>}
+                                                        <h4 className="text-[16px] font-bold text-[#1D1D1F] truncate leading-tight">{notif.name}</h4>
+                                                    </div>
+                                                    <p className={`text-[13px] font-medium truncate flex items-center mt-1 ${getDistanceColor(notif.distance)}`}>
+                                                        <i className={`fa-solid ${notif.isRealRoute ? 'fa-car' : 'fa-location-arrow'} text-[10px] mr-1.5 opacity-70`}></i>
+                                                        Nearby &bull; {formatDistance(notif.distance)} {notif.duration !== null && `• ${notif.isRealRoute ? '' : '~'}${formatDuration(notif.duration)}`}
                                                     </p>
                                                 </div>
-                                                <button onClick={(e) => { e.stopPropagation(); openForm(loc); }} className="h-9 w-9 rounded-full bg-black/5 flex items-center justify-center"><i className="fa-solid fa-pen text-xs"></i></button>
                                             </div>
+                                            <button onClick={(e) => deleteNotification(e, notif.id)} className="w-10 h-10 rounded-full bg-black/5 text-[var(--ios-red)] flex items-center justify-center active:bg-black/10 transition-colors shrink-0 ml-2">
+                                                <i className="fa-solid fa-xmark text-sm"></i>
+                                            </button>
                                         </div>
-                                    );
-                                })}
+                                    ))
+                                )}
                             </div>
                         )}
 
-                        {/* VIEW: FORM (WITH NEW PASTE FEATURE) */}
-                        {view === 'form' && (
-                            <form onSubmit={handleSaveLocation} className="animate-slide-in space-y-6">
-                                <div>
-                                    <h2 className="text-3xl font-art font-bold">{editId ? 'Refine' : 'Add'} a Spot</h2>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Capture the details</p>
+                        {/* VIEW: CITIES */}
+                        {view === 'cities' && (
+                            <div className="pb-6">
+                                <div className="pt-4 pb-8 px-2">
+                                    <h1 className="text-[44px] font-bold font-art leading-[1.05] text-[#1D1D1F] tracking-tight">
+                                        Vincent's<br/><span className="text-[#8E8E93] italic font-normal opacity-80">Travelling</span><br/>System
+                                    </h1>
+                                </div>
+                                
+                                <div className="space-y-4">
+                                    {dataHierarchy.uniqueCities.length === 0 ? (
+                                        <div className="glass-panel flex flex-col items-center justify-center py-16 px-6 text-center">
+                                            <div className="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-4">
+                                                <i className="fa-regular fa-compass text-2xl text-[#8E8E93]"></i>
+                                            </div>
+                                            <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-1">Your Journey Begins</h3>
+                                            <p className="text-[#8E8E93] font-medium text-[14px]">Tap the + icon to add your first destination.</p>
+                                        </div>
+                                    ) : (
+                                        dataHierarchy.uniqueCities.map((cityName) => (
+                                            <div key={cityName} className="glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform">
+                                                <div className="flex items-center flex-1 min-w-0" onClick={() => { setActiveCity(cityName); setView('categories'); }}>
+                                                    {dataHierarchy.cities[cityName].photos && dataHierarchy.cities[cityName].photos.length > 0 ? (
+                                                        <img src={dataHierarchy.cities[cityName].photos} className="w-16 h-20 rounded-[20px] object-cover shrink-0 mr-4 shadow-sm border border-white/60" alt={cityName} />
+                                                    ) : (
+                                                        <div className="bg-black/5 w-16 h-20 rounded-[20px] flex items-center justify-center mr-4 shrink-0 shadow-inner border border-white/60">
+                                                            <i className="fa-solid fa-city text-[#1D1D1F]/20 text-xl"></i>
+                                                        </div>
+                                                    )}
+                                                    <div className="min-w-0 flex-1 pr-2">
+                                                        <h3 className="text-[22px] font-art font-bold text-[#1D1D1F] mb-0.5 truncate">{cityName}</h3>
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-black/5 text-[11px] font-bold tracking-wide text-[var(--ios-accent)] uppercase">
+                                                            {dataHierarchy.cities[cityName].count} Places
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col space-y-2 shrink-0 ml-2">
+                                                    <button onClick={(e) => { e.stopPropagation(); openCityForm(cityName); }} className="w-8 h-8 rounded-full bg-black/5 text-[#8E8E93] flex items-center justify-center active:bg-black/10 transition-colors">
+                                                        <i className="fa-solid fa-pen text-[10px]"></i>
+                                                    </button>
+                                                    <button onClick={(e) => { e.stopPropagation(); deleteCity(cityName); }} className="w-8 h-8 rounded-full bg-[var(--ios-red)]/10 text-[var(--ios-red)] flex items-center justify-center active:bg-[var(--ios-red)]/20 transition-colors">
+                                                        <i className="fa-solid fa-trash text-[10px]"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* VIEW: CATEGORIES IN CITY */}
+                        {view === 'categories' && activeCity && dataHierarchy.cities[activeCity] && (
+                            <div className="pb-6 space-y-4">
+                                <div className="px-2 mb-6">
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight break-words">{activeCity}</h2>
+                                    <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1">Curated Collections</p>
                                 </div>
 
-                                {saveError && <div className="p-4 bg-red-100 text-red-600 rounded-2xl text-xs font-bold">{saveError}</div>}
-
-                                {!editId && (
-                                    <div className="glass-panel p-5 space-y-4">
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Search Location</label>
-                                        <div className="relative">
-                                            <input type="text" placeholder="Start typing place name..." value={formSearchQuery} onChange={e => setFormSearchQuery(e.target.value)} className="w-full h-14 px-5 glass-input font-bold" />
-                                            {isSearching && <i className="fa-solid fa-spinner fa-spin absolute right-5 top-5 text-gray-400"></i>}
+                                {Object.keys(dataHierarchy.cities[activeCity].categories).length === 0 ? (
+                                    <div className="glass-panel flex flex-col items-center justify-center py-16 px-6 text-center">
+                                        <div className="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-4">
+                                            <i className="fa-regular fa-folder-open text-2xl text-[#8E8E93]"></i>
                                         </div>
+                                        <p className="text-[#8E8E93] font-medium text-[14px]">No places in this city yet.</p>
+                                    </div>
+                                ) : (
+                                    Object.keys(dataHierarchy.cities[activeCity].categories).sort().map((catName) => {
+                                        const categoryPlaces = dataHierarchy.cities[activeCity].categories[catName];
+                                        const closestPlaceWithPhoto = categoryPlaces.find(loc => Array.isArray(loc.photos) && loc.photos.length > 0);
+                                        const coverPhoto = closestPlaceWithPhoto ? closestPlaceWithPhoto.photos : null;
+
+                                        return (
+                                            <div 
+                                                key={catName}
+                                                onClick={() => { setActiveCategory(catName); setView('category_list'); }}
+                                                className="glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform"
+                                            >
+                                                <div className="flex items-center min-w-0 flex-1">
+                                                    {coverPhoto ? (
+                                                        <img src={coverPhoto} alt={catName} className="w-14 h-14 rounded-[16px] object-cover shrink-0 mr-4 shadow-sm border border-white/60" />
+                                                    ) : (
+                                                        <div className="bg-black/5 w-14 h-14 rounded-[16px] flex items-center justify-center shrink-0 mr-4 shadow-inner border border-white/60">
+                                                            <i className="fa-solid fa-layer-group text-[var(--ios-accent)] text-lg opacity-80"></i>
+                                                        </div>
+                                                    )}
+                                                    <div className="min-w-0 flex-1 pr-4">
+                                                        <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-0.5 truncate">{catName}</h3>
+                                                        <p className="text-[13px] font-medium text-[#8E8E93] truncate">{categoryPlaces.length} Destinations</p>
+                                                    </div>
+                                                </div>
+                                                <div className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center text-[#8E8E93] shrink-0">
+                                                    <i className="fa-solid fa-chevron-right text-[10px]"></i>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        )}
+
+                        {/* VIEW: CATEGORY LIST (LOCATIONS) */}
+                        {view === 'category_list' && activeCity && activeCategory && dataHierarchy.cities[activeCity]?.categories[activeCategory] && (
+                            <div className="space-y-5 pb-6">
+                                <div className="px-2 mb-6">
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight break-words">{activeCategory}</h2>
+                                    <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1 break-words">{activeCity}</p>
+                                </div>
+
+                                {dataHierarchy.cities[activeCity].categories[activeCategory].map(loc => (
+                                    <div 
+                                        key={loc.id} 
+                                        className="glass-panel p-2 flex flex-col cursor-pointer active:scale-[0.98] transition-transform"
+                                        onClick={() => { setLocationReturnView('category_list'); setSelectedLocId(loc.id); setView('location_detail'); }}
+                                    >
+                                        {Array.isArray(loc.photos) && loc.photos.length > 0 ? (
+                                            <div className="relative w-full h-52 rounded-[22px] overflow-hidden mb-3 border border-white/60">
+                                                <div className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide">
+                                                    {loc.photos.map((p, idx) => (
+                                                        <img key={idx} src={p} alt="Location" className="w-full h-full object-cover shrink-0 snap-center" />
+                                                    ))}
+                                                </div>
+                                                {loc.photos.length > 1 && (
+                                                    <div className="absolute bottom-3 left-0 right-0 flex justify-center space-x-1.5 pointer-events-none bg-gradient-to-t from-black/50 to-transparent pt-6 pb-1">
+                                                        {loc.photos.map((_, i) => (<div key={i} className="w-1.5 h-1.5 rounded-full bg-white shadow-sm" />))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="h-20 w-full rounded-[22px] bg-black/5 flex items-center justify-center text-[#8E8E93] mb-3 shadow-inner border border-white/60">
+                                                <i className="fa-solid fa-camera-retro text-xl opacity-40"></i>
+                                            </div>
+                                        )}
+
+                                        <div className="px-3 pb-2 flex items-start justify-between min-w-0">
+                                            <div className="pr-4 min-w-0 flex-1">
+                                                <h4 className="text-[18px] font-bold text-[#1D1D1F] leading-tight mb-1 truncate">{loc.name}</h4>
+                                                <p className={`text-[13px] font-bold tracking-wide flex items-center truncate ${getDistanceColor(loc.currentDistance)}`}>
+                                                    <i className={`fa-solid ${loc.isRealRoute ? 'fa-car' : 'fa-location-arrow'} text-[10px] mr-1.5 shrink-0`}></i>
+                                                    <span className="truncate">{formatDistance(loc.currentDistance)} {loc.currentDuration !== null && `• ${loc.isRealRoute ? '' : '~'}${formatDuration(loc.currentDuration)}`}</span>
+                                                </p>
+                                            </div>
+                                            <button onClick={(e) => { e.stopPropagation(); openForm(loc); }} className="w-9 h-9 shrink-0 rounded-full bg-black/5 text-[#1D1D1F] flex items-center justify-center active:bg-black/10 transition-colors ml-2">
+                                                <i className="fa-solid fa-pen text-[11px]"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* VIEW: LOCATION DETAIL */}
+                        {view === 'location_detail' && locDetail && (
+                            <div className="pb-6 space-y-4">
+                                <div className="glass-panel p-2 flex flex-col">
+                                    {Array.isArray(locDetail.photos) && locDetail.photos.length > 0 ? (
+                                        <div className="relative w-full h-72 rounded-[22px] overflow-hidden mb-4 border border-white/60">
+                                            <div className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide">
+                                                {locDetail.photos.map((p, idx) => (
+                                                    <img 
+                                                        key={idx} src={p} alt="Detail" 
+                                                        className="w-full h-full object-cover shrink-0 snap-center active:opacity-90 transition-opacity cursor-pointer" 
+                                                        onClick={() => { setPreviousView(view); setView('photo_viewer'); setFullScreenPhoto({ photos: locDetail.photos, index: idx }); }} 
+                                                    />
+                                                ))}
+                                            </div>
+                                            {locDetail.photos.length > 1 && (
+                                                <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-1.5 pointer-events-none bg-gradient-to-t from-black/50 to-transparent pt-6 pb-1">
+                                                    {locDetail.photos.map((_, i) => (<div key={i} className="w-1.5 h-1.5 rounded-full bg-white shadow-sm" />))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="h-32 w-full rounded-[22px] bg-black/5 flex items-center justify-center text-[#8E8E93] mb-4 shadow-inner border border-white/60">
+                                            <i className="fa-solid fa-camera-retro text-2xl opacity-40"></i>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="px-3 pb-2">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div className="min-w-0 flex-1">
+                                                <h2 className="text-[28px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight mb-2 break-words">{locDetail.name}</h2>
+                                                <div className="flex items-center space-x-2 flex-wrap gap-y-2">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-black/5 text-[11px] font-bold tracking-wide text-[#1D1D1F] uppercase truncate max-w-full">
+                                                        {locDetail.category || 'Uncategorized'}
+                                                    </span>
+                                                    {(() => {
+                                                        const routeInfo = getRouteInfo(locDetail);
+                                                        if (routeInfo.dist === null) return null;
+                                                        return (
+                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold tracking-wide uppercase border truncate max-w-full ${getDistanceBgColor(routeInfo.dist)}`}>
+                                                                <i className={`fa-solid ${routeInfo.isReal ? 'fa-car' : 'fa-location-arrow'} text-[9px] mr-1 shrink-0`}></i>
+                                                                <span className="truncate">{formatDistance(routeInfo.dist)} {routeInfo.dur !== null && `• ${routeInfo.isReal ? '' : '~'}${formatDuration(routeInfo.dur)}`}</span>
+                                                            </span>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            </div>
+                                            <button onClick={() => openForm(locDetail)} className="w-10 h-10 shrink-0 rounded-full bg-black/5 text-[#1D1D1F] flex items-center justify-center active:bg-black/10 transition-colors ml-4 mt-1">
+                                                <i className="fa-solid fa-pen text-[12px]"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        {(() => {
+                                            const mapsUrl = locDetail.mapLink || (locDetail.lat != null && locDetail.lng != null ? `https://www.google.com/maps/search/?api=1&query=${locDetail.lat},${locDetail.lng}` : null);
+                                            if (!mapsUrl) return null;
+                                            return (
+                                                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full bg-[#1D1D1F] text-white py-3.5 rounded-[16px] font-semibold text-[16px] active:scale-[0.98] transition-transform mb-5 shadow-lg shadow-black/10">
+                                                    Open in Maps <i className="fa-solid fa-arrow-up-right-from-square ml-2 text-[12px] opacity-70"></i>
+                                                </a>
+                                            );
+                                        })()}
+                                        
+                                        {locDetail.comment && (
+                                            <div className="mb-5 p-4 rounded-[16px] bg-black/5 border border-black/5 shadow-inner">
+                                                <p className="text-[15px] font-medium text-[#1D1D1F] leading-relaxed whitespace-pre-wrap">{locDetail.comment}</p>
+                                            </div>
+                                        )}
+
+                                        <div className="text-center pt-2">
+                                            <button onClick={() => setShowCoords(!showCoords)} className="text-[13px] text-[#8E8E93] font-bold tracking-wide active:opacity-50 flex items-center justify-center mx-auto transition-opacity">
+                                                {showCoords ? 'HIDE COORDINATES' : 'SHOW COORDINATES'}
+                                                <i className={`fa-solid fa-chevron-${showCoords ? 'up' : 'down'} ml-1.5 text-[10px]`}></i>
+                                            </button>
+                                            
+                                            {showCoords && (
+                                                <div className="mt-4 p-4 rounded-[16px] bg-black/5 border border-black/5 shadow-inner flex justify-between items-center text-[13px] font-mono text-[#8E8E93] text-left">
+                                                    <div className="min-w-0">
+                                                        <div className="mb-1 truncate"><span className="text-[#1D1D1F] font-bold mr-2">LAT</span> {locDetail.lat != null ? Number(locDetail.lat).toFixed(6) : '—'}</div>
+                                                        <div className="truncate"><span className="text-[#1D1D1F] font-bold mr-2">LNG</span> {locDetail.lng != null ? Number(locDetail.lng).toFixed(6) : '—'}</div>
+                                                    </div>
+                                                    <i className="fa-solid fa-satellite-dish text-[#1D1D1F] text-xl opacity-20 shrink-0 ml-3"></i>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="text-center pt-2 pb-6">
+                                    <button onClick={() => deleteLocation(locDetail.id, true)} className="text-[var(--ios-red)] text-[15px] font-bold active:opacity-50 bg-[var(--ios-red)]/10 px-5 py-2.5 rounded-full transition-colors border border-[var(--ios-red)]/20">
+                                        Delete Location
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* VIEW: ADD OR EDIT CITY FORM */}
+                        {view === 'city_form' && (
+                            <form onSubmit={handleSaveCity} className="space-y-5 pb-6">
+                                <div className="px-2 mb-4">
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{editingCityName ? 'Edit City' : 'New City'}</h2>
+                                </div>
+
+                                {saveError && (
+                                    <div className="p-3 bg-[var(--ios-red)]/10 text-[var(--ios-red)] text-[13px] font-medium rounded-[16px] border border-[var(--ios-red)]/20 flex items-center">
+                                        <i className="fa-solid fa-circle-exclamation mr-2"></i>{saveError}
+                                    </div>
+                                )}
+                                
+                                <div className="glass-panel p-5 space-y-5">
+                                    <div>
+                                        <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">City Name</label>
+                                        <input type="text" required value={newCityName} onChange={e => setNewCityName(e.target.value)} className="w-full px-4 py-3.5 glass-input text-[16px] font-medium placeholder-[#8E8E93]/50 bg-white/50" placeholder="Tokyo, Japan" autoFocus />
+                                    </div>
+                                </div>
+
+                                <div className="glass-panel p-5">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-[14px] font-bold text-[#8E8E93] uppercase tracking-wide ml-1">Cover Photo</span>
+                                        <label className="text-[13px] font-bold bg-[#1D1D1F] text-white px-3 py-1.5 rounded-full cursor-pointer active:scale-95 transition-transform shadow-md">
+                                            <i className="fa-solid fa-plus mr-1"></i> Add
+                                            <input type="file" accept="image/*" className="hidden" onChange={handleCityFiles} disabled={isSaving} />
+                                        </label>
+                                    </div>
+                                    {cityPhotos.length > 0 ? (
+                                        <div className="flex overflow-x-auto space-x-3 pb-2 scrollbar-hide snap-x">
+                                            {cityPhotos.map((p, i) => (
+                                                <div key={i} className="relative w-24 h-24 flex-shrink-0 snap-start rounded-[16px] overflow-hidden border border-white/60 shadow-sm">
+                                                    <img src={p} className="w-full h-full object-cover" alt="Preview" />
+                                                    <button type="button" onClick={() => removeCityPhoto(i)} className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-md text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px]"><i className="fa-solid fa-xmark"></i></button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="h-24 w-full rounded-[16px] bg-black/5 flex items-center justify-center text-[#8E8E93] shadow-inner border border-black/5">
+                                            <i className="fa-solid fa-image text-xl opacity-40"></i>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button type="submit" disabled={isSaving || !newCityName.trim()} className="w-full py-4 bg-[#1D1D1F] disabled:bg-[#1D1D1F]/50 text-white font-bold tracking-wide text-[16px] rounded-[18px] active:scale-[0.98] transition-all mt-4 shadow-lg shadow-black/10">
+                                    {isSaving ? <i className="fa-solid fa-spinner fa-spin"></i> : editingCityName ? 'Update City' : 'Create City'}
+                                </button>
+                            </form>
+                        )}
+
+                        {/* VIEW: ADD / EDIT LOCATION FORM */}
+                        {view === 'form' && (
+                            <form onSubmit={handleSaveLocation} className="space-y-5 pb-6">
+                                <div className="px-2 mb-4">
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{editId ? 'Edit Place' : 'New Place'}</h2>
+                                </div>
+
+                                {saveError && (
+                                    <div className="p-3 bg-[var(--ios-red)]/10 text-[var(--ios-red)] text-[13px] font-medium rounded-[16px] border border-[var(--ios-red)]/20 flex items-center">
+                                        <i className="fa-solid fa-circle-exclamation mr-2"></i>{saveError}
+                                    </div>
+                                )}
+                                
+                                {/* LIVE AUTOCOMPLETE SEARCH BAR */}
+                                {!editId && (
+                                    <div className="relative z-50">
+                                        <div className="glass-panel p-1.5">
+                                            <div className="relative flex items-center glass-input px-3 py-3 bg-white/50">
+                                                <i className="fa-solid fa-magnifying-glass text-[#8E8E93] mr-2.5 shrink-0"></i>
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Search to auto-fill..." 
+                                                    value={formSearchQuery} 
+                                                    onChange={(e) => setFormSearchQuery(e.target.value)}
+                                                    className="flex-1 bg-transparent focus:outline-none text-[16px] font-medium placeholder-[#8E8E93]/60 min-w-0"
+                                                />
+                                                {isSearching && <i className="fa-solid fa-spinner fa-spin text-[var(--ios-accent)] ml-2 shrink-0"></i>}
+                                            </div>
+                                        </div>
+                                        
                                         {searchResults.length > 0 && (
-                                            <div className="bg-white/90 rounded-2xl overflow-hidden border border-gray-100 shadow-xl">
-                                                {searchResults.map((r, i) => (
-                                                    <div key={i} onClick={() => {
-                                                        setName(r.properties.name || r.properties.street);
-                                                        setCity(r.properties.city || activeCity);
-                                                        setLat(r.geometry.coordinates);
-                                                        setLng(r.geometry.coordinates);
-                                                        setFormSearchQuery('');
-                                                        setSearchResults([]);
-                                                    }} className="p-3 border-b border-gray-50 flex items-center hover:bg-black/5 cursor-pointer">
-                                                        <i className="fa-solid fa-location-dot mr-3 text-gray-400"></i>
-                                                        <div className="min-w-0">
-                                                            <p className="text-sm font-bold truncate">{r.properties.name || r.properties.street}</p>
-                                                            <p className="text-[10px] text-gray-400 truncate">{r.properties.city || r.properties.state}</p>
+                                            <div className="absolute top-[calc(100%+8px)] left-0 right-0 glass-panel overflow-hidden max-h-64 overflow-y-auto z-50 shadow-2xl border-white/80">
+                                                {searchResults.map((result, idx) => (
+                                                    <div 
+                                                        key={idx} 
+                                                        className={`p-3 pl-4 cursor-pointer active:bg-black/5 flex items-center transition-colors ${idx !== searchResults.length - 1 ? 'border-b border-black/5' : ''}`}
+                                                        onClick={() => handleSelectPlace(result)}
+                                                    >
+                                                        <div className="bg-[#1D1D1F] w-9 h-9 rounded-[10px] flex items-center justify-center text-white shrink-0 mr-3 shadow-md">
+                                                            <i className="fa-solid fa-location-dot text-[13px]"></i>
+                                                        </div>
+                                                        <div className="truncate min-w-0 flex-1">
+                                                            <h4 className="text-[15px] font-bold text-[#1D1D1F] truncate">{result.properties.name || result.properties.street || 'Unknown'}</h4>
+                                                            <p className="text-[12px] font-medium text-[#8E8E93] truncate mt-0.5">
+                                                                {[result.properties.street, result.properties.city, result.properties.state, result.properties.country].filter(Boolean).join(', ')}
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -580,142 +1447,467 @@
                                         )}
                                     </div>
                                 )}
-
-                                <div className="glass-panel p-5 space-y-5">
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Google Maps Link</label>
-                                        <div className="mt-2 flex space-x-2">
-                                            <input 
-                                                type="url" 
-                                                value={mapLink}
-                                                placeholder="Paste Maps Link or 'Lat, Lng'" 
-                                                className="flex-1 h-12 px-4 glass-input text-sm bg-[var(--ios-accent)]/5 border-[var(--ios-accent)]/20 font-medium"
-                                                onChange={(e) => handleMapLinkPaste(e.target.value)}
-                                            />
-                                            <button 
-                                                type="button" 
-                                                onClick={() => {
-                                                    if(liveLocation) {
-                                                        setLat(liveLocation.lat.toFixed(6));
-                                                        setLng(liveLocation.lng.toFixed(6));
-                                                    }
-                                                }}
-                                                className="h-12 px-4 rounded-2xl bg-[#1D1D1F] text-white text-xs font-bold shadow-lg"
-                                            >GPS</button>
-                                        </div>
-                                        <p className="text-[9px] text-gray-400 mt-2 italic px-1">Saves the link and automatically extracts GPS coordinates.</p>
+                                
+                                <div className="glass-panel p-2 flex flex-col space-y-1">
+                                    <div className="p-3 flex items-center">
+                                        <label className="w-24 shrink-0 text-[14px] font-bold text-[#8E8E93] uppercase">Name</label>
+                                        <input type="text" required value={name} onChange={e => setName(e.target.value)} className="flex-1 min-w-0 bg-transparent focus:outline-none text-[16px] placeholder-[#8E8E93]/40 font-bold text-[#1D1D1F]" placeholder="Location name" />
                                     </div>
+                                    <div className="h-px bg-black/5 mx-3"></div>
+                                    <div className="p-3 flex items-center">
+                                        <label className="w-24 shrink-0 text-[14px] font-bold text-[#8E8E93] uppercase">City</label>
+                                        <input type="text" required list="cities-list" value={city} onChange={e => setCity(e.target.value)} className="flex-1 min-w-0 bg-transparent focus:outline-none text-[16px] placeholder-[#8E8E93]/40 font-bold text-[#1D1D1F]" placeholder="Select or type" />
+                                        <datalist id="cities-list">{dataHierarchy.uniqueCities.map(c => <option key={c} value={c} />)}</datalist>
+                                    </div>
+                                    <div className="h-px bg-black/5 mx-3"></div>
+                                    <div className="p-3 flex items-center">
+                                        <label className="w-24 shrink-0 text-[14px] font-bold text-[#8E8E93] uppercase">Category</label>
+                                        <input type="text" required list="categories-list" value={category} onChange={e => setCategory(e.target.value)} className="flex-1 min-w-0 bg-transparent focus:outline-none text-[16px] placeholder-[#8E8E93]/40 font-bold text-[#1D1D1F]" placeholder="Select or type" />
+                                        <datalist id="categories-list">{dataHierarchy.allCategories.map(c => <option key={c} value={c} />)}</datalist>
+                                    </div>
+                                </div>
+                                
+                                <div className="glass-panel p-4">
+                                    <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Notes</label>
+                                    <textarea value={comment} onChange={e => setComment(e.target.value)} rows="3" className="w-full glass-input p-3.5 text-[15px] font-medium placeholder-[#8E8E93]/50 resize-none bg-white/50" placeholder="Tips, what to order, vibes..."></textarea>
+                                </div>
 
-                                    <div className="h-px bg-black/5"></div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Latitude</label>
-                                            <input type="number" step="any" value={lat} onChange={e => setLat(e.target.value)} className="w-full h-12 px-4 glass-input font-mono text-xs" placeholder="0.000000" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Longitude</label>
-                                            <input type="number" step="any" value={lng} onChange={e => setLng(e.target.value)} className="w-full h-12 px-4 glass-input font-mono text-xs" placeholder="0.000000" />
-                                        </div>
+                                <div className="glass-panel p-2 flex flex-col space-y-1">
+                                    <div className="p-3 flex justify-between items-center">
+                                        <span className="text-[14px] font-bold text-[#8E8E93] uppercase tracking-wide">Coordinates</span>
+                                        <button type="button" onClick={useCurrentLocation} className="text-[12px] font-bold tracking-wide uppercase bg-[#1D1D1F] text-white px-3 py-1.5 rounded-full active:scale-95 transition-transform shadow-md shrink-0 ml-2">
+                                            Get GPS
+                                        </button>
+                                    </div>
+                                    <div className="h-px bg-black/5 mx-3"></div>
+                                    <div className="p-3 flex items-center">
+                                        <label className="w-20 shrink-0 text-[14px] font-bold text-[#1D1D1F]">Lat</label>
+                                        <input type="number" step="any" value={lat} onChange={e => setLat(e.target.value)} className="flex-1 min-w-0 bg-transparent focus:outline-none text-[16px] font-mono font-medium placeholder-[#8E8E93]/30 text-[#1D1D1F]" placeholder="Optional" />
+                                    </div>
+                                    <div className="h-px bg-black/5 mx-3"></div>
+                                    <div className="p-3 flex items-center">
+                                        <label className="w-20 shrink-0 text-[14px] font-bold text-[#1D1D1F]">Lng</label>
+                                        <input type="number" step="any" value={lng} onChange={e => setLng(e.target.value)} className="flex-1 min-w-0 bg-transparent focus:outline-none text-[16px] font-mono font-medium placeholder-[#8E8E93]/30 text-[#1D1D1F]" placeholder="Optional" />
+                                    </div>
+                                    <div className="h-px bg-black/5 mx-3"></div>
+                                    <div className="p-3">
+                                        <input type="text" value={mapLink} onChange={handleMapLinkChange} className="w-full glass-input px-3 py-2.5 text-[14px] font-medium placeholder-[#8E8E93]/50 bg-white/50" placeholder="Paste Maps Link OR Raw GPS Coords" />
                                     </div>
                                 </div>
 
-                                <div className="glass-panel p-5 space-y-4">
-                                    <input type="text" placeholder="Name of place" value={name} onChange={e => setName(e.target.value)} className="w-full h-14 px-5 glass-input font-bold text-lg" required />
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <input type="text" placeholder="City" value={city} onChange={e => setCity(e.target.value)} className="w-full h-12 px-4 glass-input font-bold" required />
-                                        <input type="text" placeholder="Category" value={category} onChange={e => setCategory(e.target.value)} className="w-full h-12 px-4 glass-input font-bold" required />
+                                <div className="glass-panel p-4">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-[14px] font-bold text-[#8E8E93] uppercase tracking-wide ml-1">Photos</span>
+                                        <label className="text-[13px] font-bold bg-[#1D1D1F] text-white px-3 py-1.5 rounded-full cursor-pointer active:scale-95 transition-transform shadow-md">
+                                            <i className="fa-solid fa-plus mr-1"></i> Add
+                                            <input type="file" multiple accept="image/*" className="hidden" onChange={handleFiles} disabled={isSaving} />
+                                        </label>
                                     </div>
-                                    <textarea placeholder="Personal notes, vibes, or tips..." value={comment} onChange={e => setComment(e.target.value)} rows="3" className="w-full p-5 glass-input text-sm resize-none"></textarea>
+                                    {photos.length > 0 ? (
+                                        <div className="flex overflow-x-auto space-x-3 pb-2 scrollbar-hide snap-x">
+                                            {photos.map((p, i) => (
+                                                <div key={i} className="relative w-24 h-24 flex-shrink-0 snap-start rounded-[16px] overflow-hidden border border-white/60 shadow-sm">
+                                                    <img src={p} className="w-full h-full object-cover" alt="Preview" />
+                                                    <button type="button" onClick={() => removePhoto(i)} className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-md text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px]"><i className="fa-solid fa-xmark"></i></button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="h-24 w-full rounded-[16px] bg-black/5 flex items-center justify-center text-[#8E8E93] shadow-inner border border-black/5">
+                                            <i className="fa-solid fa-images text-xl opacity-40"></i>
+                                        </div>
+                                    )}
                                 </div>
 
-                                <button type="submit" className="w-full h-16 bg-[#1D1D1F] text-white font-bold rounded-3xl shadow-xl active:scale-[0.98] transition-transform">
-                                    {isSaving ? <i className="fa-solid fa-spinner fa-spin mr-2"></i> : null}
-                                    {editId ? 'Update Place' : 'Complete Entry'}
+                                <button type="submit" disabled={!user || isSaving} className="w-full py-4 bg-[#1D1D1F] disabled:bg-[#1D1D1F]/50 text-white font-bold tracking-wide text-[16px] rounded-[18px] active:scale-[0.98] transition-all mt-4 shadow-lg shadow-black/10">
+                                    {isSaving ? <i className="fa-solid fa-spinner fa-spin"></i> : editId ? 'Save Changes' : 'Create Place'}
                                 </button>
                             </form>
                         )}
 
-                        {/* VIEW: LOCATION DETAIL */}
-                        {view === 'location_detail' && (
-                            <div className="animate-slide-in space-y-6">
+                        {/* ========================================================= */}
+                        {/* MAIN VIEWS - ITINERARY PLANNER                            */}
+                        {/* ========================================================= */}
+
+                        {/* VIEW: ITINERARIES LIST */}
+                        {view === 'itineraries' && (
+                            <div className="pb-6 space-y-4">
+                                <div className="px-2 mb-6">
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">Itineraries</h2>
+                                    <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1">Planned Days</p>
+                                </div>
+
+                                {itineraries.length === 0 ? (
+                                    <div className="glass-panel flex flex-col items-center justify-center py-16 px-6 text-center">
+                                        <div className="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-4">
+                                            <i className="fa-regular fa-calendar text-2xl text-[#8E8E93]"></i>
+                                        </div>
+                                        <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-1">No Plans Yet</h3>
+                                        <p className="text-[#8E8E93] font-medium text-[14px]">Tap the + icon to plan a new day.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {itineraries.map((itin, index) => (
+                                            <div 
+                                                key={itin.id} 
+                                                className="glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform" 
+                                                onClick={() => { setActiveItinId(itin.id); setView('itinerary_detail'); }}
+                                            >
+                                                <div className="flex items-center flex-1 min-w-0">
+                                                    <div className="w-14 h-14 rounded-[16px] bg-[var(--ios-accent)]/10 flex flex-col items-center justify-center shrink-0 mr-4 border border-[var(--ios-accent)]/20 shadow-inner text-[var(--ios-accent)]">
+                                                        <span className="text-[9px] font-bold uppercase tracking-widest mb-[-2px] opacity-80">Day</span>
+                                                        <span className="text-[22px] font-art font-bold leading-none">{index + 1}</span>
+                                                    </div>
+                                                    <div className="pr-2 min-w-0 flex-1">
+                                                        <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-0.5 leading-tight truncate">{itin.title}</h3>
+                                                        <p className="text-[13px] text-[#8E8E93] font-medium truncate">
+                                                            {itin.date || 'Unscheduled'} <span className="opacity-50 mx-1">&bull;</span> {(itin.items || []).length} events
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col space-y-2 shrink-0 ml-2">
+                                                    <button onClick={(e) => { e.stopPropagation(); deleteItinerary(itin.id); }} className="w-8 h-8 rounded-full bg-[var(--ios-red)]/10 text-[var(--ios-red)] flex items-center justify-center active:bg-[var(--ios-red)]/20 transition-colors">
+                                                        <i className="fa-solid fa-trash text-[10px]"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* VIEW: ITINERARY DETAIL (TIMESHEET) */}
+                        {view === 'itinerary_detail' && (
+                            <div className="pb-6">
                                 {(() => {
-                                    const loc = locations.find(l => l.id === selectedLocId);
-                                    if (!loc) return null;
-                                    const r = getRouteInfo(loc);
+                                    const itin = itineraries.find(i => i.id === activeItinId);
+                                    if (!itin) return null;
+                                    const totalDayCost = (itin.items || []).reduce((sum, item) => sum + (parseFloat(item.billTotal) || 0), 0);
                                     return (
                                         <>
-                                            <div className="glass-panel overflow-hidden p-2">
-                                                <div className="h-72 w-full rounded-[24px] bg-black/5 overflow-hidden shadow-inner mb-4">
-                                                    {loc.photos?.length ? <img src={loc.photos} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><i className="fa-solid fa-mountain-sun text-6xl opacity-5"></i></div>}
-                                                </div>
-                                                <div className="px-4 pb-4">
-                                                    <div className="flex justify-between items-start mb-4">
-                                                        <div className="min-w-0 pr-4">
-                                                            <h2 className="text-3xl font-art font-bold truncate">{loc.name}</h2>
-                                                            <div className="flex items-center space-x-2 mt-2">
-                                                                <span className="bg-black/5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest">{loc.category}</span>
-                                                                <span className={`${getDistanceBgColor(r.dist)} px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border`}>{formatDistance(r.dist)} away</span>
-                                                            </div>
-                                                        </div>
-                                                        <button onClick={() => openForm(loc)} className="h-10 w-10 rounded-full bg-black/5 flex items-center justify-center shrink-0"><i className="fa-solid fa-pen"></i></button>
-                                                    </div>
-                                                    
-                                                    {loc.comment && (
-                                                        <div className="bg-black/5 rounded-2xl p-4 mb-6 border border-black/5">
-                                                            <p className="text-sm font-medium leading-relaxed opacity-80">{loc.comment}</p>
+                                            <div className="px-2 mb-8 flex justify-between items-end">
+                                                <div className="min-w-0 pr-4">
+                                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight break-words">{itin.title}</h2>
+                                                    <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1 truncate">{itin.date || 'Unscheduled'}</p>
+                                                    {totalDayCost > 0 && (
+                                                        <div className="mt-3 inline-flex items-center px-3 py-1 bg-[var(--ios-accent)]/10 rounded-full border border-[var(--ios-accent)]/20 shadow-sm max-w-full">
+                                                            <i className="fa-solid fa-wallet text-[var(--ios-accent)] text-[12px] mr-1.5 shrink-0"></i>
+                                                            <span className="text-[13px] font-bold text-[var(--ios-accent)] truncate">Day Total: ${totalDayCost.toFixed(2)}</span>
                                                         </div>
                                                     )}
-
-                                                    <a 
-                                                        href={loc.mapLink || `https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lng}`}
-                                                        target="_blank"
-                                                        className="w-full h-14 bg-[#1D1D1F] text-white flex items-center justify-center rounded-2xl font-bold shadow-lg"
-                                                    >
-                                                        Navigate to {loc.name} <i className="fa-solid fa-location-arrow ml-2 text-xs"></i>
-                                                    </a>
                                                 </div>
-                                            </div>
-                                            
-                                            <div className="flex justify-center">
-                                                <button onClick={() => deleteLocation(loc.id)} className="text-red-500 text-xs font-bold bg-red-50 px-6 py-3 rounded-full uppercase tracking-widest border border-red-100">
-                                                    Remove Destination
+                                                <button onClick={() => openItineraryForm(itin)} className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-[#1D1D1F] active:bg-black/10 transition-colors shadow-sm mb-1 shrink-0">
+                                                    <i className="fa-solid fa-pen text-[12px]"></i>
                                                 </button>
                                             </div>
+                                            
+                                            {(itin.items || []).length === 0 ? (
+                                                <div className="glass-panel flex flex-col items-center justify-center py-12 px-6 text-center">
+                                                    <p className="text-[#8E8E93] font-medium text-[15px]">Timesheet is empty.</p>
+                                                </div>
+                                            ) : (
+                                                <div className="relative before:absolute before:inset-0 before:ml-[42px] before:-translate-x-px before:h-full before:w-[2px] before:bg-gradient-to-b before:from-black/5 before:via-black/20 before:to-black/5 space-y-6 mt-4">
+                                                    {(itin.items || []).map((item) => {
+                                                        const loc = locations.find(l => l.id === item.locationId);
+                                                        return (
+                                                            <div key={item.id} className="relative z-10 flex items-start pl-4">
+                                                                <div className="w-16 shrink-0 pt-2 text-right pr-4">
+                                                                    <div className="text-[13px] font-bold text-[#8E8E93] truncate">{item.time}</div>
+                                                                </div>
+                                                                
+                                                                <div className="w-3.5 h-3.5 rounded-full border-2 border-white bg-[#1D1D1F] shadow-sm shrink-0 mt-1.5 relative z-20"></div>
+                                                                
+                                                                <div className="ml-5 flex-1 min-w-0 glass-panel p-4 active:scale-[0.98] transition-transform border border-[var(--ios-accent)]/20">
+                                                                    <div className="flex justify-between items-start mb-2">
+                                                                        <span className="text-[10px] font-bold text-white bg-[#1D1D1F] uppercase tracking-wider px-2 py-0.5 rounded-md shadow-sm truncate max-w-[120px]">{item.label}</span>
+                                                                        <div className="flex space-x-1.5 bg-black/5 rounded-full px-1.5 py-1 shrink-0 ml-2">
+                                                                            <button onClick={() => openItineraryItemForm(item)} className="w-7 h-7 rounded-full text-[#8E8E93] flex items-center justify-center hover:text-[#1D1D1F] active:bg-black/10 transition-colors"><i className="fa-solid fa-pen text-[10px]"></i></button>
+                                                                            <button onClick={() => deleteItineraryItem(item.id)} className="w-7 h-7 rounded-full text-[var(--ios-red)] flex items-center justify-center hover:text-[var(--ios-red)]/80 active:bg-[var(--ios-red)]/10 transition-colors"><i className="fa-solid fa-xmark text-[12px]"></i></button>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    {loc ? (
+                                                                        <div className="flex items-center space-x-3 mt-1 cursor-pointer group" onClick={() => { setLocationReturnView('itinerary_detail'); setSelectedLocId(loc.id); setView('location_detail'); }}>
+                                                                            {Array.isArray(loc.photos) && loc.photos.length > 0 ? (
+                                                                                <img src={loc.photos} className="w-12 h-12 rounded-[12px] object-cover border border-black/5 shadow-sm shrink-0" alt="Preview" />
+                                                                            ) : (
+                                                                                <div className="w-12 h-12 rounded-[12px] bg-black/5 border border-black/5 flex items-center justify-center text-[#8E8E93] shadow-inner shrink-0"><i className="fa-solid fa-map-pin"></i></div>
+                                                                            )}
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <p className="font-bold text-[#1D1D1F] text-[16px] leading-tight mb-0.5 group-active:text-[var(--ios-accent)] transition-colors truncate">{loc.name}</p>
+                                                                                <p className="text-[12px] font-medium text-[#8E8E93] truncate">{loc.category}</p>
+                                                                            </div>
+                                                                            <i className="fa-solid fa-chevron-right text-[#1D1D1F]/20 text-[12px] mr-1 shrink-0"></i>
+                                                                        </div>
+                                                                    ) : item.locationId ? (
+                                                                        <p className="text-[12px] text-[var(--ios-red)] font-bold bg-[var(--ios-red)]/10 inline-block px-2 py-1 rounded-md mt-1 border border-[var(--ios-red)]/20">Location deleted</p>
+                                                                    ) : null}
+                                                                    
+                                                                    {item.notes && (
+                                                                        <div className="mt-3 pt-3 border-t border-black/5">
+                                                                            <p className="text-[13px] font-medium text-[#1D1D1F] leading-relaxed break-words">{item.notes}</p>
+                                                                        </div>
+                                                                    )}
+                                                                    
+                                                                    {/* Left-Aligned Touch-Friendly Calculator Button */}
+                                                                    <div className="mt-4 pt-3 border-t border-black/5 flex justify-start">
+                                                                        <button onClick={() => handleOpenSplitBill(item)} className="flex items-center bg-white/60 hover:bg-white/90 border border-white/80 shadow-sm rounded-full pr-4 p-1 active:scale-95 transition-all max-w-full">
+                                                                            <div className="w-8 h-8 rounded-full bg-[var(--ios-accent)] flex items-center justify-center text-white shadow-md mr-2.5 shrink-0">
+                                                                                <i className="fa-solid fa-calculator text-[13px]"></i>
+                                                                            </div>
+                                                                            {item.billTotal > 0 ? (
+                                                                                <div className="flex flex-col text-left justify-center min-w-0 overflow-hidden">
+                                                                                    <span className="text-[14px] font-bold text-[#1D1D1F] leading-tight truncate">${(parseFloat(item.billTotal) / (parseInt(item.billSplit)||1)).toFixed(2)}</span>
+                                                                                    <span className="text-[9px] font-bold text-[#8E8E93] uppercase tracking-wider leading-tight mt-0.5 truncate">{item.billSplit} {item.billSplit > 1 ? 'people' : 'person'}</span>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <span className="text-[13px] font-bold text-[#1D1D1F] pr-1 shrink-0">Split Bill</span>
+                                                                            )}
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
                                         </>
                                     );
                                 })()}
                             </div>
                         )}
+
+                        {/* VIEW: ITINERARY DAY FORM */}
+                        {view === 'itinerary_form' && (
+                            <form onSubmit={handleSaveItinerary} className="space-y-5 pb-6">
+                                <div className="px-2 mb-4">
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{editId ? 'Edit Day' : 'Plan Day'}</h2>
+                                </div>
+
+                                {saveError && (
+                                    <div className="p-3 bg-[var(--ios-red)]/10 text-[var(--ios-red)] text-[13px] font-medium rounded-[16px] border border-[var(--ios-red)]/20 flex items-center">
+                                        <i className="fa-solid fa-circle-exclamation mr-2"></i>{saveError}
+                                    </div>
+                                )}
+                                
+                                <div className="glass-panel p-5 space-y-4">
+                                    <div>
+                                        <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Title</label>
+                                        <input type="text" required value={itinTitle} onChange={e => setItinTitle(e.target.value)} className="w-full px-4 py-3.5 glass-input text-[16px] font-medium placeholder-[#8E8E93]/50 bg-white/50" placeholder="Day 1: City Tour" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Date</label>
+                                        <input type="date" value={itinDate} onChange={e => setItinDate(e.target.value)} className="w-full px-4 py-3.5 glass-input text-[16px] font-medium bg-white/50" />
+                                    </div>
+                                </div>
+                                <button type="submit" disabled={isSaving} className="w-full py-4 bg-[#1D1D1F] disabled:bg-[#1D1D1F]/50 text-white font-bold tracking-wide text-[16px] rounded-[18px] active:scale-[0.98] transition-all mt-4 shadow-lg shadow-black/10">
+                                    {isSaving ? <i className="fa-solid fa-spinner fa-spin"></i> : 'Save Day'}
+                                </button>
+                            </form>
+                        )}
+
+                        {/* VIEW: SELECT LOCATION FOR ITINERARY */}
+                        {view === 'itinerary_select_location' && (
+                            <div className="space-y-5 pb-6">
+                                <div className="px-2 mb-2 flex justify-between items-center">
+                                    <h2 className="text-[28px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">Pick Place</h2>
+                                    <button onClick={() => handleSelectLocationForItinerary('')} className="text-[#8E8E93] font-bold text-[14px] active:opacity-50 px-2 py-1">
+                                        Skip
+                                    </button>
+                                </div>
+
+                                <div className="glass-panel p-1.5">
+                                    <div className="relative flex items-center glass-input px-3 py-3 bg-white/50">
+                                        <i className="fa-solid fa-magnifying-glass text-[#8E8E93] mr-2.5 shrink-0"></i>
+                                        <input 
+                                            type="text" placeholder="Search saved places..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="flex-1 min-w-0 bg-transparent focus:outline-none text-[16px] font-medium placeholder-[#8E8E93]/60"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                {filteredAndGroupedLocations.sortedCategories.length === 0 ? (
+                                    <div className="text-center p-8 text-[#8E8E93] font-medium">No saved places found.</div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {filteredAndGroupedLocations.sortedCategories.map(cat => (
+                                            <div key={cat} className="space-y-2">
+                                                <h3 className="text-[12px] font-bold text-[#8E8E93] uppercase tracking-wide pl-2">{cat}</h3>
+                                                <div className="glass-panel overflow-hidden">
+                                                    {filteredAndGroupedLocations.grouped[cat].map((loc, index, arr) => (
+                                                        <div 
+                                                            key={loc.id} 
+                                                            className={`flex items-center justify-between p-3 pl-4 cursor-pointer active:bg-black/5 transition-colors ${index !== arr.length - 1 ? 'border-b border-black/5' : ''}`}
+                                                            onClick={() => handleSelectLocationForItinerary(loc.id)}
+                                                        >
+                                                            <div className="flex items-center flex-1 min-w-0 overflow-hidden">
+                                                                {Array.isArray(loc.photos) && loc.photos.length > 0 ? (
+                                                                    <img src={loc.photos} className="w-12 h-12 rounded-[12px] object-cover shrink-0 mr-3 border border-white/60 shadow-sm" alt="" />
+                                                                ) : (
+                                                                    <div className="w-12 h-12 rounded-[12px] bg-black/5 flex items-center justify-center text-[#8E8E93] shrink-0 mr-3 border border-black/5 shadow-inner"><i className="fa-solid fa-map-pin"></i></div>
+                                                                )}
+                                                                <div className="truncate pr-2 min-w-0 flex-1">
+                                                                    <h4 className="text-[16px] font-bold text-[#1D1D1F] truncate">{loc.name}</h4>
+                                                                    <p className="text-[12px] font-medium text-[#8E8E93] truncate mt-0.5">{loc.city || 'City'}</p>
+                                                                </div>
+                                                            </div>
+                                                            <span className={`text-[11px] font-bold shrink-0 px-2 py-1 rounded-md border flex items-center ${getDistanceBgColor(loc.currentDistance)}`}>
+                                                                {loc.isRealRoute && <i className="fa-solid fa-car text-[9px] mr-1 opacity-70"></i>}
+                                                                {formatDistance(loc.currentDistance)} {loc.currentDuration !== null && `• ${loc.isRealRoute ? '' : '~'}${formatDuration(loc.currentDuration)}`}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* VIEW: ITINERARY ITEM FORM */}
+                        {view === 'itinerary_item_form' && (
+                            <form onSubmit={handleSaveItineraryItem} className="space-y-5 pb-6">
+                                <div className="px-2 mb-4">
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">{editItinItemId ? 'Edit Event' : 'Add Event'}</h2>
+                                </div>
+
+                                {saveError && <div className="p-3 bg-[var(--ios-red)]/10 text-[var(--ios-red)] text-[13px] font-medium rounded-[16px] border border-[var(--ios-red)]/20 flex items-center"><i className="fa-solid fa-circle-exclamation mr-2"></i>{saveError}</div>}
+                                
+                                <div className="glass-panel p-5 space-y-5">
+                                    <div>
+                                        <div className="flex justify-between items-center mb-2 ml-1">
+                                            <label className="block text-[12px] font-bold text-[#8E8E93] uppercase tracking-wide">Location</label>
+                                            <button type="button" onClick={() => setView('itinerary_select_location')} className="text-white text-[12px] font-bold bg-[#1D1D1F] px-3 py-1 rounded-full shadow-md active:scale-95 transition-transform shrink-0 ml-2">Change</button>
+                                        </div>
+                                        <div className="w-full px-4 py-3.5 glass-input text-[16px] text-[#1D1D1F] truncate font-bold bg-white/50 flex items-center">
+                                            {itinItemLocId ? (locations.find(l => l.id === itinItemLocId)?.name || 'Unknown') : 'No location attached'}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="min-w-0">
+                                            <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Time</label>
+                                            <input type="time" required value={itinItemTime} onChange={e => setItinItemTime(e.target.value)} className="w-full px-3 py-3.5 glass-input text-[15px] font-mono font-medium bg-white/50" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Type</label>
+                                            <div className="relative">
+                                                <select value={itinItemLabel} onChange={e => setItinItemLabel(e.target.value)} className="w-full pl-3 pr-8 py-3.5 glass-input text-[14px] appearance-none font-bold bg-white/50 truncate">
+                                                    <option value="Breakfast">Breakfast</option>
+                                                    <option value="Lunch">Lunch</option>
+                                                    <option value="Dinner">Dinner</option>
+                                                    <option value="Tourist Attraction">Attraction</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                                <i className="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#8E8E93] pointer-events-none"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Notes</label>
+                                        <textarea value={itinItemNotes} onChange={e => setItinItemNotes(e.target.value)} rows="3" className="w-full glass-input p-4 text-[15px] font-medium placeholder-[#8E8E93]/50 resize-none bg-white/50" placeholder="Optional notes for this event" />
+                                    </div>
+                                </div>
+
+                                <button type="submit" disabled={isSaving} className="w-full py-4 bg-[#1D1D1F] disabled:bg-[#1D1D1F]/50 text-white font-bold tracking-wide text-[16px] rounded-[18px] active:scale-[0.98] transition-all mt-4 shadow-lg shadow-black/10">
+                                    {isSaving ? <i className="fa-solid fa-spinner fa-spin"></i> : 'Save Event'}
+                                </button>
+                            </form>
+                        )}
+
+                        {/* VIEW: SPLIT BILL CALCULATOR PAGE */}
+                        {view === 'split_bill' && splitBillItem && (
+                            <div className="space-y-6 pb-6">
+                                <div className="px-2 mb-4">
+                                    <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">Split Bill</h2>
+                                    <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1">{splitBillItem.label}</p>
+                                </div>
+
+                                <div className="glass-panel p-6 space-y-8">
+                                    <div className="text-center">
+                                        <label className="block text-[12px] font-bold text-[#8E8E93] uppercase tracking-widest mb-3">Total Bill</label>
+                                        <div className="flex items-center justify-center text-[#1D1D1F]">
+                                            <span className="text-[36px] font-medium text-[#8E8E93] mr-2">$</span>
+                                            <input type="number" step="any" min="0" value={tempBillTotal} onChange={e => setTempBillTotal(e.target.value)} className="w-[180px] text-center bg-transparent focus:outline-none text-[52px] font-bold transition-colors placeholder-[#8E8E93]/30" placeholder="0" autoFocus />
+                                        </div>
+                                    </div>
+
+                                    <div className="h-px bg-black/5 mx-4"></div>
+
+                                    <div className="flex items-center justify-between px-2">
+                                        <button type="button" onClick={() => setTempBillSplit(Math.max(1, parseInt(tempBillSplit) - 1))} className="w-14 h-14 rounded-[20px] bg-white/60 shadow-sm border border-white/80 flex items-center justify-center text-[#1D1D1F] active:scale-95 transition-transform"><i className="fa-solid fa-minus"></i></button>
+                                        <div className="text-center">
+                                            <span className="block text-[28px] font-bold text-[#1D1D1F] leading-none">{tempBillSplit}</span>
+                                            <span className="block text-[11px] font-bold text-[#8E8E93] uppercase tracking-wider mt-1.5">People</span>
+                                        </div>
+                                        <button type="button" onClick={() => setTempBillSplit(parseInt(tempBillSplit) + 1)} className="w-14 h-14 rounded-[20px] bg-white/60 shadow-sm border border-white/80 flex items-center justify-center text-[#1D1D1F] active:scale-95 transition-transform"><i className="fa-solid fa-plus"></i></button>
+                                    </div>
+                                </div>
+
+                                {tempBillTotal > 0 && (
+                                    <div className="glass-panel p-6 text-center border-[var(--ios-accent)]/30 shadow-[0_8px_30px_rgba(198,142,88,0.15)] bg-gradient-to-b from-white/80 to-[var(--ios-accent)]/10">
+                                        <span className="text-[12px] font-bold text-[#8E8E93] uppercase tracking-wider">Per Person</span>
+                                        <div className="text-[44px] font-bold text-[var(--ios-accent)] leading-none mt-2">
+                                            ${(parseFloat(tempBillTotal) / (parseInt(tempBillSplit) || 1)).toFixed(2)}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <button onClick={handleSaveSplitBill} className="w-full py-4 bg-[#1D1D1F] text-white font-bold tracking-wide text-[16px] rounded-[18px] active:scale-[0.98] transition-all mt-6 shadow-lg shadow-black/10">
+                                    Save Calculator
+                                </button>
+                            </div>
+                        )}
                     </main>
 
-                    {/* Bottom Nav */}
-                    <nav className="fixed bottom-6 left-6 right-6 safe-bottom flex justify-center z-50">
-                        <div className="glass-pill w-full max-w-sm h-16 flex items-center justify-around px-2">
-                            <button onClick={() => setView('cities')} className={`flex flex-col items-center justify-center w-full h-full rounded-full transition-all ${activeTab === 'places' ? 'text-[#1D1D1F]' : 'text-gray-400'}`}>
-                                <i className="fa-solid fa-map-location-dot text-lg"></i>
-                                <span className="text-[8px] font-bold uppercase tracking-tighter mt-1">Exploration</span>
+                    {/* FLOATING LIGHT GLASS NAV PILL */}
+                    <div className="fixed bottom-6 left-6 right-6 z-40 safe-bottom pointer-events-none flex justify-center">
+                        <div className="glass-pill w-full max-w-[400px] h-16 flex justify-around items-center px-2 pointer-events-auto">
+                            <button 
+                                onClick={() => setView('cities')} 
+                                className={`flex flex-col items-center justify-center w-full h-full rounded-full transition-colors active:bg-black/5 ${activeTab === 'places' ? 'text-[#1D1D1F]' : 'text-[#8E8E93] hover:text-[#1D1D1F]'}`}
+                            >
+                                <i className="fa-solid fa-map-location-dot text-[18px] mb-1"></i>
+                                <span className="text-[10px] font-bold tracking-wider uppercase">Places</span>
                             </button>
-                            <button onClick={() => setView('notifications')} className={`flex flex-col items-center justify-center w-full h-full rounded-full transition-all ${activeTab === 'radar' ? 'text-[#1D1D1F]' : 'text-gray-400'}`}>
-                                <i className="fa-solid fa-tower-broadcast text-lg"></i>
-                                <span className="text-[8px] font-bold uppercase tracking-tighter mt-1">Radar</span>
+                            <button 
+                                onClick={() => setView('notifications')} 
+                                className={`flex flex-col items-center justify-center w-full h-full rounded-full transition-colors active:bg-black/5 relative ${activeTab === 'notifications' ? 'text-[#1D1D1F]' : 'text-[#8E8E93] hover:text-[#1D1D1F]'}`}
+                            >
+                                <div className="relative">
+                                    <i className={unreadCount > 0 ? "fa-solid fa-bell text-[18px] mb-1" : "fa-regular fa-bell text-[18px] mb-1"}></i>
+                                    {unreadCount > 0 && (
+                                        <span className="absolute -top-1.5 -right-2 bg-[var(--ios-red)] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center shadow-sm border border-white">
+                                            {unreadCount}
+                                        </span>
+                                    )}
+                                </div>
+                                <span className="text-[10px] font-bold tracking-wider uppercase">Radar</span>
                             </button>
-                            <button onClick={() => setView('itineraries')} className={`flex flex-col items-center justify-center w-full h-full rounded-full transition-all ${activeTab === 'itinerary' ? 'text-[#1D1D1F]' : 'text-gray-400'}`}>
-                                <i className="fa-solid fa-calendar-day text-lg"></i>
-                                <span className="text-[8px] font-bold uppercase tracking-tighter mt-1">Planning</span>
+                            <button 
+                                onClick={() => setView('itineraries')} 
+                                className={`flex flex-col items-center justify-center w-full h-full rounded-full transition-colors active:bg-black/5 ${activeTab === 'itineraries' ? 'text-[#1D1D1F]' : 'text-[#8E8E93] hover:text-[#1D1D1F]'}`}
+                            >
+                                <i className="fa-solid fa-calendar-day text-[18px] mb-1"></i>
+                                <span className="text-[10px] font-bold tracking-wider uppercase">Itinerary</span>
                             </button>
                         </div>
-                    </nav>
-
-                    {/* Modals */}
+                    </div>
+                    
+                    {/* CUSTOM iOS CONFIRM MODAL */}
                     {confirmDialog && (
-                        <div className="fixed inset-0 z- bg-black/40 backdrop-blur-md flex items-center justify-center p-6 animate-fade-in">
-                            <div className="bg-white/95 rounded-[32px] p-6 w-full max-w-[300px] text-center shadow-2xl">
-                                <h3 className="text-lg font-bold mb-2">Confirmation</h3>
-                                <p className="text-sm text-gray-500 mb-6 font-medium">{confirmDialog.message}</p>
-                                <div className="flex space-x-3">
-                                    <button onClick={() => setConfirmDialog(null)} className="flex-1 h-12 rounded-2xl bg-black/5 font-bold text-xs uppercase tracking-widest">Cancel</button>
-                                    <button onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }} className="flex-1 h-12 rounded-2xl bg-red-500 text-white font-bold text-xs uppercase tracking-widest shadow-lg">Confirm</button>
+                        <div className="fixed inset-0 z-50 bg-black/20 flex items-center justify-center p-4 backdrop-blur-md animate-fade-in" style={{ zIndex: 130 }}>
+                            <div className="bg-white/95 backdrop-blur-3xl rounded-[20px] w-[280px] flex flex-col overflow-hidden animate-pop-in shadow-2xl border border-white" style={{animationDuration: '0.3s'}}>
+                                <div className="p-5 text-center">
+                                    <h3 className="text-[17px] font-bold text-[#1D1D1F] mb-1.5">Confirm</h3>
+                                    <p className="text-[13px] font-medium text-[#8E8E93] leading-relaxed">{confirmDialog.message}</p>
+                                </div>
+                                <div className="flex border-t border-black/5">
+                                    <button onClick={() => setConfirmDialog(null)} className="flex-1 py-3 text-[16px] text-[#1D1D1F] font-bold border-r border-black/5 active:bg-black/5 transition-colors">Cancel</button>
+                                    <button onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }} className="flex-1 py-3 text-[16px] text-[var(--ios-red)] font-bold active:bg-[var(--ios-red)]/10 transition-colors">Delete</button>
                                 </div>
                             </div>
                         </div>
@@ -723,7 +1915,7 @@
                 </div>
             );
         }
-
+        
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
