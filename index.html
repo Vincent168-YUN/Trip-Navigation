@@ -357,7 +357,6 @@
             // --- HANDLERS ---
             const handleQuickPaste = (input) => {
                 setQuickPaste(input);
-                // Matches two numbers separated by comma, handles negatives and parentheses
                 const match = input.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
                 if (match && match.length >= 3) {
                     setLat(parseFloat(match).toFixed(6));
@@ -378,6 +377,18 @@
                     setQuickPaste('');
                 } else { resetForm(); }
                 setView('form');
+            };
+
+            const openCityForm = (cityName = null) => {
+                setPreviousView(view); setSaveError('');
+                if (cityName) { 
+                    setEditingCityName(cityName); setNewCityName(cityName); 
+                    const cityMarker = locations.find(l => l.isCityMarker && (l.city || 'Ho Chi Minh City') === cityName);
+                    setCityPhotos(cityMarker && cityMarker.photos ? [...cityMarker.photos] : []);
+                } else { 
+                    setEditingCityName(null); setNewCityName(''); setCityPhotos([]); 
+                }
+                setView('city_form');
             };
 
             const handleBack = () => {
@@ -465,6 +476,7 @@
             }, [locations, liveLocation, realRoutes]);
 
             const locDetail = view === 'location_detail' && selectedLocId ? locations.find(l => l.id === selectedLocId) : null;
+            
             const getHeaderTitle = () => {
                 if (view === 'cities') return ""; if (view === 'city_form') return editingCityName ? 'Edit City' : 'Add City';
                 if (view === 'categories') return activeCity; if (view === 'category_list') return activeCategory;
@@ -472,6 +484,9 @@
                 if (view === 'itineraries') return 'Itineraries'; if (view === 'itinerary_detail') return 'Timesheet';
                 if (editId) return 'Edit Item'; return 'Create Item';
             };
+
+            const canShowAddButton = ['cities', 'categories', 'category_list', 'itineraries', 'itinerary_detail'].includes(view);
+            const unreadCount = notifications.filter(n => !n.read).length;
 
             return (
                 <div className="min-h-screen relative flex flex-col selection:bg-[var(--ios-accent)]/20">
