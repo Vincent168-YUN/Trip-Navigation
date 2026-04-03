@@ -440,7 +440,7 @@
 
                     {/* PHOTO VIEWER MODAL */}
                     {photoViewer && (
-                        <div className="fixed inset-0 z- bg-black/95 animate-fade-in flex flex-col justify-center">
+                        <div className="fixed inset-0 z-50 bg-black/95 animate-fade-in flex flex-col justify-center">
                             <button onClick={() => setPhotoViewer(null)} className="absolute top-12 right-6 text-white text-2xl z-"><i className="fa-solid fa-xmark"></i></button>
                             <div className="w-full flex overflow-x-auto snap-x snap-mandatory scrollbar-hide">
                                 {photoViewer.photos.map((p, i) => (
@@ -464,7 +464,7 @@
                                         <div key={city} onClick={() => { setActiveCity(city); setView('categories'); }} className="glass-panel p-4 flex items-center justify-between active:scale-[0.98] transition-transform cursor-pointer">
                                             <div className="flex items-center space-x-4">
                                                 <div className="w-16 h-16 rounded-[20px] overflow-hidden bg-gray-200 border border-white">
-                                                    {cityData[city].photos ? <img src={cityData[city].photos} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-400"><i className="fa-solid fa-city"></i></div>}
+                                                    {cityData[city].photos?. ? <img src={cityData[city].photos} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-400"><i className="fa-solid fa-city"></i></div>}
                                                 </div>
                                                 <div>
                                                     <h3 className="text-xl font-bold">{city}</h3>
@@ -510,7 +510,7 @@
                             <>
                                 <Header title={activeCategory} showBack />
                                 <div className="space-y-6 pt-4">
-                                    {cityData[activeCity].categories[activeCategory].map(loc => {
+                                    {cityData[activeCity]?.categories[activeCategory]?.map(loc => {
                                         const route = realRoutes[loc.id];
                                         return (
                                             <div key={loc.id} onClick={() => { setSelectedLocId(loc.id); setView('location_detail'); }} className="glass-panel overflow-hidden group active:scale-[0.98] transition-transform">
