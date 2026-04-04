@@ -1175,7 +1175,7 @@
                                     Object.keys(dataHierarchy.cities[activeCity].categories).sort().map((catName) => {
                                         const categoryPlaces = dataHierarchy.cities[activeCity].categories[catName];
                                         
-                                        // Strictly use the top/closest location (index 0) for the category icon
+                                        // Find the closest location in this category that has at least one photo
                                         const placeWithPhoto = categoryPlaces.find(loc => Array.isArray(loc.photos) && loc.photos.length > 0);
                                         const coverPhoto = placeWithPhoto ? placeWithPhoto.photos : null;
 
