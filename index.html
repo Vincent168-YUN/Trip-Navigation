@@ -1176,10 +1176,8 @@
                                         const categoryPlaces = dataHierarchy.cities[activeCity].categories[catName];
                                         
                                         // Strictly use the top/closest location (index 0) for the category icon
-                                        const topPlace = categoryPlaces;
-                                        const coverPhoto = (topPlace && Array.isArray(topPlace.photos) && topPlace.photos.length > 0) 
-                                            ? topPlace.photos 
-                                            : null;
+                                        const placeWithPhoto = categoryPlaces.find(loc => Array.isArray(loc.photos) && loc.photos.length > 0);
+                                        const coverPhoto = placeWithPhoto ? placeWithPhoto.photos : null;
 
                                         // Smart icon fallback
                                         const lowerCat = catName.toLowerCase();
