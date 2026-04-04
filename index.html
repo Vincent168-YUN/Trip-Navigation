@@ -195,6 +195,12 @@
             return "bg-[var(--ios-red)]/10 border-[var(--ios-red)]/20 text-[var(--ios-red)]";
         };
 
+        const fallbackImageSrc = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23e5e5ea'/%3E%3Cpath d='M35 40h30v20H35z' fill='none' stroke='%238e8e93' stroke-width='2'/%3E%3Ccircle cx='50' cy='50' r='4' fill='%238e8e93'/%3E%3C/svg%3E";
+        const handleImgErr = (e) => {
+            e.target.onerror = null;
+            e.target.src = fallbackImageSrc;
+        };
+
         function App() {
             // --- STATE ---
             const [user, setUser] = useState(null);
@@ -980,7 +986,7 @@
                             <div ref={fullScreenScrollRef} className="absolute inset-0 w-full h-full flex overflow-x-auto snap-x snap-mandatory scrollbar-hide items-center z-0">
                                 {fullScreenPhoto.photos.map((p, idx) => (
                                     <div key={idx} className="w-full h-full flex-shrink-0 snap-center flex items-center justify-center p-4">
-                                        <img src={p} className="max-w-full max-h-[85vh] object-contain rounded-[20px] shadow-2xl" alt={`Photo ${idx + 1}`} />
+                                        <img src={p} className="max-w-full max-h-[85vh] object-contain rounded-[20px] shadow-2xl" alt={`Photo ${idx + 1}`} onError={handleImgErr} />
                                     </div>
                                 ))}
                             </div>
@@ -1084,7 +1090,7 @@
                                         >
                                             <div className="flex items-center flex-1 min-w-0">
                                                 {Array.isArray(notif.photos) && notif.photos.length > 0 ? (
-                                                    <img src={notif.photos} className="w-14 h-14 rounded-[16px] object-cover shrink-0 mr-4 shadow-sm border border-white/60" alt="" />
+                                                    <img src={notif.photos} className="w-14 h-14 rounded-[16px] object-cover shrink-0 mr-4 shadow-sm border border-white/60" alt="" onError={handleImgErr} />
                                                 ) : (
                                                     <div className="w-14 h-14 rounded-[16px] bg-gradient-to-br from-[#1D1D1F] to-[#434343] flex items-center justify-center text-white shrink-0 mr-4 shadow-sm border border-white/60">
                                                         <i className="fa-solid fa-location-dot text-lg"></i>
@@ -1133,7 +1139,7 @@
                                             <div key={cityName} className="glass-panel p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform">
                                                 <div className="flex items-center flex-1 min-w-0" onClick={() => { setActiveCity(cityName); setView('categories'); }}>
                                                     {dataHierarchy.cities[cityName].photos && dataHierarchy.cities[cityName].photos.length > 0 ? (
-                                                        <img src={dataHierarchy.cities[cityName].photos} className="w-16 h-20 rounded-[20px] object-cover shrink-0 mr-4 shadow-sm border border-white/60" alt={cityName} onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='rgb(242,244,247)'><rect width='100' height='100' rx='20'/></svg>"; }} />
+                                                        <img src={dataHierarchy.cities[cityName].photos} className="w-16 h-20 rounded-[20px] object-cover shrink-0 mr-4 shadow-sm border border-white/60" alt={cityName} onError={handleImgErr} />
                                                     ) : (
                                                         <div className="bg-black/5 w-16 h-20 rounded-[20px] flex items-center justify-center mr-4 shrink-0 shadow-inner border border-white/60">
                                                             <i className="fa-solid fa-city text-[#1D1D1F]/20 text-xl"></i>
@@ -1190,7 +1196,7 @@
                                             >
                                                 <div className="flex items-center min-w-0 flex-1">
                                                     {coverPhoto ? (
-                                                        <img src={coverPhoto} alt={catName} className="w-14 h-14 rounded-[16px] object-cover shrink-0 mr-4 shadow-sm border border-white/60" onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='rgb(242,244,247)'><rect width='100' height='100' rx='16'/></svg>"; }} />
+                                                        <img src={coverPhoto} alt={catName} className="w-14 h-14 rounded-[16px] object-cover shrink-0 mr-4 shadow-sm border border-white/60" onError={handleImgErr} />
                                                     ) : (
                                                         <div className="bg-black/5 w-14 h-14 rounded-[16px] flex items-center justify-center shrink-0 mr-4 shadow-inner border border-white/60">
                                                             <i className="fa-solid fa-layer-group text-[var(--ios-accent)] text-lg opacity-80"></i>
@@ -1229,7 +1235,7 @@
                                             <div className="relative w-full h-52 rounded-[22px] overflow-hidden mb-3 border border-white/60">
                                                 <div className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide">
                                                     {loc.photos.map((p, idx) => (
-                                                        <img key={idx} src={p} alt="Location" className="w-full h-full object-cover shrink-0 snap-center" />
+                                                        <img key={idx} src={p} alt="Location" className="w-full h-full object-cover shrink-0 snap-center" onError={handleImgErr} />
                                                     ))}
                                                 </div>
                                                 {loc.photos.length > 1 && (
@@ -1273,6 +1279,7 @@
                                                         key={idx} src={p} alt="Detail" 
                                                         className="w-full h-full object-cover shrink-0 snap-center active:opacity-90 transition-opacity cursor-pointer" 
                                                         onClick={() => { setPreviousView(view); setView('photo_viewer'); setFullScreenPhoto({ photos: locDetail.photos, index: idx }); }} 
+                                                        onError={handleImgErr}
                                                     />
                                                 ))}
                                             </div>
@@ -1388,7 +1395,7 @@
                                         <div className="flex overflow-x-auto space-x-3 pb-2 scrollbar-hide snap-x">
                                             {cityPhotos.map((p, i) => (
                                                 <div key={i} className="relative w-24 h-24 flex-shrink-0 snap-start rounded-[16px] overflow-hidden border border-white/60 shadow-sm">
-                                                    <img src={p} className="w-full h-full object-cover" alt="Preview" />
+                                                    <img src={p} className="w-full h-full object-cover" alt="Preview" onError={handleImgErr} />
                                                     <button type="button" onClick={() => removeCityPhoto(i)} className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-md text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px]"><i className="fa-solid fa-xmark"></i></button>
                                                 </div>
                                             ))}
@@ -1555,7 +1562,7 @@
                                         <div className="flex overflow-x-auto space-x-3 pb-2 scrollbar-hide snap-x">
                                             {photos.map((p, i) => (
                                                 <div key={i} className="relative w-24 h-24 flex-shrink-0 snap-start rounded-[16px] overflow-hidden border border-white/60 shadow-sm">
-                                                    <img src={p} className="w-full h-full object-cover" alt="Preview" />
+                                                    <img src={p} className="w-full h-full object-cover" alt="Preview" onError={handleImgErr} />
                                                     <button type="button" onClick={() => removePhoto(i)} className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-md text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px]"><i className="fa-solid fa-xmark"></i></button>
                                                 </div>
                                             ))}
@@ -1678,7 +1685,7 @@
                                                                     {loc ? (
                                                                         <div className="flex items-center space-x-3 mt-1 cursor-pointer group" onClick={() => { setLocationReturnView('itinerary_detail'); setSelectedLocId(loc.id); setView('location_detail'); }}>
                                                                             {Array.isArray(loc.photos) && loc.photos.length > 0 ? (
-                                                                                <img src={loc.photos} className="w-12 h-12 rounded-[12px] object-cover border border-black/5 shadow-sm shrink-0" alt="Preview" />
+                                                                                <img src={loc.photos} className="w-12 h-12 rounded-[12px] object-cover border border-black/5 shadow-sm shrink-0" alt="Preview" onError={handleImgErr} />
                                                                             ) : (
                                                                                 <div className="w-12 h-12 rounded-[12px] bg-black/5 border border-black/5 flex items-center justify-center text-[#8E8E93] shadow-inner shrink-0"><i className="fa-solid fa-map-pin"></i></div>
                                                                             )}
@@ -1791,7 +1798,7 @@
                                                         >
                                                             <div className="flex items-center flex-1 min-w-0 overflow-hidden">
                                                                 {Array.isArray(loc.photos) && loc.photos.length > 0 ? (
-                                                                    <img src={loc.photos} className="w-12 h-12 rounded-[12px] object-cover shrink-0 mr-3 border border-white/60 shadow-sm" alt="" />
+                                                                    <img src={loc.photos} className="w-12 h-12 rounded-[12px] object-cover shrink-0 mr-3 border border-white/60 shadow-sm" alt="" onError={handleImgErr} />
                                                                 ) : (
                                                                     <div className="w-12 h-12 rounded-[12px] bg-black/5 flex items-center justify-center text-[#8E8E93] shrink-0 mr-3 border border-black/5 shadow-inner"><i className="fa-solid fa-map-pin"></i></div>
                                                                 )}
