@@ -200,6 +200,123 @@
             e.target.src = fallbackImageSrc;
         };
 
+        const processNoteImage = (file) => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX = 800; // Smaller max size for inline notes to save DB space
+                        let {width, height} = img;
+                        if (width > height && width > MAX) { height *= MAX / width; width = MAX; }
+                        else if (height > MAX) { width *= MAX / height; height = MAX; }
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.6)); 
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        };
+
+        const renderHTML = (html) => {
+            if (!html) return { __html: '' };
+            const hasHTML = /<[a-z][\s\S]*>/i.test(html);
+            return { __html: hasHTML ? html : html.replace(/\n/g, '<br>') };
+        };
+
+        const RichEditor = React.memo(({ value, onChange, placeholder, disabled }) => {
+            const editorRef = React.useRef(null);
+            const isEditing = React.useRef(false);
+
+            React.useEffect(() => {
+                if (editorRef.current && !isEditing.current && editorRef.current.innerHTML !== value) {
+                    editorRef.current.innerHTML = value || '';
+                }
+            }, [value]);
+
+            const handleInput = () => {
+                if (onChange && editorRef.current) {
+                    onChange(editorRef.current.innerHTML);
+                }
+            };
+
+            const handleFocus = () => { isEditing.current = true; };
+            const handleBlur = () => { isEditing.current = false; handleInput(); };
+
+            const handlePaste = async (e) => {
+                const clipboardData = e.clipboardData;
+                if (!clipboardData) return;
+
+                let hasImage = false;
+                for (let i = 0; i < clipboardData.items.length; i++) {
+                    const item = clipboardData.items[i];
+                    if (item.type.indexOf('image') !== -1) {
+                        hasImage = true;
+                        e.preventDefault();
+                        const file = item.getAsFile();
+                        const processedDataUrl = await processNoteImage(file);
+                        const img = `<img src="${processedDataUrl}" style="max-width:100%; border-radius:12px; margin: 8px 0; box-shadow: 0 1px 2px rgba(0,0,0,0.1);" />`;
+                        document.execCommand('insertHTML', false, img);
+                        handleInput();
+                    }
+                }
+                
+                if (!hasImage) {
+                    e.preventDefault();
+                    const text = clipboardData.getData('text/plain');
+                    const htmlText = text.replace(/\n/g, '<br>');
+                    document.execCommand('insertHTML', false, htmlText);
+                    handleInput();
+                }
+            };
+
+            const handleInsertImage = async (e) => {
+                const file = e.target.files;
+                if (!file) return;
+                const processedDataUrl = await processNoteImage(file);
+                
+                if (editorRef.current) {
+                    editorRef.current.focus();
+                    const img = `<br><img src="${processedDataUrl}" style="max-width:100%; border-radius:12px; margin: 8px 0; box-shadow: 0 1px 2px rgba(0,0,0,0.1);" /><br>`;
+                    try {
+                        const inserted = document.execCommand('insertHTML', false, img);
+                        if (!inserted) editorRef.current.innerHTML += img;
+                    } catch(err) {
+                        editorRef.current.innerHTML += img;
+                    }
+                    handleInput();
+                }
+                e.target.value = null;
+            };
+
+            return (
+                <div>
+                    <div className="flex justify-between items-center mb-2">
+                        <label className="block text-[12px] font-bold text-[#8E8E93] uppercase tracking-wide ml-1">Notes</label>
+                        <label className={`text-[11px] font-bold bg-black/5 text-[#1D1D1F] px-2.5 py-1.5 rounded-md cursor-pointer active:scale-95 transition-transform ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <i className="fa-solid fa-image mr-1"></i> Insert Photo
+                            <input type="file" accept="image/*" className="hidden" onChange={handleInsertImage} disabled={disabled} />
+                        </label>
+                    </div>
+                    <div
+                        ref={editorRef}
+                        contentEditable={!disabled}
+                        onInput={handleInput}
+                        onFocus={handleFocus}
+                        onBlur={handleBlur}
+                        onPaste={handlePaste}
+                        className={`w-full glass-input p-4 text-[15px] font-medium min-h-[120px] outline-none bg-white/50 cursor-text empty:before:content-[attr(data-placeholder)] empty:before:text-[#8E8E93]/50 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
+                        data-placeholder={placeholder}
+                        style={{ whiteSpace: 'pre-wrap' }}
+                    />
+                </div>
+            );
+        });
+
         function App() {
             // --- STATE ---
             const [user, setUser] = useState(null);
@@ -1331,7 +1448,10 @@
                                         
                                         {locDetail.comment && (
                                             <div className="mb-5 p-4 rounded-[16px] bg-black/5 border border-black/5 shadow-inner">
-                                                <p className="text-[15px] font-medium text-[#1D1D1F] leading-relaxed whitespace-pre-wrap">{locDetail.comment}</p>
+                                                <div 
+                                                    className="text-[15px] font-medium text-[#1D1D1F] leading-relaxed break-words [&>img]:max-w-full [&>img]:rounded-[12px] [&>img]:my-3 [&>img]:shadow-sm" 
+                                                    dangerouslySetInnerHTML={renderHTML(locDetail.comment)} 
+                                                />
                                             </div>
                                         )}
 
@@ -1486,8 +1606,12 @@
                                 </div>
                                 
                                 <div className="glass-panel p-4">
-                                    <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Notes</label>
-                                    <textarea value={comment} onChange={e => setComment(e.target.value)} rows="3" className="w-full glass-input p-3.5 text-[15px] font-medium placeholder-[#8E8E93]/50 resize-none bg-white/50" placeholder="Tips, what to order, vibes..."></textarea>
+                                    <RichEditor 
+                                        value={comment} 
+                                        onChange={setComment} 
+                                        placeholder="Tips, what to order, vibes... (Paste images directly here!)" 
+                                        disabled={isSaving} 
+                                    />
                                 </div>
 
                                 <div className="glass-panel p-2 flex flex-col space-y-1">
@@ -1700,7 +1824,10 @@
                                                                     
                                                                     {item.notes && (
                                                                         <div className="mt-3 pt-3 border-t border-black/5">
-                                                                            <p className="text-[13px] font-medium text-[#1D1D1F] leading-relaxed break-words">{item.notes}</p>
+                                                                            <div 
+                                                                                className="text-[13px] font-medium text-[#1D1D1F] leading-relaxed break-words [&>img]:max-w-full [&>img]:rounded-[8px] [&>img]:my-2 [&>img]:shadow-sm"
+                                                                                dangerouslySetInnerHTML={renderHTML(item.notes)}
+                                                                            />
                                                                         </div>
                                                                     )}
                                                                     
@@ -1860,9 +1987,13 @@
                                         </div>
                                     </div>
                                     
-                                    <div>
-                                        <label className="block text-[12px] font-bold text-[#8E8E93] mb-2 uppercase tracking-wide ml-1">Notes</label>
-                                        <textarea value={itinItemNotes} onChange={e => setItinItemNotes(e.target.value)} rows="3" className="w-full glass-input p-4 text-[15px] font-medium placeholder-[#8E8E93]/50 resize-none bg-white/50" placeholder="Optional notes for this event" />
+                                    <div className="pt-2">
+                                        <RichEditor 
+                                            value={itinItemNotes} 
+                                            onChange={setItinItemNotes} 
+                                            placeholder="Optional notes, schedule details... (Paste images directly here!)" 
+                                            disabled={isSaving} 
+                                        />
                                     </div>
                                 </div>
 
