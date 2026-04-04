@@ -316,11 +316,11 @@
                             docPhotos = [data.media];
                         }
                         
-                        // FIX: Ensure it is an array and filter out broken or empty image strings
+                        // FIX: Strict validation to completely eliminate corrupted data 
                         if (!Array.isArray(docPhotos)) {
                             docPhotos = typeof docPhotos === 'string' ? [docPhotos] : [];
                         }
-                        docPhotos = docPhotos.filter(p => typeof p === 'string' && p.trim().length > 20);
+                        docPhotos = docPhotos.filter(p => typeof p === 'string' && (p.startsWith('data:image/') || p.startsWith('http')));
 
                         fetchedLocations.push({ id: doc.id, ...data, photos: docPhotos });
                     });
@@ -1185,8 +1185,12 @@
                                 ) : (
                                     Object.keys(dataHierarchy.cities[activeCity].categories).sort().map((catName) => {
                                         const categoryPlaces = dataHierarchy.cities[activeCity].categories[catName];
-                                        const closestPlaceWithPhoto = categoryPlaces.find(loc => Array.isArray(loc.photos) && loc.photos.length > 0);
-                                        const coverPhoto = closestPlaceWithPhoto ? closestPlaceWithPhoto.photos : null;
+                                        
+                                        // Grab the absolute closest location in this category
+                                        const closestPlace = categoryPlaces;
+                                        const coverPhoto = (closestPlace && Array.isArray(closestPlace.photos) && closestPlace.photos.length > 0) 
+                                            ? closestPlace.photos 
+                                            : null;
 
                                         return (
                                             <div 
