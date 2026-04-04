@@ -170,7 +170,6 @@
             return `${Number(distInKm).toFixed(1)}km`;
         }
 
-        // NEW: Formats duration directly from exact minutes
         function formatDuration(totalMinutes) {
             if (totalMinutes == null || isNaN(totalMinutes)) return "";
             totalMinutes = Math.ceil(totalMinutes);
@@ -210,7 +209,7 @@
             const [geoError, setGeoError] = useState('');
             const [locations, setLocations] = useState([]);
             
-            // NEW: Stores actual road distances and driving durations
+            // Stores actual road distances and driving durations
             const [realRoutes, setRealRoutes] = useState({}); 
             
             // Itinerary State
@@ -316,7 +315,7 @@
                             docPhotos = [data.media];
                         }
                         
-                        // FIX: Strict validation to completely eliminate corrupted data 
+                        // Strict validation to completely eliminate corrupted data 
                         if (!Array.isArray(docPhotos)) {
                             docPhotos = typeof docPhotos === 'string' ? [docPhotos] : [];
                         }
@@ -407,7 +406,6 @@
                         
                         if (data.code === 'Ok' && data.durations && data.distances) {
                             const newRoutes = {};
-                            // FIX: OSRM returns a 2D matrix. We must specify the first row
                             const durations = data.durations;
                             const distances = data.distances;
                             
@@ -416,8 +414,8 @@
                                 const distanceMet = distances[index + 1];
                                 if (durationSec != null && distanceMet != null) {
                                     newRoutes[loc.id] = {
-                                        distance: distanceMet / 1000, // convert to km
-                                        duration: durationSec / 60    // convert to minutes
+                                        distance: distanceMet / 1000, 
+                                        duration: durationSec / 60
                                     };
                                 }
                             });
@@ -428,7 +426,7 @@
                     }
                 };
 
-                const timeoutId = setTimeout(fetchMatrix, 2500); // Debounce to avoid spamming while walking
+                const timeoutId = setTimeout(fetchMatrix, 2500);
                 return () => clearTimeout(timeoutId);
             }, [liveLocation, locations]);
 
@@ -478,7 +476,6 @@
                     const routeInfo = getRouteInfo(loc);
                     if (routeInfo.dist === null) return;
                     
-                    // Track and alert for ALL locations within 1km radius
                     if (routeInfo.dist <= 1.0) { 
                         if (!alertedLocsRef.current.has(loc.id) && !(view === 'location_detail' && selectedLocId === loc.id)) {
                             addNotification({ ...loc, currentDistance: routeInfo.dist, currentDuration: routeInfo.dur, isRealRoute: routeInfo.isReal }, false);
@@ -560,7 +557,6 @@
                 const queryMatch = input.match(/[?&](?:q|ll)=([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
                 const placeMatch = input.match(/place\/.*@(-?\d+\.\d+),(-?\d+\.\d+)/) || input.match(/place\/[^\/]+\/([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
                 
-                // NEW: Catch raw pasted coordinates (e.g., "11.5564, 104.9282" or "11.5564° N, 104.9282° E")
                 const rawMatch = input.match(/([-+]?\d{1,2}\.\d+)[^\d-]+([-+]?\d{1,3}\.\d+)/);
 
                 const match = exactPinMatch || atMatch || queryMatch || placeMatch || rawMatch;
@@ -569,7 +565,6 @@
                     const parsedLat = parseFloat(match);
                     const parsedLng = parseFloat(match);
                     
-                    // Verify they are valid map coordinates before applying
                     if (parsedLat >= -90 && parsedLat <= 90 && parsedLng >= -180 && parsedLng <= 180) {
                         setLat(parsedLat.toFixed(6)); 
                         setLng(parsedLng.toFixed(6));
@@ -583,14 +578,11 @@
                 const link = e.target.value; setMapLink(link);
                 setSaveError('');
                 
-                // 1. Try to extract directly first (for full web URLs)
                 if (extractCoordsFromUrl(link)) return;
 
-                // 2. If it's a short link (like from the iPhone Google Maps app), expand it live with fallbacks
                 if (link.includes('maps.app.goo.gl') || link.includes('goo.gl/maps') || link.includes('maps.google.com')) {
                     setSaveError("Extracting GPS from iPhone link...");
                     
-                    // Helper to aggressively scan HTML for hidden coordinates
                     const tryExtractFromHtml = (html) => {
                         const metaRefreshMatch = html.match(/URL=['"]?([^'"]+)['"]/i);
                         if (metaRefreshMatch && extractCoordsFromUrl(metaRefreshMatch.replace(/&amp;/g, '&'))) return true;
@@ -610,7 +602,6 @@
                     };
 
                     try {
-                        // Attempt 1: AllOrigins Proxy
                         const res1 = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(link)}`);
                         if (res1.ok) {
                             const data1 = await res1.json();
@@ -620,7 +611,6 @@
                     } catch (e1) { console.warn("Extraction 1 failed"); }
 
                     try {
-                        // Attempt 2: CodeTabs Proxy (Very reliable for following redirects)
                         const res2 = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(link)}`);
                         if (res2.ok) {
                             const text2 = await res2.text();
@@ -629,7 +619,6 @@
                     } catch (e2) { console.warn("Extraction 2 failed"); }
                     
                     try {
-                        // Attempt 3: CorsProxy.io
                         const res3 = await fetch(`https://corsproxy.io/?${encodeURIComponent(link)}`);
                         if (res3.ok) {
                             const text3 = await res3.text();
@@ -1186,10 +1175,10 @@
                                     Object.keys(dataHierarchy.cities[activeCity].categories).sort().map((catName) => {
                                         const categoryPlaces = dataHierarchy.cities[activeCity].categories[catName];
                                         
-                                        // Strictly use the closest location (index 0) for the category icon
-                                        const closestPlace = categoryPlaces;
-                                        const coverPhoto = (closestPlace && Array.isArray(closestPlace.photos) && closestPlace.photos.length > 0) 
-                                            ? closestPlace.photos 
+                                        // Strictly use the top/closest location (index 0) for the category icon
+                                        const topPlace = categoryPlaces;
+                                        const coverPhoto = (topPlace && Array.isArray(topPlace.photos) && topPlace.photos.length > 0) 
+                                            ? topPlace.photos 
                                             : null;
 
                                         // Smart icon fallback
