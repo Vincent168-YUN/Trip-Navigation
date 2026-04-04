@@ -1186,11 +1186,9 @@
                                     Object.keys(dataHierarchy.cities[activeCity].categories).sort().map((catName) => {
                                         const categoryPlaces = dataHierarchy.cities[activeCity].categories[catName];
                                         
-                                        // Grab the absolute closest location in this category
-                                        const closestPlace = categoryPlaces;
-                                        const coverPhoto = (closestPlace && Array.isArray(closestPlace.photos) && closestPlace.photos.length > 0) 
-                                            ? closestPlace.photos 
-                                            : null;
+                                        // Grab the closest location in this category that actually has a photo
+                                        const closestPlaceWithPhoto = categoryPlaces.find(loc => Array.isArray(loc.photos) && loc.photos.length > 0);
+                                        const coverPhoto = closestPlaceWithPhoto ? closestPlaceWithPhoto.photos : null;
 
                                         return (
                                             <div 
