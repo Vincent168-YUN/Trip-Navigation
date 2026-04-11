@@ -22,6 +22,10 @@
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Leaflet Map CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -315,6 +319,60 @@
                     />
                 </div>
             );
+        });
+
+        // --- MAP COMPONENT FOR ROUTE VISUALIZATION ---
+        const RouteMap = React.memo(({ points }) => {
+            const mapRef = React.useRef(null);
+            const mapInstanceRef = React.useRef(null);
+            const featureGroupRef = React.useRef(null);
+
+            React.useEffect(() => {
+                if (!mapRef.current) return;
+                
+                // Initialize map once
+                if (!mapInstanceRef.current) {
+                    mapInstanceRef.current = L.map(mapRef.current, { 
+                        zoomControl: false, 
+                        attributionControl: false 
+                    });
+                    
+                    // Use premium, clean CartoDB Voyager tiles
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                        maxZoom: 19
+                    }).addTo(mapInstanceRef.current);
+                    
+                    featureGroupRef.current = L.featureGroup().addTo(mapInstanceRef.current);
+                }
+
+                const map = mapInstanceRef.current;
+                const group = featureGroupRef.current;
+                
+                // Clear old markers and lines
+                group.clearLayers();
+
+                const validPoints = points.filter(p => p.lat != null && p.lng != null);
+                if (validPoints.length === 0) return;
+
+                const latLngs = validPoints.map(p => [parseFloat(p.lat), parseFloat(p.lng)]);
+                
+                // Add Numbered Markers
+                validPoints.forEach((p, i) => {
+                    const iconHtml = `<div style="background-color: #1D1D1F; color: white; width: 24px; height: 24px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.4);">${i + 1}</div>`;
+                    const customIcon = L.divIcon({ html: iconHtml, className: '', iconSize:, iconAnchor: });
+                    L.marker([parseFloat(p.lat), parseFloat(p.lng)], { icon: customIcon }).addTo(group);
+                });
+
+                // Add Connecting Line
+                if (latLngs.length > 1) {
+                    L.polyline(latLngs, { color: 'var(--ios-accent)', weight: 4, dashArray: '6, 8', lineCap: 'round' }).addTo(group);
+                    map.fitBounds(group.getBounds(), { padding:, maxZoom: 15 });
+                } else if (latLngs.length === 1) {
+                    map.setView(latLngs, 14);
+                }
+            }, [points]);
+
+            return <div ref={mapRef} className="w-full h-[220px] rounded-[20px] relative z-0" style={{ zIndex: 1 }}></div>;
         });
 
         function App() {
@@ -2179,17 +2237,17 @@
                                         <p className="text-[#8E8E93] font-medium text-[14px]">Select locations to calculate travel time.</p>
                                     </div>
                                 ) : (
-                                    <div className="relative before:absolute before:inset-0 before:ml-[28px] before:translate-x-[0.5px] before:h-full before:w-[2px] before:bg-gradient-to-b before:from-black/10 before:via-black/20 before:to-transparent space-y-2 mt-4 pb-4">
-                                        {routePoints.map((loc, index) => (
-                                            <React.Fragment key={`${loc.id}-${index}`}>
-                                                <div className="relative z-10 flex items-center pl-2 pr-2">
-                                                    <div className="w-10 h-10 rounded-full border-[3px] border-white bg-[#1D1D1F] text-white flex items-center justify-center shadow-md shrink-0 z-20 text-[13px] font-bold">
-                                                        {index + 1}
-                                                    </div>
-                                                    
-                                                    <div 
-                                                        className="ml-4 flex-1 min-w-0 glass-panel p-3 flex items-center justify-between shadow-sm border border-white/60 cursor-pointer active:scale-[0.98] transition-transform"
-                                                        onClick={() => { setLocationReturnView('route_calculator'); setSelectedLocId(loc.id); setView('location_detail'); }}
+                                    <>
+                                        {/* VISUAL MAP VIEW */}
+                                        <div className="glass-panel p-2 shadow-sm border border-white/60 mb-6 overflow-hidden relative">
+                                            <RouteMap points={routePoints} />
+                                        </div>
+
+                                        <div className="relative before:absolute before:inset-0 before:ml-[28px] before:translate-x-[0.5px] before:h-full before:w-[2px] before:bg-gradient-to-b before:from-black/10 before:via-black/20 before:to-transparent space-y-2 mt-4 pb-4">
+                                            {routePoints.map((loc, index) => (
+                                                <React.Fragment key={`${loc.id}-${index}`}>
+                                                    <div className="relative z-10 flex items-center pl-2 pr-2">
+                                                        <div className="w-10 h-10 rounded-full border-[3px] border-white bg-[#1D1D1F] text-white flex items-center justify-center shadow-md shrink-0 z-20 text-[13px] font-bold">
                                                     >
                                                         <div className="flex items-center flex-1 min-w-0 overflow-hidden">
                                                             {Array.isArray(loc.photos) && loc.photos.length > 0 ? (
@@ -2206,23 +2264,23 @@
                                                             onClick={(e) => { e.stopPropagation(); setRoutePoints(prev => prev.filter((_, i) => i !== index)); }} 
                                                             className="w-8 h-8 rounded-full bg-black/5 text-[#8E8E93] flex items-center justify-center active:bg-black/10 hover:text-[var(--ios-red)] transition-colors shrink-0"
                                                         >
-                                                            <i className="fa-solid fa-xmark text-[12px]"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                
-                                                {index < routePoints.length - 1 && routeCalculations[index] && (
-                                                    <div className="flex items-center pl-[52px] py-1.5 opacity-90">
-                                                        <div className={`px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide border shadow-sm flex items-center ${getDistanceBgColor(routeCalculations[index].distance)}`}>
-                                                            <i className={`fa-solid ${routeCalculations[index].isReal ? 'fa-car' : 'fa-location-arrow'} text-[9px] mr-1.5 opacity-80`}></i>
-                                                            {formatDistance(routeCalculations[index].distance)}
-                                                            {routeCalculations[index].duration !== null && ` • ${routeCalculations[index].isReal ? '' : '~'}${formatDuration(routeCalculations[index].duration)}`}
+                                                            </button>
                                                         </div>
                                                     </div>
-                                                )}
-                                            </React.Fragment>
-                                        ))}
-                                    </div>
+                                                    
+                                                    {index < routePoints.length - 1 && routeCalculations[index] && (
+                                                        <div className="flex items-center pl-[52px] py-1.5 opacity-90">
+                                                            <div className={`px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide border shadow-sm flex items-center ${getDistanceBgColor(routeCalculations[index].distance)}`}>
+                                                                <i className={`fa-solid ${routeCalculations[index].isReal ? 'fa-car' : 'fa-location-arrow'} text-[9px] mr-1.5 opacity-80`}></i>
+                                                                {formatDistance(routeCalculations[index].distance)}
+                                                                {routeCalculations[index].duration !== null && ` • ${routeCalculations[index].isReal ? '' : '~'}${formatDuration(routeCalculations[index].duration)}`}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </React.Fragment>
+                                            ))}
+                                        </div>
+                                    </>
                                 )}
                                 
                                 {routePoints.length >= 2 && routeCalculations.length === routePoints.length - 1 && (
