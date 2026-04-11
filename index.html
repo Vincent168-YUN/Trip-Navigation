@@ -352,6 +352,10 @@
             // Search State
             const [searchQuery, setSearchQuery] = useState('');
             
+            // Route Calculator State
+            const [routePoints, setRoutePoints] = useState([]);
+            const [routeCalculations, setRouteCalculations] = useState([]);
+
             // New Location Form Search State
             const [formSearchQuery, setFormSearchQuery] = useState('');
             const [searchResults, setSearchResults] = useState([]);
@@ -366,7 +370,7 @@
             const [locationReturnView, setLocationReturnView] = useState('category_list');
             
             // Derived active bottom tab
-            const activeTab = view === 'notifications' ? 'notifications' : (view.includes('itinerar') ? 'itineraries' : 'places');
+            const activeTab = view === 'notifications' ? 'notifications' : (view.includes('itinerar') ? 'itineraries' : (view.includes('route') ? 'route' : 'places'));
 
             // In-App Notification State
             const [notifications, setNotifications] = useState([]);
@@ -547,6 +551,51 @@
                 return () => clearTimeout(timeoutId);
             }, [liveLocation, locations]);
 
+            // 6. Route Calculator Logic (A to B to C...)
+            useEffect(() => {
+                if (routePoints.length < 2) {
+                    setRouteCalculations([]);
+                    return;
+                }
+                let isCancelled = false;
+                
+                const fallbackCalc = () => {
+                    if (isCancelled) return;
+                    const calcs = [];
+                    for (let i = 0; i < routePoints.length - 1; i++) {
+                        const dist = calculateDistance(routePoints[i].lat, routePoints[i].lng, routePoints[i+1].lat, routePoints[i+1].lng);
+                        calcs.push({ distance: dist, duration: dist ? dist * 3.5 : null, isReal: false });
+                    }
+                    setRouteCalculations(calcs);
+                };
+
+                const fetchRoute = async () => {
+                    const coords = routePoints.map(p => `${p.lng},${p.lat}`).join(';');
+                    try {
+                        const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=false`);
+                        const data = await res.json();
+                        if (isCancelled) return;
+                        
+                        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                            const route = data.routes;
+                            const calculations = route.legs.map(leg => ({
+                                distance: leg.distance / 1000, 
+                                duration: leg.duration / 60, 
+                                isReal: true
+                            }));
+                            setRouteCalculations(calculations);
+                        } else {
+                            fallbackCalc();
+                        }
+                    } catch (e) {
+                        fallbackCalc();
+                    }
+                };
+                
+                const timeoutId = setTimeout(fetchRoute, 300);
+                return () => { isCancelled = true; clearTimeout(timeoutId); };
+            }, [routePoints]);
+
             // Helper to get the best available route data
             const getRouteInfo = (loc) => {
                 if (realRoutes[loc.id]) {
@@ -663,6 +712,7 @@
                 else if (view === 'itinerary_select_location') { setView('itinerary_detail'); } 
                 else if (view === 'itinerary_item_form') { setView(previousView === 'itinerary_select_location' ? 'itinerary_select_location' : 'itinerary_detail'); }
                 else if (view === 'split_bill') { setView('itinerary_detail'); setSplitBillItem(null); }
+                else if (view === 'route_select_location') { setView('route_calculator'); }
             };
 
             // --- FORM HANDLERS ---
@@ -1059,6 +1109,8 @@
                 if (view === 'itinerary_form') return editId ? 'Edit Day' : 'Plan a Day';
                 if (view === 'itinerary_select_location') return 'Select Location';
                 if (view === 'split_bill') return 'Split Bill';
+                if (view === 'route_calculator') return 'Distance Calculator';
+                if (view === 'route_select_location') return 'Select Stop';
                 if (editId || editItinItemId) return 'Edit Item';
                 return 'Create Item';
             };
@@ -2046,6 +2098,153 @@
                                 </button>
                             </div>
                         )}
+
+                        {/* ========================================================= */}
+                        {/* MAIN VIEWS - DISTANCE & ROUTE CALCULATOR                  */}
+                        {/* ========================================================= */}
+
+                        {/* VIEW: ROUTE CALCULATOR */}
+                        {view === 'route_calculator' && (
+                            <div className="pb-6 space-y-4">
+                                <div className="px-2 mb-6 flex justify-between items-end">
+                                    <div>
+                                        <h2 className="text-[34px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight break-words">Route</h2>
+                                        <p className="text-[#8E8E93] font-bold tracking-wide uppercase text-[12px] mt-1">Distance & Duration</p>
+                                    </div>
+                                    {routePoints.length > 0 && (
+                                        <button onClick={() => setRoutePoints([])} className="text-[var(--ios-red)] text-[12px] font-bold bg-[var(--ios-red)]/10 px-3 py-1.5 rounded-full active:scale-95 transition-transform mb-1">
+                                            Clear All
+                                        </button>
+                                    )}
+                                </div>
+
+                                {routePoints.length === 0 ? (
+                                    <div className="glass-panel flex flex-col items-center justify-center py-12 px-6 text-center">
+                                        <div className="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mb-4">
+                                            <i className="fa-solid fa-route text-2xl text-[#8E8E93]"></i>
+                                        </div>
+                                        <h3 className="text-[18px] font-bold text-[#1D1D1F] mb-1">Map Your Journey</h3>
+                                        <p className="text-[#8E8E93] font-medium text-[14px]">Select locations to calculate travel time.</p>
+                                    </div>
+                                ) : (
+                                    <div className="relative before:absolute before:inset-0 before:ml-[28px] before:translate-x-[0.5px] before:h-full before:w-[2px] before:bg-gradient-to-b before:from-black/10 before:via-black/20 before:to-transparent space-y-2 mt-4 pb-4">
+                                        {routePoints.map((loc, index) => (
+                                            <React.Fragment key={`${loc.id}-${index}`}>
+                                                <div className="relative z-10 flex items-center pl-2 pr-2">
+                                                    <div className="w-10 h-10 rounded-full border-[3px] border-white bg-[#1D1D1F] text-white flex items-center justify-center shadow-md shrink-0 z-20 text-[13px] font-bold">
+                                                        {index + 1}
+                                                    </div>
+                                                    
+                                                    <div className="ml-4 flex-1 min-w-0 glass-panel p-3 flex items-center justify-between shadow-sm border border-white/60">
+                                                        <div className="min-w-0 flex-1 pr-2">
+                                                            <h4 className="text-[15px] font-bold text-[#1D1D1F] truncate">{loc.name}</h4>
+                                                            <p className="text-[12px] font-medium text-[#8E8E93] truncate">{loc.city}</p>
+                                                        </div>
+                                                        <button onClick={() => setRoutePoints(prev => prev.filter((_, i) => i !== index))} className="w-8 h-8 rounded-full bg-black/5 text-[#8E8E93] flex items-center justify-center active:bg-black/10 hover:text-[var(--ios-red)] transition-colors shrink-0">
+                                                            <i className="fa-solid fa-xmark text-[12px]"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                
+                                                {index < routePoints.length - 1 && routeCalculations[index] && (
+                                                    <div className="flex items-center pl-[52px] py-1.5 opacity-90">
+                                                        <div className={`px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide border shadow-sm flex items-center ${getDistanceBgColor(routeCalculations[index].distance)}`}>
+                                                            <i className={`fa-solid ${routeCalculations[index].isReal ? 'fa-car' : 'fa-location-arrow'} text-[9px] mr-1.5 opacity-80`}></i>
+                                                            {formatDistance(routeCalculations[index].distance)}
+                                                            {routeCalculations[index].duration !== null && ` • ${routeCalculations[index].isReal ? '' : '~'}${formatDuration(routeCalculations[index].duration)}`}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </React.Fragment>
+                                        ))}
+                                    </div>
+                                )}
+                                
+                                {routePoints.length >= 2 && routeCalculations.length === routePoints.length - 1 && (
+                                    <div className="glass-panel p-4 mb-4 bg-[#1D1D1F] text-white flex justify-between items-center shadow-lg border-none">
+                                        <div className="font-bold text-[14px] uppercase tracking-wider text-white/70">Total Trip</div>
+                                        <div className="text-right">
+                                            <div className="font-bold text-[18px] text-[var(--ios-accent)]">
+                                                {formatDistance(routeCalculations.reduce((acc, curr) => acc + curr.distance, 0))}
+                                            </div>
+                                            <div className="text-[13px] font-medium text-white/80 mt-0.5">
+                                                {formatDuration(routeCalculations.reduce((acc, curr) => acc + curr.duration, 0))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <button onClick={() => { setSearchQuery(''); setView('route_select_location'); }} className="w-full py-3.5 bg-white/80 border border-white backdrop-blur-md text-[#1D1D1F] font-bold tracking-wide text-[16px] rounded-[18px] active:scale-[0.98] transition-all mt-2 shadow-[0_4px_20px_rgba(0,0,0,0.05)] flex items-center justify-center">
+                                    <i className="fa-solid fa-plus mr-2 opacity-70"></i> Add Stop
+                                </button>
+                            </div>
+                        )}
+
+                        {/* VIEW: SELECT LOCATION FOR ROUTE */}
+                        {view === 'route_select_location' && (
+                            <div className="space-y-5 pb-6">
+                                <div className="px-2 mb-2 flex justify-between items-center">
+                                    <h2 className="text-[28px] font-art font-bold text-[#1D1D1F] leading-tight tracking-tight">Pick Place</h2>
+                                    <button onClick={() => setView('route_calculator')} className="text-[#8E8E93] font-bold text-[14px] active:opacity-50 px-2 py-1">
+                                        Cancel
+                                    </button>
+                                </div>
+
+                                <div className="glass-panel p-1.5">
+                                    <div className="relative flex items-center glass-input px-3 py-3 bg-white/50">
+                                        <i className="fa-solid fa-magnifying-glass text-[#8E8E93] mr-2.5 shrink-0"></i>
+                                        <input 
+                                            type="text" placeholder="Search saved places..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="flex-1 min-w-0 bg-transparent focus:outline-none text-[16px] font-medium placeholder-[#8E8E93]/60"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                {filteredAndGroupedLocations.sortedCategories.length === 0 ? (
+                                    <div className="text-center p-8 text-[#8E8E93] font-medium">No saved places found.</div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {filteredAndGroupedLocations.sortedCategories.map(cat => (
+                                            <div key={cat} className="space-y-2">
+                                                <h3 className="text-[12px] font-bold text-[#8E8E93] uppercase tracking-wide pl-2">{cat}</h3>
+                                                <div className="glass-panel overflow-hidden">
+                                                    {filteredAndGroupedLocations.grouped[cat].map((loc, index, arr) => (
+                                                        <div 
+                                                            key={loc.id} 
+                                                            className={`flex items-center justify-between p-3 pl-4 transition-colors ${loc.lat == null ? 'opacity-50' : 'cursor-pointer active:bg-black/5'} ${index !== arr.length - 1 ? 'border-b border-black/5' : ''}`}
+                                                            onClick={() => {
+                                                                if (loc.lat != null && loc.lng != null) {
+                                                                    setRoutePoints(prev => [...prev, loc]);
+                                                                    setView('route_calculator');
+                                                                }
+                                                            }}
+                                                        >
+                                                            <div className="flex items-center flex-1 min-w-0 overflow-hidden">
+                                                                {Array.isArray(loc.photos) && loc.photos.length > 0 ? (
+                                                                    <img src={loc.photos} className="w-12 h-12 rounded-[12px] object-cover shrink-0 mr-3 border border-white/60 shadow-sm bg-[#e5e5ea]" alt="" onError={handleImgErr} />
+                                                                ) : (
+                                                                    <div className="w-12 h-12 rounded-[12px] bg-black/5 flex items-center justify-center text-[#8E8E93] shrink-0 mr-3 border border-black/5 shadow-inner"><i className="fa-solid fa-map-pin"></i></div>
+                                                                )}
+                                                                <div className="truncate pr-2 min-w-0 flex-1">
+                                                                    <h4 className="text-[16px] font-bold text-[#1D1D1F] truncate">{loc.name}</h4>
+                                                                    <p className="text-[12px] font-medium text-[#8E8E93] truncate mt-0.5">{loc.city || 'City'}</p>
+                                                                </div>
+                                                            </div>
+                                                            {loc.lat == null ? (
+                                                                <span className="text-[10px] text-[var(--ios-red)] font-bold uppercase tracking-wider">No GPS</span>
+                                                            ) : (
+                                                                <i className="fa-solid fa-plus text-[#8E8E93] text-[14px] shrink-0 px-2"></i>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                     </main>
 
                     {/* FLOATING LIGHT GLASS NAV PILL */}
@@ -2057,6 +2256,13 @@
                             >
                                 <i className="fa-solid fa-map-location-dot text-[18px] mb-1"></i>
                                 <span className="text-[10px] font-bold tracking-wider uppercase">Places</span>
+                            </button>
+                            <button 
+                                onClick={() => setView('route_calculator')} 
+                                className={`flex flex-col items-center justify-center w-full h-full rounded-full transition-colors active:bg-black/5 ${activeTab === 'route' ? 'text-[#1D1D1F]' : 'text-[#8E8E93] hover:text-[#1D1D1F]'}`}
+                            >
+                                <i className="fa-solid fa-route text-[18px] mb-1"></i>
+                                <span className="text-[10px] font-bold tracking-wider uppercase">Route</span>
                             </button>
                             <button 
                                 onClick={() => setView('notifications')} 
