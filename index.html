@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -463,7 +464,7 @@
             // 3. Track GPS
             useEffect(() => {
                 if (!("geolocation" in navigator)) {
-                    setGeoError("GPS not supported.");
+                    setGeoError("GPS not supported by browser.");
                     return;
                 }
                 const watchId = navigator.geolocation.watchPosition(
@@ -472,7 +473,18 @@
                         setGpsAccuracy(pos.coords.accuracy);
                         setGeoError(''); 
                     },
-                    (err) => { setGeoError("Using Mock Location"); setLiveLocation({ lat: 11.5564, lng: 104.9282 }); setGpsAccuracy(null); },
+                    (err) => { 
+                        // Map the geolocation error code to a readable message
+                        let errorMessage = "Using Mock Location";
+                        if (err.code === err.PERMISSION_DENIED) errorMessage = "GPS Permission Denied";
+                        else if (err.code === err.POSITION_UNAVAILABLE) errorMessage = "GPS Position Unavailable";
+                        else if (err.code === err.TIMEOUT) errorMessage = "GPS Timeout";
+
+                        setGeoError(errorMessage); 
+                        // UPDATED FALLBACK: Ho Chi Minh City instead of Phnom Penh
+                        setLiveLocation({ lat: 10.762622, lng: 106.660172 }); 
+                        setGpsAccuracy(null); 
+                    },
                     { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
                 );
                 return () => navigator.geolocation.clearWatch(watchId);
@@ -852,7 +864,7 @@
                             setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGpsAccuracy(pos.coords.accuracy);
                             setLat(pos.coords.latitude.toFixed(6)); setLng(pos.coords.longitude.toFixed(6)); setSaveError(''); setGeoError('');
                         },
-                        (err) => { setSaveError("GPS Error: Could not get live location."); setLat((11.5564).toFixed(6)); setLng((104.9282).toFixed(6)); },
+                        (err) => { setSaveError("GPS Error: Could not get live location."); setLat((10.7626).toFixed(6)); setLng((106.6601).toFixed(6)); },
                         { enableHighAccuracy: true, timeout: 5000 }
                     );
                 }
@@ -2386,3 +2398,6 @@
     </script>
 </body>
 </html>
+
+
+```
