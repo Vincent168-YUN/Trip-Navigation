@@ -318,6 +318,32 @@
             );
         });
 
+        // 🚀 HIGH-ACCURACY IP GEOLOCATION CASCADE
+        const fetchIpLocation = async () => {
+            // Provider 1: Highly accurate city/district level routing
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+                if (data.latitude && data.longitude) return { lat: parseFloat(data.latitude), lng: parseFloat(data.longitude) };
+            } catch (e) {}
+            // Provider 2: Reliable global fallback
+            try {
+                const res = await fetch('https://ipinfo.io/json');
+                const data = await res.json();
+                if (data.loc) {
+                    const [lat, lng] = data.loc.split(',');
+                    return { lat: parseFloat(lat), lng: parseFloat(lng) };
+                }
+            } catch (e) {}
+            // Provider 3: Free HTTPS tier fail-safe
+            try {
+                const res = await fetch('https://freeipapi.com/api/json');
+                const data = await res.json();
+                if (data.latitude && data.longitude) return { lat: parseFloat(data.latitude), lng: parseFloat(data.longitude) };
+            } catch (e) {}
+            throw new Error("All IP location services failed");
+        };
+
         function App() {
             // --- STATE ---
             const [user, setUser] = useState(null);
@@ -463,28 +489,23 @@
 
             // 3. Track GPS
             useEffect(() => {
+                const handleFallback = async (errorMessage) => {
+                    setGeoError("GPS Blocked - Fetching IP Location...");
+                    try {
+                        const coords = await fetchIpLocation();
+                        setLiveLocation(coords);
+                        setGpsAccuracy(5000); // 5km approximate IP accuracy
+                        setGeoError("Using Accurate IP Location");
+                    } catch (err) {
+                        setGeoError(errorMessage + " (IP Fallback failed)");
+                        setLiveLocation(null); // Clear fake location entirely
+                    }
+                };
+
                 if (!("geolocation" in navigator)) {
-                    setGeoError("GPS not supported by browser.");
+                    handleFallback("GPS not supported by browser.");
                     return;
                 }
-
-                const handleFallback = (errorMessage) => {
-                    setGeoError(errorMessage + " - Falling back to IP Location...");
-                    // Dynamic IP-based location fallback instead of a hardcoded city
-                    fetch('https://get.geojs.io/v1/ip/geo.json')
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.latitude && data.longitude) {
-                                setLiveLocation({ lat: parseFloat(data.latitude), lng: parseFloat(data.longitude) });
-                                setGpsAccuracy(5000); // Approximate accuracy (5km)
-                                setGeoError("Using Approximate IP Location");
-                            }
-                        })
-                        .catch(() => {
-                            setGeoError(errorMessage + " (IP Fallback failed)");
-                            setLiveLocation(null); // Clear fake location entirely
-                        });
-                };
 
                 const watchId = navigator.geolocation.watchPosition(
                     (pos) => { 
@@ -874,14 +895,20 @@
                     // Use the IP fallback or native GPS if it exists
                     setLat(liveLocation.lat.toFixed(6)); setLng(liveLocation.lng.toFixed(6)); setSaveError('');
                 } else {
-                    setSaveError("Fetching live GPS...");
+                    setSaveError("Fetching live GPS/IP...");
                     navigator.geolocation.getCurrentPosition(
                         (pos) => {
                             setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGpsAccuracy(pos.coords.accuracy);
                             setLat(pos.coords.latitude.toFixed(6)); setLng(pos.coords.longitude.toFixed(6)); setSaveError(''); setGeoError('');
                         },
-                        (err) => { 
-                            setSaveError("GPS blocked. Please allow location access or type coordinates manually."); 
+                        async (err) => { 
+                            try {
+                                const coords = await fetchIpLocation();
+                                setLiveLocation(coords); setGpsAccuracy(5000);
+                                setLat(coords.lat.toFixed(6)); setLng(coords.lng.toFixed(6)); setSaveError(''); setGeoError('Using Accurate IP Location');
+                            } catch (ipErr) {
+                                setSaveError("GPS & IP blocked. Please type coordinates manually."); 
+                            }
                         },
                         { enableHighAccuracy: true, timeout: 5000 }
                     );
@@ -2416,6 +2443,7 @@
     </script>
 </body>
 </html>
+
 
 
 
