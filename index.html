@@ -467,6 +467,25 @@
                     setGeoError("GPS not supported by browser.");
                     return;
                 }
+
+                const handleFallback = (errorMessage) => {
+                    setGeoError(errorMessage + " - Falling back to IP Location...");
+                    // Dynamic IP-based location fallback instead of a hardcoded city
+                    fetch('https://get.geojs.io/v1/ip/geo.json')
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.latitude && data.longitude) {
+                                setLiveLocation({ lat: parseFloat(data.latitude), lng: parseFloat(data.longitude) });
+                                setGpsAccuracy(5000); // Approximate accuracy (5km)
+                                setGeoError("Using Approximate IP Location");
+                            }
+                        })
+                        .catch(() => {
+                            setGeoError(errorMessage + " (IP Fallback failed)");
+                            setLiveLocation(null); // Clear fake location entirely
+                        });
+                };
+
                 const watchId = navigator.geolocation.watchPosition(
                     (pos) => { 
                         setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); 
@@ -474,16 +493,12 @@
                         setGeoError(''); 
                     },
                     (err) => { 
-                        // Map the geolocation error code to a readable message
-                        let errorMessage = "Using Mock Location";
+                        let errorMessage = "GPS Error";
                         if (err.code === err.PERMISSION_DENIED) errorMessage = "GPS Permission Denied";
                         else if (err.code === err.POSITION_UNAVAILABLE) errorMessage = "GPS Position Unavailable";
                         else if (err.code === err.TIMEOUT) errorMessage = "GPS Timeout";
 
-                        setGeoError(errorMessage); 
-                        // UPDATED FALLBACK: Ho Chi Minh City instead of Phnom Penh
-                        setLiveLocation({ lat: 10.762622, lng: 106.660172 }); 
-                        setGpsAccuracy(null); 
+                        handleFallback(errorMessage);
                     },
                     { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
                 );
@@ -856,6 +871,7 @@
 
             const useCurrentLocation = () => {
                 if (liveLocation && liveLocation.lat != null && liveLocation.lng != null) {
+                    // Use the IP fallback or native GPS if it exists
                     setLat(liveLocation.lat.toFixed(6)); setLng(liveLocation.lng.toFixed(6)); setSaveError('');
                 } else {
                     setSaveError("Fetching live GPS...");
@@ -864,7 +880,9 @@
                             setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGpsAccuracy(pos.coords.accuracy);
                             setLat(pos.coords.latitude.toFixed(6)); setLng(pos.coords.longitude.toFixed(6)); setSaveError(''); setGeoError('');
                         },
-                        (err) => { setSaveError("GPS Error: Could not get live location."); setLat((10.7626).toFixed(6)); setLng((106.6601).toFixed(6)); },
+                        (err) => { 
+                            setSaveError("GPS blocked. Please allow location access or type coordinates manually."); 
+                        },
                         { enableHighAccuracy: true, timeout: 5000 }
                     );
                 }
@@ -2398,6 +2416,7 @@
     </script>
 </body>
 </html>
+
 
 
 ```
