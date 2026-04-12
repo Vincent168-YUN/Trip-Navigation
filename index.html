@@ -489,17 +489,26 @@
 
             // 3. Track GPS
             useEffect(() => {
+                let watchId;
+                let ipInterval;
+
                 const handleFallback = async (errorMessage) => {
-                    setGeoError("GPS Blocked - Fetching IP Location...");
-                    try {
-                        const coords = await fetchIpLocation();
-                        setLiveLocation(coords);
-                        setGpsAccuracy(5000); // 5km approximate IP accuracy
-                        setGeoError("Using Accurate IP Location");
-                    } catch (err) {
-                        setGeoError(errorMessage + " (IP Fallback failed)");
-                        setLiveLocation(null); // Clear fake location entirely
-                    }
+                    setGeoError("GPS Blocked - Fetching IP...");
+                    
+                    const fetchIp = async () => {
+                        try {
+                            const coords = await fetchIpLocation();
+                            setLiveLocation(coords);
+                            setGpsAccuracy(5000); // 5km approximate IP accuracy
+                            setGeoError("Using Accurate IP Location");
+                        } catch (err) {
+                            setGeoError(errorMessage + " (IP Fallback failed)");
+                        }
+                    };
+
+                    await fetchIp();
+                    // Poll IP location every 30 seconds since watchPosition is blocked
+                    ipInterval = setInterval(fetchIp, 30000);
                 };
 
                 if (!("geolocation" in navigator)) {
@@ -507,7 +516,7 @@
                     return;
                 }
 
-                const watchId = navigator.geolocation.watchPosition(
+                watchId = navigator.geolocation.watchPosition(
                     (pos) => { 
                         setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); 
                         setGpsAccuracy(pos.coords.accuracy);
@@ -523,8 +532,46 @@
                     },
                     { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
                 );
-                return () => navigator.geolocation.clearWatch(watchId);
+                
+                return () => {
+                    if (watchId !== undefined) navigator.geolocation.clearWatch(watchId);
+                    if (ipInterval) clearInterval(ipInterval);
+                };
             }, []);
+
+            // Manual Refresh Function
+            const forceRefreshLocation = async () => {
+                setGeoError("Refreshing...");
+                if ("geolocation" in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            setLiveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                            setGpsAccuracy(pos.coords.accuracy);
+                            setGeoError('');
+                        },
+                        async (err) => {
+                            try {
+                                const coords = await fetchIpLocation();
+                                setLiveLocation(coords);
+                                setGpsAccuracy(5000);
+                                setGeoError("Using Accurate IP Location");
+                            } catch (ipErr) {
+                                setGeoError("Refresh failed");
+                            }
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } // Force un-cached reading
+                    );
+                } else {
+                    try {
+                        const coords = await fetchIpLocation();
+                        setLiveLocation(coords);
+                        setGpsAccuracy(5000);
+                        setGeoError("Using Accurate IP Location");
+                    } catch (ipErr) {
+                        setGeoError("Refresh failed");
+                    }
+                }
+            };
 
             // 4. Live Place Autocomplete Search
             useEffect(() => {
@@ -1281,8 +1328,10 @@
                                         <span className="text-[16px] font-bold tracking-wide">Back</span>
                                     </button>
                                 ) : (
-                                    <div className="h-12 px-5 rounded-full bg-white/80 backdrop-blur-3xl border border-white shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex items-center justify-center space-x-2.5">
-                                        {geoError ? (
+                                    <button onClick={forceRefreshLocation} className="h-12 px-5 rounded-full bg-white/80 backdrop-blur-3xl border border-white shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex items-center justify-center space-x-2.5 active:scale-95 transition-transform cursor-pointer">
+                                        {geoError === "Refreshing..." ? (
+                                            <i className="fa-solid fa-spinner fa-spin text-[var(--ios-accent)] text-sm"></i>
+                                        ) : geoError ? (
                                             <i className="fa-solid fa-location-crosshairs text-[var(--ios-red)] text-sm" title={geoError}></i>
                                         ) : liveLocation ? (
                                             <div className="flex items-center space-x-2" title={gpsAccuracy ? `Accuracy: ±${Math.round(gpsAccuracy)}m` : 'GPS Active'}>
@@ -1295,7 +1344,7 @@
                                                 </span>
                                             </div>
                                         ) : <i className="fa-solid fa-spinner fa-spin text-[#8E8E93] text-sm"></i>}
-                                    </div>
+                                    </button>
                                 )}
                             </div>
 
@@ -2443,6 +2492,7 @@
     </script>
 </body>
 </html>
+
 
 
 
